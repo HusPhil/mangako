@@ -2,6 +2,7 @@ import { View, Text } from 'react-native'
 import React, {useEffect} from 'react'
 import { Stack, SplashScreen } from 'expo-router'
 import { useFonts } from 'expo-font'
+import MangaInfoScreen from '../app/screens/mangaInfo'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -29,6 +30,7 @@ const RootLayout = () => {
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{headerShown: false}} />
+      <Stack.Screen name="screens" options={{headerShown: false}} />
     </Stack>
   )
 }

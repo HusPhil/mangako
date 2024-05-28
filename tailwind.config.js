@@ -7,13 +7,16 @@ module.exports = {
         primary: "#1D2434",
         secondary: {
           DEFAULT: "#3E414A",
-          100: "#FF9001",
-          200: "#FF8E01",
+          100: "rgba(62, 75, 74, 0.75)",
+          200: "rgba(62, 75, 74, 0.5)",
         },
-        accent: "#FC3B2C",
+        accent: {
+          DEFAULT: "#FC3B2C",
+          100: "rgba(252, 59, 44, .5)",
+        },
         black: {
           DEFAULT: "#000",
-          100: "#1E1E2D",
+          100: "rgba(252, 59, 44, .50)",
           200: "#232533",
         },
         gray: {

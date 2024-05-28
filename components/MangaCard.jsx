@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, Button, Alert, StyleSheet, ImageBackground, TouchableOpacity } from 'react-native';
-
+import { router } from 'expo-router';
 import { getMangaById, getMangaByTitle } from '../utils/MangaDexClient'
+
 import images  from "../constants/images"
  
-const MangaCard = ({ mangaId, containerStyles, coverStyles, mangaTitle, mangaCover }) => {
+const MangaCard = ({ mangaId, containerStyles, coverStyles, mangaTitle, mangaCover, mangaDetails, autoload, children, disabled }) => {
   
   const [title, setTitle] = useState("")
   const [coverImgUrl, setCoverImgUrl] = useState("")
@@ -12,7 +13,7 @@ const MangaCard = ({ mangaId, containerStyles, coverStyles, mangaTitle, mangaCov
   useEffect(() => {
     const fetchData = async () => {
       try {
-        if(mangaId) {
+        if(autoload) {
           const result = await getMangaById(mangaId);
           setCoverImgUrl(result.cover);
           setTitle(result.title);
@@ -23,33 +24,43 @@ const MangaCard = ({ mangaId, containerStyles, coverStyles, mangaTitle, mangaCov
     };
 
     fetchData();
-  }, [mangaId]);
+  }, [autoload]);
   
   const handlePress = () => {
-    Alert.alert(title ? title : mangaTitle)
+    // console.log(mangaDetails.altTitles)
+    if(mangaDetails) {
+      router.navigate({
+        pathname: "screens/mangaInfo",
+        params: {
+          "mangaId": mangaId,
+          "mangaCover": mangaCover,
+          "mangaTitle": mangaTitle,
+          "status":  mangaDetails.status ? mangaDetails.status : "no status available", 
+          "desc":  mangaDetails.desc ? mangaDetails.desc : "no description available",  
+          "altTitles": mangaDetails.altTitles ? JSON.stringify(mangaDetails.altTitles) : "no alternative titles", 
+          "tags" : JSON.stringify(mangaDetails.tags),
+          "contentRating": mangaDetails.contentRating ? mangaDetails.contentRating : "no rating available",
+        }
+      })
+    }
   }
 
-  const source = mangaId ? coverImgUrl : mangaCover;
-  const displayTitle = mangaId ? title : mangaTitle;
+  const source = autoload ? coverImgUrl : mangaCover;
+  const displayTitle = autoload ? title : mangaTitle;
   
   return (
     <TouchableOpacity 
-      className={`${containerStyles} rounded-md overflow-hidden bg-red-400 border-2`}
+      className={`${containerStyles} rounded-md overflow-hidden bg-accent-100 border-2 border-accent-100`}
       onPress={handlePress}
+      disabled={disabled}
     >
       <ImageBackground
         source={source ? { uri: source } : images.test}   
         className={`${coverStyles} relative`}
         resizeMode='cover'
       >
-        <Image 
-          className="w-full h-full bg-black" 
-          style={{ opacity: 0.2 }} 
-        />
-        <View className="absolute top-[115] w-full items-center overflow-hidden">
-          <Text className="text-white text-xs text-left px-1">{displayTitle ? displayTitle : "Loading.."}</Text>
-        </View>
       </ImageBackground>
+        {children}
     </TouchableOpacity>
   );
 }
