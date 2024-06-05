@@ -7,6 +7,7 @@ import {LinearGradient} from 'expo-linear-gradient';
 // import colors from '../constants/colors';
 import colors from '../../constants/colors'
 
+
 export default function App() {
   return (
     <SafeAreaView className="bg-primary">
@@ -22,10 +23,11 @@ export default function App() {
     >
       <MangaGrid
         order={{
+          title:"asc",
           relevance: 'desc',
-          followedCount: 'desc'
+          followedCount: 'desc',
         }}
-        limit={3*33}
+        limit={100}
         numColumns={3}
       />
 

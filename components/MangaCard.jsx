@@ -5,7 +5,12 @@ import { getMangaById, getMangaByTitle } from '../utils/MangaDexClient'
 
 import images  from "../constants/images"
  
-const MangaCard = ({ mangaId, containerStyles, coverStyles, mangaTitle, mangaCover, mangaDetails, autoload, children, disabled }) => {
+const MangaCard = ({ 
+  mangaId, mangaLink, containerStyles, coverStyles, 
+  mangaTitle, mangaCover, mangaDetails, 
+  autoload, children, disabled,
+
+}) => {
   
   const [title, setTitle] = useState("")
   const [coverImgUrl, setCoverImgUrl] = useState("")
@@ -28,18 +33,14 @@ const MangaCard = ({ mangaId, containerStyles, coverStyles, mangaTitle, mangaCov
   
   const handlePress = () => {
     // console.log(mangaDetails.altTitles)
-    if(mangaDetails) {
+    if(!mangaDetails) {
       router.navigate({
         pathname: "screens/mangaInfo",
         params: {
           "mangaId": mangaId,
           "mangaCover": mangaCover,
           "mangaTitle": mangaTitle,
-          "status":  mangaDetails.status ? mangaDetails.status : "no status available", 
-          "desc":  mangaDetails.desc ? mangaDetails.desc : "no description available",  
-          "altTitles": mangaDetails.altTitles ? JSON.stringify(mangaDetails.altTitles) : "no alternative titles", 
-          "tags" : JSON.stringify(mangaDetails.tags),
-          "contentRating": mangaDetails.contentRating ? mangaDetails.contentRating : "no rating available",
+          "mangaLink": mangaLink || "NONE"
         }
       })
     }

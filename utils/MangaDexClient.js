@@ -9,6 +9,26 @@ const api = axios.create({
   timeout: 10000, 
 });
 
+const formatParams = (params) => {
+  const searchParams = new URLSearchParams();
+
+  Object.keys(params).forEach(key => {
+    if (Array.isArray(params[key])) {
+      params[key].forEach(value => {
+        searchParams.append(`${key}[]`, value);
+      });
+    } else if (typeof params[key] === 'object') {
+      Object.keys(params[key]).forEach(subKey => {
+        searchParams.append(`${key}[${subKey}]`, params[key][subKey]);
+      });
+    } else {
+      searchParams.append(key, params[key]);
+    }
+  });
+
+  return searchParams;
+};
+
 
 export const getMangaById = async (mangaId) => {
   try {
@@ -46,8 +66,8 @@ export const getMangaByTitle = async (title) => {
     console.log(result);
     return result;
   } catch (error) {
-    console.error('Error fetching manga by title:', error);
-    throw error;
+    console.log('Error fetching manga by title:', error);
+    // throw error;
   }
 };
 
@@ -94,6 +114,71 @@ export const getMangaByOrder = async (order, limit) => {
 
 };
 
+export const getMangaChapters = async (mangaID) => {
+  try {
+    let resp;
+    let offset = 0;
+    const chapterMap = new Map();
+
+    do {
+      resp = await api.get(`/chapter`, {
+        params: formatParams({
+          limit: 100,
+          manga: mangaID,
+          translatedLanguage: ['en'],
+          offset: offset,
+          includes: ["manga"]
+        })
+      });
+
+      if (resp.data.result !== 'ok') break;
+
+      const chapters = resp.data.data;
+
+      chapters.forEach((chapter) => {
+        const chNum = parseFloat(chapter.attributes.chapter);
+        if (!chapterMap.has(chNum)) {
+          chapterMap.set(chNum, {
+            id: chapter.id,
+            chNum: chapter.attributes.chapter,
+            publishDate: new Date(chapter.attributes.publishAt).toISOString().split('T')[0]
+          });
+        }
+      });
+
+      offset += 100;
+    } while (resp.data.total > offset);
+
+    const allChapters = Array.from(chapterMap.values()).sort((a, b) => parseFloat(b.chNum) - parseFloat(a.chNum));
+    return allChapters;
+  } catch (error) {
+    console.error('Error fetching manga chapters:', error);
+  }
+};
+
+export const getMangaFeed = async (mangaID) => {
+  try {
+    const resp = await api.get(`/manga/${mangaID}/feed`);
+
+    console.log(resp.url)
+
+    const result = resp.data.data.map((chapters) => {
+      return(
+        {
+          id: chapters.id,
+          chNum: chapters.attributes.chapter,
+          publishDate: new Date(chapters.attributes.publishAt).toISOString().split('T')[0],
+        }
+      )
+    })
+    result.sort((a, b) => parseFloat(b.chNum) - parseFloat(a.chNum));
+    return result;
+  } catch (error) {
+    console.error('Error fetching manga by title:', error);
+    throw error;
+  }
+};
+
 export const base64toBlob = (base64Data, contentType) => {
   contentType = contentType || '';
     var sliceSize = 1024;
@@ -117,7 +202,7 @@ export const base64toBlob = (base64Data, contentType) => {
 
 export const tryScrape = async () => {
   // URL and headers
-  const url = 'https://v15.mkklcdnv6tempv5.com/img/tab_15/03/76/41/lp988998/chapter_1/1-o.jpg';
+  const url = 'https://v16.mkklcdnv6tempv5.com/img/tab_16/00/03/66/ko951723/chapter_72/5-o.jpg';
   const headers = {
     'sec-ch-ua': '"Microsoft Edge";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
     'Referer': 'https://chapmanganato.to/',

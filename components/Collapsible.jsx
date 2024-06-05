@@ -10,9 +10,9 @@ import {
   import React, { useState } from 'react';
   import { AntDesign } from '@expo/vector-icons';
   
-  const Accordion = ({ title, details }) => {
+  const Accordion = ({ title, details, children }) => {
     const [opened, setOpened] = useState(false);
-    const otherContainerStyles = !opened ? "bg-secondary-100" : "" 
+    const otherContainerStyles = !opened ? "" : "" 
     const otherTitleStyles = opened ? "" : "" 
   
     if (
@@ -35,7 +35,7 @@ import {
       <View className={`${otherContainerStyles} p-3 rounded-md my-2 mx-5`}>
         <TouchableWithoutFeedback onPress={toggleAccordion}>
           <View style={styles.header}>
-            <Text className={`${otherTitleStyles} text-white font-pbold`}>{title}</Text>
+           {children}
             <AntDesign color={"#fff"} name={opened ? 'caretup' : 'caretdown'} size={16} />
           </View>
         </TouchableWithoutFeedback>

@@ -1,15 +1,18 @@
-import { View, Text } from 'react-native'
-import React from 'react'
-
-import colors from '../../constants/colors'
-import { useLocalSearchParams } from 'expo-router'
+import { View, Text, Button } from 'react-native'
+import React, {useState} from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const more = () => {
-  const params = useLocalSearchParams();
-  console.log(params)
+  const [isLoading, setisLoading] = useState(false)
+
   return (
-    <View>
-      <Text>more</Text>
+    <View className="justify-center items-center h-full">
+      <Button disabled={isLoading} onPress={ async () => {
+        setisLoading(true) 
+        await AsyncStorage.clear()
+        setisLoading(false) 
+        }
+        } title='Clear Cache' />
     </View>
   )
 }

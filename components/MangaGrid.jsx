@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Alert, View, Text } from 'react-native';
+import React, { useState, useEffect, memo } from 'react';
+import { Alert, View, Text, Button } from 'react-native';
 import { FlashList } from "@shopify/flash-list";
 import MangaCard from './MangaCard';
-import { getMangaByOrder } from '../utils/MangaDexClient';
+import { getMangaByOrder } from '../utils/MangakakalotClient';
 
-import {LinearGradient} from 'expo-linear-gradient';
-import colors from '../constants/colors';
 
 const MangaGrid = ({ order, limit, numColumns, listStyles }) => {
   const [mangaData, setMangaData] = useState([]);
@@ -18,22 +16,20 @@ const MangaGrid = ({ order, limit, numColumns, listStyles }) => {
     details: null,
   }));
 
-  
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      const result = await getMangaByOrder('div.list-truyen-item-wrap', 1);
+      setMangaData([...mangaData, ...result]);
+    } catch (error) {
+      Alert.alert("Error", error.message);
+      setMangaData(placeholderData);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const result = await getMangaByOrder(order, limit);
-        setMangaData(result);
-      } catch (error) {
-        Alert.alert("Error", error.message);
-        setMangaData(placeholderData);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchData();
   }, [order, limit]);
 
@@ -51,12 +47,12 @@ const MangaGrid = ({ order, limit, numColumns, listStyles }) => {
     <View className="w-full px-2">
       <MangaCard 
         mangaId={item.id}
+        mangaLink={item.link}
         mangaTitle={item.title}
         mangaCover={item.cover}
-        mangaDetails={item.details}
         containerStyles={"my-1 w-[100%]"}
         coverStyles={"w-[100%] h-[150px]"}
-        
+        disabled={isLoading ? true : false}
       >
       <MangaText mangaTitle={item.title}/>
       </MangaCard>
@@ -66,7 +62,7 @@ const MangaGrid = ({ order, limit, numColumns, listStyles }) => {
   
 
   return (
-    <View className="h-full w-full self-center px-2 mt-2">  
+    <View className="h-full w-full self-center px-2 mt-2 flex-1">  
         {mangaData ? (
           <FlashList
             data={isLoading ? placeholderData : mangaData}
@@ -78,10 +74,14 @@ const MangaGrid = ({ order, limit, numColumns, listStyles }) => {
             />
             
           ) : (
-            <Text>Error loading</Text>
+            <View>
+
+              <Text>Error loading</Text>
+              <Button onPress={fetchData} title='Retry'/>
+            </View>
           )}
     </View>
   );
 };
 
-export default MangaGrid;
+export default memo(MangaGrid);

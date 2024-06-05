@@ -1,9 +1,9 @@
 import { View, Text } from 'react-native'
 import React from 'react'
 
-const HorizontalRule = ({displayText}) => {
+const HorizontalRule = ({displayText, otherStyles}) => {
   return (
-    <View className="flex-row items-center px-5">
+    <View className={`flex-row items-center ${otherStyles}`}>
         <View className="flex-1 h-[1px] bg-white" />
         {displayText && (
             <>
