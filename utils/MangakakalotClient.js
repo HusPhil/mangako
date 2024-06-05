@@ -116,14 +116,14 @@ export const getChapterList = async (mangaUrl) => {
       const chapterList = [];
 
       $('ul.row-content-chapter > li').each((index, item) => {
-          const chNum = $(item).find('a').text().trim();
+          const chTitle = $(item).find('a').text().trim();
           const publishDate = $(item).find('span.chapter-time.text-nowrap').text().trim();
           const chapterUrl = $(item).find('a').attr('href');
-          const chapId = `${chapterUrl}-${chNum}-${publishDate}`;
+          const chapId = `${chapterUrl}-${chTitle}-${publishDate}`;
       
           chapterList.push({
               chapId,
-              chNum,
+              chTitle,
               publishDate,
               chapterUrl,
           });

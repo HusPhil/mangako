@@ -40,20 +40,23 @@ const ChapterList = ({ mangaLink }) => {
     fetchData();
   }, [mangaLink]);
 
-  const handleChapterPress = useCallback((item) => {
+  const handleChapterPress = useCallback((item, index) => {
+    const chData = chaptersData.map(chapter => chapter.chapterUrl)
     router.navigate({
       pathname: "screens/mangaReader",
       params: {
         chId: item.chapId,
         chapterUrl: item.chapterUrl,
-        chNum: item.chNum,
+        chTitle: item.chTitle,
+        chIndex: index,
+        chData: JSON.stringify(chData),
       }
     });
   }, []);
 
-  const renderItem = useCallback(({ item }) => (
+  const renderItem = useCallback(({ item, index }) => (
     <View className="w-full px-2">
-      <ChapterListItem chNum={item.chNum} publishedDate={item.publishDate} handlePress={() => handleChapterPress(item)} />
+      <ChapterListItem chTitle={item.chTitle} publishedDate={item.publishDate} handlePress={() => handleChapterPress(item, index)} />
     </View>
   ), [handleChapterPress]);
 
