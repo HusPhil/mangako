@@ -203,7 +203,12 @@ export const getChapterList = async (mangaUrl) => {
       }
 
       
-
+    //   chapterList.push({
+    //     chapId: "hello world",
+    //     chTitle:"hello world",
+    //     publishDate:"hello world",
+    //     chapterUrl: "hello world",
+    // })
       return chapterList;
     } else {
       console.log(`Failed to scrape data. Status code: ${response.status}`);

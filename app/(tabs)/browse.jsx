@@ -101,7 +101,6 @@ const Browse = () => {
     <View style={styles.container}>
        <Image source={{ uri: `data:image/jpeg;base64,${image}` }} style={{ height: 300, width: 200 }} />
       <Button title="Download From URL" onPress={testDL} />
-      <StatusBar backgroundColor={colors.secondary.DEFAULT} style='light'/>
     </View>
   );
 }

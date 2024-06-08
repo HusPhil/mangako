@@ -15,9 +15,9 @@ const MangaGrid = ({ mangaData, limit, numColumns, listStyles, isLoading }) => {
 
   const MangaText = ({mangaTitle}) => {
     return (
-      <View className="absolute  bg-opacity-0 max-h-[40px]  bottom-0 w-full justify-end py-1 bg-secondary-100">
-        <Text className="text-white text-xs text-left px-1 font-pregular overflow-auto">
-        {mangaTitle ? (mangaTitle.length > 30 ? `${mangaTitle.substring(0, 30)}...` : mangaTitle) : 'Loading..'}
+      <View className="absolute  bg-opacity-0 bottom-0 w-full justify-end py-1 bg-secondary-100">
+        <Text className="text-white text-xs text-left px-1 font-pregular overflow-auto" numberOfLines={3}>
+        {mangaTitle ?  mangaTitle : 'Loading..'}
         </Text>
       </View>
     )
@@ -42,7 +42,7 @@ const MangaGrid = ({ mangaData, limit, numColumns, listStyles, isLoading }) => {
   
 
   return (
-    <View className="h-full w-full self-center px-2 mt-2 flex-1">  
+    <View className="h-full w-full self-center px-2 flex-1">  
         <FlashList
           data={mangaData ? mangaData : placeholderData}
           renderItem={renderItem}

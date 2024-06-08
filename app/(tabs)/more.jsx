@@ -8,7 +8,6 @@ const more = () => {
 
   return (
     <View className="justify-center items-center h-full">
-      <StatusBar backgroundColor={colors.secondary.DEFAULT} style='light'/>
       <Button disabled={isLoading} onPress={ async () => {
         setisLoading(true) 
         await AsyncStorage.clear()

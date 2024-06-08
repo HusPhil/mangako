@@ -29,7 +29,7 @@ const TabIcon = ({icon, color, name, focused}) => {
 const TabsLayout = () => {
   return (
     <>
-    <StatusBar backgroundColor={colors.secondary.DEFAULT} style='light'/> 
+    <StatusBar backgroundColor={colors.secondary.DEFAULT} barStyle={'light-content'}/>
     <Tabs
       screenOptions={{
         tabBarShowLabel: false,
