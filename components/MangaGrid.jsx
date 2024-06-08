@@ -2,12 +2,9 @@ import React, { useState, useEffect, memo } from 'react';
 import { Alert, View, Text, Button } from 'react-native';
 import { FlashList } from "@shopify/flash-list";
 import MangaCard from './MangaCard';
-import { getMangaByOrder } from '../utils/MangakakalotClient';
 
 
-const MangaGrid = ({ order, limit, numColumns, listStyles }) => {
-  const [mangaData, setMangaData] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+const MangaGrid = ({ mangaData, limit, numColumns, listStyles, isLoading }) => {
 
   const placeholderData = new Array(3*10).fill(null).map((_, index) => ({
     id: `placeholder-${index}`,
@@ -15,23 +12,6 @@ const MangaGrid = ({ order, limit, numColumns, listStyles }) => {
     cover: null,
     details: null,
   }));
-
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-      const result = await getMangaByOrder('div.list-truyen-item-wrap', 1);
-      setMangaData([...mangaData, ...result]);
-    } catch (error) {
-      Alert.alert("Error", error.message);
-      setMangaData(placeholderData);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [order, limit]);
 
   const MangaText = ({mangaTitle}) => {
     return (
@@ -52,7 +32,7 @@ const MangaGrid = ({ order, limit, numColumns, listStyles }) => {
         mangaCover={item.cover}
         containerStyles={"my-1 w-[100%]"}
         coverStyles={"w-[100%] h-[150px]"}
-        disabled={isLoading ? true : false}
+        disabled={isLoading}
       >
       <MangaText mangaTitle={item.title}/>
       </MangaCard>
@@ -63,23 +43,14 @@ const MangaGrid = ({ order, limit, numColumns, listStyles }) => {
 
   return (
     <View className="h-full w-full self-center px-2 mt-2 flex-1">  
-        {mangaData ? (
-          <FlashList
-            data={isLoading ? placeholderData : mangaData}
-            renderItem={renderItem}
-            keyExtractor={(item) => item.id}
-            estimatedItemSize={limit}
-            numColumns={numColumns}
-            contentContainerStyle={listStyles}
-            />
-            
-          ) : (
-            <View>
-
-              <Text>Error loading</Text>
-              <Button onPress={fetchData} title='Retry'/>
-            </View>
-          )}
+        <FlashList
+          data={mangaData ? mangaData : placeholderData}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          estimatedItemSize={limit}
+          numColumns={numColumns}
+          contentContainerStyle={listStyles}
+        />
     </View>
   );
 };

@@ -41,7 +41,6 @@ const ChapterList = ({ mangaLink }) => {
   }, [mangaLink]);
 
   const handleChapterPress = useCallback((item, index) => {
-    const chData = chaptersData.map(chapter => chapter.chapterUrl)
     router.navigate({
       pathname: "screens/mangaReader",
       params: {
@@ -49,10 +48,11 @@ const ChapterList = ({ mangaLink }) => {
         chapterUrl: item.chapterUrl,
         chTitle: item.chTitle,
         chIndex: index,
-        chData: JSON.stringify(chData),
+        chData: JSON.stringify(chaptersData)
       }
+      
     });
-  }, []);
+  }, [chaptersData]);
 
   const renderItem = useCallback(({ item, index }) => (
     <View className="w-full px-2">

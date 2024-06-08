@@ -6,10 +6,13 @@ const ScreensLayout = () => {
   return (
     <Stack>
       <Stack.Screen
-        name="mangaInfo" options={{headerShown:false, headerTitle: "Information"}}
+        name="mangaInfo" options={{headerShown:false}}
       />
       <Stack.Screen
         name="mangaReader" options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="mangaSearcher" options={{headerShown: false}}
       />
     </Stack>
   )
