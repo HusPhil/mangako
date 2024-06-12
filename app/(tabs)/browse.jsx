@@ -1,14 +1,13 @@
 import React, {useState, useEffect} from 'react';
-import { View, Button, Platform, StyleSheet, Image, Alert, StatusBar  } from 'react-native';
+import { View, Button, Platform, StyleSheet, Image, Alert  } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import { shareAsync } from 'expo-sharing';
+import { StatusBar } from 'expo-status-bar';
 import { tryScrape } from '../../utils/MangaDexClient';
-
-import colors from '../../constants/colors';
 
 const Browse = () => {
   const [image, setImage] = useState(null);
-  const [downloadPath, setdownloadPath] = useState(FileSystem.StorageAccessFramework.getUriForDirectoryInRoot(''))
+  const [downloadPath, setdownloadPath] = useState('MangaDls')
 
   useEffect(() => {
     const fetchImage = async () => {
@@ -61,12 +60,12 @@ const Browse = () => {
 
   const testDL = async () => {
     // const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-    // const tryPerm = FileSystem.StorageAccessFramework.getUriForDirectoryInRoot('MangaDLss')
-    console.log(downloadPath)
+    const tryPerm = FileSystem.StorageAccessFramework.getUriForDirectoryInRoot('MangaKo')
+    console.log(tryPerm)
     const filename = "testImage.jpg";
 
     const fileUri = `${FileSystem.documentDirectory}/${filename}`;
-    await FileSystem.StorageAccessFramework.createFileAsync(downloadPath.directoryUri, filename, 'application/octet-stream')
+    await FileSystem.StorageAccessFramework.createFileAsync(tryPerm, filename, 'application/octet-stream')
           .then(async (uri) => {
             await FileSystem.writeAsStringAsync(uri, image, { encoding: FileSystem.EncodingType.Base64 });
           })
@@ -101,6 +100,7 @@ const Browse = () => {
     <View style={styles.container}>
        <Image source={{ uri: `data:image/jpeg;base64,${image}` }} style={{ height: 300, width: 200 }} />
       <Button title="Download From URL" onPress={testDL} />
+      <StatusBar style="auto" />
     </View>
   );
 }

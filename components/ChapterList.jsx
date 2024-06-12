@@ -111,12 +111,17 @@ const ChapterList = ({ mangaLink, headerComponent }) => {
           renderItem={renderItem}
           estimatedItemSize={100}
           onEndReached={handleEndReached}
-          onEndReachedThreshold={0.1}
+          onEndReachedThreshold={2}
           ListEmptyComponent={<Text>No available chapters..</Text>}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleChapterRefresh} />
             }
-            ListHeaderComponent={<Button title='scroll to bottom' onPress={handleScrollToEnd} />}
+            ListHeaderComponent={
+              <View>
+                {headerComponent}
+                <Button title='scroll to bottom' onPress={handleScrollToEnd} />
+              </View>
+            }
             ListFooterComponent={<Button title='to top' onPress={handleScrollToTop} />}
           
         />

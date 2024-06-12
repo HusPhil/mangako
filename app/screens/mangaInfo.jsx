@@ -106,40 +106,36 @@ const MangaInfoScreen = () => {
             </View>
           </View>
         </ScrollView>
-        <View>
-          {isLoading ? (
-            <ActivityIndicator color={colors.accent[100]} />
-            ) : (
-            <>
-              <View className="flex-row flex-wrap mt-5 mx-4">
-                {details.tags.map((g, i) => (
-                  <Text key={i} className="p-2 m-1 rounded-md text-white bg-accent-100">
-                    {g}
-                  </Text>
-                ))}
-              </View>
-              {details && (
-                <View>
-                  <Accordion details={details.alternativeNames.join('\n')}>
-                    <Text className="text-white font-pbold ">Alternative Titles</Text>
-                  </Accordion>
-                </View>
-              )}
-            </>
-          )}
-          <HorizontalRule displayText="Chapter list" otherStyles={"mx-4 sticky"} />
-        </View>
+        
       </LinearGradient>
       </View>
-    
         <View className="flex-1 mx-2 mb-5 h-full">
-            <ChapterList mangaLink={mangaLink} 
+            <ChapterList mangaLink={mangaLink}
               headerComponent={
                 <View>
-                  
-                  
+                  {isLoading ? (
+                    <ActivityIndicator color={colors.accent[100]} />
+                    ) : (
+                    <>
+                      <View className="flex-row flex-wrap mt-5 mx-4">
+                        {details.tags.map((g, i) => (
+                          <Text key={i} className="p-2 m-1 rounded-md text-white bg-accent-100">
+                            {g}
+                          </Text>
+                        ))}
+                      </View>
+                      {details && (
+                        <View>
+                          <Accordion details={details.alternativeNames.join('\n')}>
+                            <Text className="text-white font-pbold ">Alternative Titles</Text>
+                          </Accordion>
+                        </View>
+                      )}
+                    </>
+                  )}
+                  <HorizontalRule displayText="Chapter list" otherStyles={"mx-4 sticky"} />
                 </View>
-              } 
+              }
             />
         </View>
     </View>

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Image } from 'react-native';
 import cheerio from 'cheerio';
 import uuid from 'react-native-uuid'
 import { Buffer } from 'buffer';
@@ -221,21 +222,96 @@ export const getChapterList = async (mangaUrl) => {
 };
 
 export const getChapterImage = async (imageUrl) => {
-  
   try {
     // Make the request and get the image data as an arraybuffer
     const response = await axios({
       method: 'get',
       url: imageUrl,
       responseType: 'arraybuffer',
-      headers: headers
+      headers: headers,
     });
 
     if (response.status === 200) {
-      const base64Image = Buffer.from(response.data, 'binary').toString('base64');
+      // Extract image dimensions from response headers
+      const contentType = response.headers['content-type'];
+      const contentLength = response.headers['content-length'];
+
+      // Assuming content-length header exists and indicates image size
+      // Extract width and height from content-length header (if available)
+      const dimensionsMatch = contentLength.match(/(\d+)x(\d+)/);
+      const width = dimensionsMatch ? parseInt(dimensionsMatch[1]) : null;
+      const height = dimensionsMatch ? parseInt(dimensionsMatch[2]) : null;
+
+      console.log(`CHAPTER URL: ${imageUrl}\nImage height: ${height}, width: ${width}`);
+
+      const base64Image = Buffer.from(response.data).toString('base64');
       return base64Image;
     } else {
-      console.log(`Failed to retrieve the image. Status code: ${response.status}`);
+      console.error(`Failed to retrieve the image. Status code: ${response.status}`);
+      return null; // Handle failure case as needed
+    }
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    throw error; // Re-throw error to handle it in the calling function
+  }
+};
+
+
+export const splitLongImage = async (imageUrl) => {
+  const maxHeight = 100
+  try {
+    // Make the request and get the image data as an arraybuffer
+    const response = await axios({
+      method: 'get',
+      url: imageUrl,
+      responseType: 'arraybuffer',
+    });
+
+    if (response.status === 200) {
+      // Convert array buffer to base64 for lossless encoding
+      const base64Image = Buffer.from(response.data).toString('base64');
+
+      // Create a temporary image component to get dimensions
+      const tempImageUri = `data:image/jpeg;base64,${base64Image}`;
+      const { width, height } = await new Promise((resolve, reject) => {
+        Image.getSize(
+          tempImageUri,
+          (imgWidth, imgHeight) => {
+            resolve({ width: imgWidth, height: imgHeight });
+          },
+          (error) => {
+            reject(error);
+          }
+        );
+      });
+
+      // Check if the image height exceeds the maxHeight
+      if (height > maxHeight) {
+        const slices = [];
+        let startY = 0;
+        while (startY < height) {
+          const sliceHeight = Math.min(maxHeight, height - startY);
+          const slice = await new Promise((resolve, reject) => {
+            ImageEditor.cropImage(
+              tempImageUri,
+              {
+                offset: { x: 0, y: startY },
+                size: { width: width, height: sliceHeight },
+              },
+              (uri) => resolve(uri),
+              (error) => reject(error)
+            );
+          });
+          slices.push(slice);
+          startY += maxHeight;
+        }
+        
+        return slices;
+      } else {
+        return [base64Image]; // Return the original image if it doesn't need to be split
+      }
+    } else {
+      console.error(`Failed to retrieve the image. Status code: ${response.status}`);
       return null; // Handle failure case as needed
     }
   } catch (error) {
