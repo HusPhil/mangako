@@ -8,69 +8,50 @@ import * as FileSystem from 'expo-file-system';
 import { getChapterImage, getChapterImageUrls, splitLongImage } from '../../utils/MangakakalotClient';
 import ModalPopup from '../../components/ModalPopup';
 import ImageWebView from "../../components/ImageWebView"
+import ImageRenderer from '../../components/ImageRenderer';
 
 const MangaReaderScreen = () => {
   const params = useLocalSearchParams();
   const { chapterUrl, chData } = params;
   const chapterData = JSON.parse(chData).map(chapter => chapter.chapterUrl);
-  const screenWidth = Dimensions.get('window').width;
-
   const [chapterImages, setChapterImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [cachedImageUris, setCachedImageUris] = useState([]);
   const [currentChapterUrl, setCurrentChapterUrl] = useState(chapterUrl);
   const [imgSlice, setImgSlice] = useState([])
+  const [pageUrls, setPageUrls] = useState([])
 
   const isMounted = useRef(true);
 
   
 
   const fetchData = async (url) => {
-
+    const imgSlice = await FileSystem.readAsStringAsync('file:///data/user/0/host.exp.exponent/cache/Z1Erv4L', { encoding: 'base64' });
+    setImgSlice(imgSlice)
+    
     try {
+      //check cache - checking the cache for chaptserPagesUrl
+      const cacheKey = shorthash.unique(url)
+      const cachedChapterPageUris = `${FileSystem.cacheDirectory}${cacheKey}`
+      let pageUrls = []
 
-    //check cache - checking the cache for chapterPagesUrl
-    const cacheKey = shorthash.unique(url)
-    const cachedChapterPageUris = `${FileSystem.cacheDirectory}${cacheKey}`
-    let pageUrls = []
-    
-    const fileInfo = await FileSystem.getInfoAsync(cachedChapterPageUris)
 
-    //if cache exist get that data if not request the data then cache the req data
-    if(fileInfo.exists) {
-      const cachedPageData = await FileSystem.readAsStringAsync(cachedChapterPageUris)
-      pageUrls = JSON.parse(cachedPageData)
-      }
-      else {
-      const requestedPageData = await getChapterImageUrls(url)
-      pageUrls = requestedPageData
-      await FileSystem.writeAsStringAsync(cachedChapterPageUris, JSON.stringify(pageUrls))
-    }
-    
-    for(const pageUrl of pageUrls) {
-      const pageCacheKey = shorthash.unique(pageUrl)
-      const pageUri = `${FileSystem.cacheDirectory}${pageCacheKey}`
-      let pageInfo;
-      let imageUri;
-      let imageFileData;
-      if(pageUri) {
-        pageInfo = await FileSystem.getInfoAsync(pageUri)
+      
+      const fileInfo = await FileSystem.getInfoAsync(cachedChapterPageUris)
+
+      //if cache exist get that data if not request the data then cache the req data
+      if(fileInfo.exists) {
+        const cachedPageData = await FileSystem.readAsStringAsync(cachedChapterPageUris)
+        pageUrls = JSON.parse(cachedPageData)
         }
-      if(pageInfo.exists) {
-        imageUri = pageUri
-        imageFileData = await FileSystem.readAsStringAsync(imageUri, { encoding: 'base64' })
-      } else {
-        imageFileData = await getChapterImage(pageUrl)
-        await FileSystem.writeAsStringAsync(pageUri, imageFileData, {encoding: FileSystem.EncodingType.Base64})
-      }          
-
-      try {
-        setImgSlice(prevImages => [...prevImages, imageFileData])
-      } catch (error) {
-        console.error(error)
+        else {
+        const requestedPageData = await getChapterImageUrls(url)
+        pageUrls = requestedPageData
+        await FileSystem.writeAsStringAsync(cachedChapterPageUris, JSON.stringify(pageUrls))
       }
-    }
+
+      setPageUrls(pageUrls)
       
     } catch (error) {
       alert(error.message)
@@ -154,7 +135,7 @@ const MangaReaderScreen = () => {
         {isLoading && chapterImages.length === 0 ? (
           <ActivityIndicator />
         ) : (
-          <ImageWebView imgSlice={imgSlice}/>
+          <ImageWebView pageUrls={pageUrls}/>          
         )}
       </View>
     </View>

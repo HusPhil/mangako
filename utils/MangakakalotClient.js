@@ -232,18 +232,6 @@ export const getChapterImage = async (imageUrl) => {
     });
 
     if (response.status === 200) {
-      // Extract image dimensions from response headers
-      const contentType = response.headers['content-type'];
-      const contentLength = response.headers['content-length'];
-
-      // Assuming content-length header exists and indicates image size
-      // Extract width and height from content-length header (if available)
-      const dimensionsMatch = contentLength.match(/(\d+)x(\d+)/);
-      const width = dimensionsMatch ? parseInt(dimensionsMatch[1]) : null;
-      const height = dimensionsMatch ? parseInt(dimensionsMatch[2]) : null;
-
-      console.log(`CHAPTER URL: ${imageUrl}\nImage height: ${height}, width: ${width}`);
-
       const base64Image = Buffer.from(response.data).toString('base64');
       return base64Image;
     } else {
