@@ -1,20 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { WebView } from 'react-native-webview';
-import { View, Image, Dimensions } from 'react-native';
+import { View, Dimensions, Image } from 'react-native';
 
 const ImageRenderer = ({ imageData }) => {
   const [htmlContent, setHtmlContent] = useState('');
-  const [imageHeight, setImageHeight] = useState(null);
-  const [imageWidth, setImageWidth] = useState(null);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
     if (imageData) {
-      Image.getSize(`data:image/jpeg;base64,${imageData}`, (width, height) => {
-        const screenWidth = Dimensions.get('window').width;
+      const screenWidth = Dimensions.get('window').width;
+      const imageSrc = `data:image/jpeg;base64,${imageData}`;
+      
+      Image.getSize(imageSrc, (width, height) => {
         const calculatedHeight = screenWidth / (width / height);
-
-        setImageWidth(screenWidth);
-        setImageHeight(calculatedHeight);
 
         const content = `
           <html>
@@ -32,20 +30,13 @@ const ImageRenderer = ({ imageData }) => {
                   overflow: hidden;
                 }
                 img {
-                  width: auto;
+                  width: 100%;
                   height: auto;
-                  max-width: 100%;
-                  max-height: 100%;
-                  animation: fade-in 0.3s ease-out;
-                }
-                @keyframes fade-in {
-                  from { opacity: 0; }
-                  to { opacity: 1; }
                 }
               </style>
             </head>
             <body>
-              <img id="renderedImage" src="data:image/jpeg;base64,${imageData}" alt="Rendered Image" />
+              <img id="renderedImage" src="${imageSrc}" alt="Rendered Image" />
               <script>
                 const img = document.getElementById('renderedImage');
                 img.onload = function() {
@@ -55,6 +46,8 @@ const ImageRenderer = ({ imageData }) => {
             </body>
           </html>
         `;
+
+        setDimensions({ width: screenWidth, height: calculatedHeight });
         setHtmlContent(content);
       });
     }
@@ -62,15 +55,15 @@ const ImageRenderer = ({ imageData }) => {
 
   const onMessage = event => {
     const { height } = JSON.parse(event.nativeEvent.data);
-    setImageHeight(height);
+    setDimensions(prevDimensions => ({ ...prevDimensions, height }));
   };
 
   return (
-    <View style={{ height: imageHeight, width: imageWidth }}>
+    <View style={{ height: dimensions.height, width: dimensions.width }}>
       <WebView
         originWhitelist={['*']}
         source={{ html: htmlContent }}
-        style={{ height: imageHeight }}
+        style={{ height: dimensions.height, width: dimensions.width }}
         scrollEnabled={false}
         onMessage={onMessage}
       />
