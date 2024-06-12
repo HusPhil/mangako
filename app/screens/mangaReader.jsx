@@ -1,21 +1,12 @@
 import { View, Text, Image, ActivityIndicator, Alert, ScrollView, 
   Dimensions, Button, TouchableWithoutFeedback, StatusBar,
-  PixelRatio
  } from 'react-native';
-import { WebView } from 'react-native-webview';
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import shorthash from 'shorthash';
 import * as FileSystem from 'expo-file-system';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { getChapterImage, getChapterImageUrls, splitLongImage } from '../../utils/MangakakalotClient';
-import HorizontalRule from '../../components/HorizontalRule';
 import ModalPopup from '../../components/ModalPopup';
-import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
-import { ImageZoom } from '@likashefqet/react-native-image-zoom';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import ImageSplitter from '../../components/ImageSplitter';
-import images from '../../constants/images';
 import ImageWebView from "../../components/ImageWebView"
 
 const MangaReaderScreen = () => {
@@ -37,38 +28,6 @@ const MangaReaderScreen = () => {
 
   const fetchData = async (url) => {
 
-    // const fetchedSlices = await getChapterImage("https://v7.mkklcdnv6tempv3.com/img/tab_27/02/91/17/dr980474/chapter_200/2-o.jpg")
-    // setImgSlice(fetchedSlices)
-    // let imageFileData = await FileSystem.readAsStringAsync('file:///data/user/0/host.exp.exponent/cache/tGfuh', { encoding: 'base64' })
-    // imgFiles.push(imageFileData)
-    // imageFileData = await FileSystem.readAsStringAsync('file:///data/user/0/host.exp.exponent/cache/Z1rcLSD', { encoding: 'base64' })
-    // imgFiles.push(imageFileData)
-    // imageFileData = await FileSystem.readAsStringAsync('file:///data/user/0/host.exp.exponent/cache/QemJ7', { encoding: 'base64' })
-    // imgFiles.push(imageFileData)
-    // let asyncImage =  await getChapterImage('https://mn2.mkklcdnv6temp.com/img/tab_34/03/24/69/gr983826/chapter_557/8-1717828378-n.webp')
-    // imgFiles.push(asyncImage)
-    // asyncImage =  await getChapterImage('https://mn2.mkklcdnv6temp.com/img/tab_34/03/24/69/gr983826/chapter_557/3-1717828364-o.jpg')
-    // imgFiles.push(asyncImage)
-
-    // setImgSlice(prevImages => [...prevImages, ...imgFiles])
-
-
-    const getImageSize = (imageUri) => {
-      return new Promise(
-        (resolve, reject) => {
-          Image.getSize(
-            imageUri,
-            (width, height) => {
-              resolve({width, height})
-            },
-            (error) => {
-              reject(error)
-            }
-          )
-        }
-      )
-    }
-
     try {
 
     //check cache - checking the cache for chapterPagesUrl
@@ -89,9 +48,6 @@ const MangaReaderScreen = () => {
       await FileSystem.writeAsStringAsync(cachedChapterPageUris, JSON.stringify(pageUrls))
     }
     
-    //check cache - checking the cache for chapterPagesUrl
-    const imgFiles = []
-    const pageUris = []
     for(const pageUrl of pageUrls) {
       const pageCacheKey = shorthash.unique(pageUrl)
       const pageUri = `${FileSystem.cacheDirectory}${pageCacheKey}`
@@ -104,27 +60,12 @@ const MangaReaderScreen = () => {
       if(pageInfo.exists) {
         imageUri = pageUri
         imageFileData = await FileSystem.readAsStringAsync(imageUri, { encoding: 'base64' })
-        
-        } else {
-          const pageImageData = await getChapterImage(pageUrl)
-          await FileSystem.writeAsStringAsync(pageUri, pageImageData, {encoding: FileSystem.EncodingType.Base64})
-          imageFileData = await getChapterImage(pageUrl)
+      } else {
+        imageFileData = await getChapterImage(pageUrl)
+        await FileSystem.writeAsStringAsync(pageUri, imageFileData, {encoding: FileSystem.EncodingType.Base64})
+      }          
 
-          imageUri = pageUri
-        }
-
-        pageUris.push(imageUri)
-        imgFiles.push(imageFileData)
-          
       try {
-        const pageSize = await getImageSize(imageUri)
-        const myWidth = 100 
-        // const calculatedHeight = pageSize.height
-        const calculatedHeight = screenWidth / (pageSize.width/pageSize.height)
-
-        // console.log(imageUri+"\n"+pageUrl)
-
-        setChapterImages(prevImages => [...prevImages, {url:pageUrl, uri: imageUri, width: pageSize.width, height: calculatedHeight}])
         setImgSlice(prevImages => [...prevImages, imageFileData])
       } catch (error) {
         console.error(error)
@@ -201,12 +142,6 @@ const MangaReaderScreen = () => {
   return (
     <View className="flex-1 bg-primary">
       <StatusBar translucent />
-      <ImageWebView imgSlice={imgSlice} />
-      {/* <WebView  source={{uri: `data:image/jpeg;base64,${imgSlice[1]}`}} /> */}
-      {/* <ImageSplitter
-              imageUrl={"https://v7.mkklcdnv6tempv3.com/img/tab_27/02/91/17/dr980474/chapter_199/2-o.jpg"}
-              maxHeight={1000}
-            /> */}
       <ModalPopup
         visible={showModal}
         onClose={handleShowModal}
@@ -219,69 +154,7 @@ const MangaReaderScreen = () => {
         {isLoading && chapterImages.length === 0 ? (
           <ActivityIndicator />
         ) : (
-          <ScrollView>
-            {/* <ReactNativeZoomableView
-              maxZoom={10}
-              minZoom={1}
-              zoomStep={0.5}
-              initialZoom={1}
-              bindToBorders={true}
-              onZoomAfter={this.logOutZoomState}
-              movementSensibility={0.5}
-              disablePanOnInitialZoom
-            > */}
-
-            
-              {/* <Image
-              style={{ width: screenWidth, height: undefined, aspectRatio: 1}}
-              source={images.pageTest3 }              
-              />
-              <Image
-              style={{ width: screenWidth, height: undefined, aspectRatio: 1}}
-              source={images.pageTest4 }              
-              />
-               */}
-              {chapterImages.map((imgData, index) => (
-                <View key={index} className="w-full self-center">
-                  <TouchableWithoutFeedback onLongPress={handleShowModal}>
-                    <Image
-                      style={{ width: screenWidth, height:imgData.height}}
-                      source={{ uri: imgData.uri }}
-                      // resizeMode='contain'
-                      
-                      />
-                      
-                      {/* <WebView className="h-[50%]" source={{ html: `<img src=${imgData.url} style="width: 100%;" />` }} /> */}
-
-                      {/* <GestureHandlerRootView>
-
-                      <ImageZoom
-                        uri={imgData.uri}
-                        minScale={20}
-                        maxScale={20}
-                        doubleTapScale={20}
-                        minPanPointers={1}
-                        isSingleTapEnabled
-                        isDoubleTapEnabled
-                        style={{ width: screenWidth, height:'auto', aspectRatio: 1}}
-                      />
-                      </GestureHandlerRootView> */}
-                  </TouchableWithoutFeedback>
-                  <HorizontalRule displayText={`Page end ${imgData.width} x ${imgData.height}`} otherStyles={"mx-1"} />
-                </View>
-              ))}
-            
-            {/* </ReactNativeZoomableView> */}
-            {isLoading && (
-              <View className="flex-1 justify-center items-center">
-                <Text className="text-white"><ActivityIndicator/> Loading images</Text>
-              </View>
-            )}
-            <View className="flex-row justify-around">
-              <Button title='Prev' onPress={handlePrevChap} />
-              <Button title='Next' onPress={handleNextChap} />
-            </View>
-          </ScrollView>
+          <ImageWebView imgSlice={imgSlice}/>
         )}
       </View>
     </View>

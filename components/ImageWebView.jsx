@@ -1,10 +1,8 @@
 import React from 'react';
 import { WebView } from 'react-native-webview';
 
-const Base64ImageRenderer = ({ imgSlice }) => {
-  // Assuming imgSlice is an array containing base64 encoded image strings
+const ImageWebView = ({ imgSlice }) => {
 
-  // Construct the HTML content with the base64 image data
   const htmlContent = `
   <html>
     <body style="padding:0; margin:0;">
@@ -25,4 +23,4 @@ const Base64ImageRenderer = ({ imgSlice }) => {
   );
 };
 
-export default Base64ImageRenderer;
+export default ImageWebView;
