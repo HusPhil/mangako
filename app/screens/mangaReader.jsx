@@ -1,42 +1,28 @@
-import { View, Text, Image, ActivityIndicator, Alert, Dimensions, Button, TouchableWithoutFeedback, StatusBar } from 'react-native';
-import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, ActivityIndicator, Alert, Dimensions, Button, TouchableWithoutFeedback, StatusBar, ScrollView } from 'react-native';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import shorthash from 'shorthash';
 import * as FileSystem from 'expo-file-system';
-import { getChapterImage, getChapterImageUrls } from '../../utils/MangakakalotClient';
+import { getChapterImageUrls } from '../../utils/MangakakalotClient';
 import ModalPopup from '../../components/ModalPopup';
-import ExpoImage from '../../components/ExpoImage';
-import { FlashList } from '@shopify/flash-list';
 import ChapterPage from '../../components/ChapterPage';
+import colors from '../../constants/colors';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 const MangaReaderScreen = () => {
   const { chapterUrl, chData } = useLocalSearchParams();
   const chapterData = JSON.parse(chData).map(chapter => chapter.chapterUrl);
 
-  const [chapterImages, setChapterImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [chapterUrls, setChapterUrls] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [cachedImageUris, setCachedImageUris] = useState([]);
   const [currentChapterUrl, setCurrentChapterUrl] = useState(chapterUrl);
 
-  const screenWidth = Dimensions.get('window').width;
   const isMounted = useRef(true);
 
-  const fetchData = async (url) => {
-    const getImageSize = (imageUri) => {
-      return new Promise((resolve, reject) => {
-        Image.getSize(
-          imageUri,
-          (width, height) => {
-            resolve({ width, height });
-          },
-          (error) => {
-            reject(error);
-          }
-        );
-      });
-    };
-
+  const fetchData = useCallback(async (url) => {
     try {
       const cacheKey = shorthash.unique(url);
       const cachedChapterPageUris = `${FileSystem.cacheDirectory}${cacheKey}`;
@@ -53,43 +39,7 @@ const MangaReaderScreen = () => {
         await FileSystem.writeAsStringAsync(cachedChapterPageUris, JSON.stringify(pageUrls));
       }
 
-      const pageUris = [];
-      const newChapterImages = [];
-
-      for (const pageUrl of pageUrls) {
-        const pageCacheKey = shorthash.unique(pageUrl);
-        const pageUri = `${FileSystem.cacheDirectory}${pageCacheKey}`;
-        let pageInfo;
-        let imageUri;
-
-        if (pageUri) {
-          pageInfo = await FileSystem.getInfoAsync(pageUri);
-        }
-
-        if (pageInfo.exists) {
-          imageUri = pageUri;
-        } else {
-          const pageImageData = await getChapterImage(pageUrl);
-          await FileSystem.writeAsStringAsync(pageUri, pageImageData, { encoding: FileSystem.EncodingType.Base64 });
-          imageUri = pageUri;
-        }
-        pageUris.push(imageUri);
-
-        try {
-          const pageSize = await getImageSize(imageUri);
-          const pageAR = pageSize.width / pageSize.height;
-          const calculatedHeight = screenWidth / pageAR;
-
-          setChapterImages(prevChapterImages => [...prevChapterImages, { uri: imageUri, width: screenWidth, height: pageSize.height, aspectRatio: pageAR, url: pageUrl }]);
-        } catch (error) {
-          console.error(error);
-        }
-      }
-
-      if (isMounted.current) {
-        // setChapterImages(newChapterImages);
-        setCachedImageUris(pageUris);
-      }
+      setChapterUrls(pageUrls);
     } catch (error) {
       Alert.alert("Error", error.message);
     } finally {
@@ -97,21 +47,21 @@ const MangaReaderScreen = () => {
         setIsLoading(false);
       }
     }
-  };
+  }, []);
 
   useEffect(() => {
     isMounted.current = true;
     setIsLoading(true);
-    setChapterImages([]);
+    setChapterUrls([]);
     setCachedImageUris([]);
     fetchData(currentChapterUrl);
 
     return () => {
       isMounted.current = false;
     };
-  }, [currentChapterUrl]);
+  }, [currentChapterUrl, fetchData]);
 
-  const clearCache = async () => {
+  const clearCache = useCallback(async () => {
     try {
       const cacheKey = shorthash.unique(currentChapterUrl);
       const cachedImageUrlsFileUri = `${FileSystem.cacheDirectory}${cacheKey}`;
@@ -129,79 +79,77 @@ const MangaReaderScreen = () => {
         }
       }
 
-      setChapterImages([]);
+      setChapterUrls([]);
       setCachedImageUris([]);
       Alert.alert('Success', 'Cache cleared successfully');
     } catch (error) {
       Alert.alert('Failed to delete', 'Cache already cleared');
       console.log(error);
     }
-  };
+  }, [cachedImageUris, currentChapterUrl]);
 
-  const handleShowModal = () => {
+  const handleShowModal = useCallback(() => {
+    if (!showModal) {
+      StatusBar.setBackgroundColor(colors.secondary.DEFAULT);
+    } else {
+      StatusBar.setBackgroundColor('transparent');
+    }
     setShowModal(!showModal);
-  };
+  }, [showModal]);
 
-  const handlePrevChap = () => {
+  const handlePrevChap = useCallback(() => {
     const currentChapterIndex = chapterData.indexOf(currentChapterUrl);
     if (currentChapterIndex < chapterData.length - 1) {
       const prevChapterUrl = chapterData[currentChapterIndex + 1];
       setCurrentChapterUrl(prevChapterUrl);
     }
-  };
+  }, [currentChapterUrl, chapterData]);
 
-  const handleNextChap = () => {
+  const handleNextChap = useCallback(() => {
     const currentChapterIndex = chapterData.indexOf(currentChapterUrl);
     if (currentChapterIndex > 0) {
       const nextChapterUrl = chapterData[currentChapterIndex - 1];
       setCurrentChapterUrl(nextChapterUrl);
     }
-  };
+  }, [currentChapterUrl, chapterData]);
 
-  const renderItem = ({ item }) => (
-    <View className="w-full self-center">
+  const renderItem = useCallback((item) => (
+    <View key={item} className="w-full self-center">
       <TouchableWithoutFeedback onLongPress={handleShowModal}>
         <View>
-          {/* <ExpoImage imgSrc={ item.url } imgWidth={item.width} imgAR={item.aspectRatio} /> */}
-          <ChapterPage/>
+          <ChapterPage pageUrl={item} />
         </View>
       </TouchableWithoutFeedback>
     </View>
-  );
+  ), [handleShowModal]);
+
+  const renderList = useMemo(() => {
+    return chapterUrls.map(renderItem);
+  }, [chapterUrls, renderItem]);
 
   return (
     <View className="flex-1 bg-primary">
-      <StatusBar translucent />
       <ModalPopup visible={showModal} onClose={handleShowModal}>
         <Text>Hello world</Text>
         <Button title='Clear cache' onPress={clearCache} />
         <Button title='Close' onPress={handleShowModal} />
       </ModalPopup>
       <View className="flex-1">
-        {isLoading && chapterImages.length === 0 ? (
+        {isLoading && chapterUrls.length === 0 ? (
           <ActivityIndicator />
         ) : (
-          <FlashList
-            data={chapterImages}
-            renderItem={renderItem}
-            estimatedItemSize={100}
-            onEndReached={() => { console.log('finished!'); }}
-            onEndReachedThreshold={2}
-            ListEmptyComponent={<Text>No available pages..</Text>}
-            ListFooterComponent={
-              <View>
-                {isLoading && (
-                  <View className="flex-1 justify-center items-center">
-                    <Text className="text-white"><ActivityIndicator /> Loading images</Text>
-                  </View>
-                )}
-                <View className="flex-row justify-around">
-                  <Button title='Prev' onPress={handlePrevChap} />
-                  <Button title='Next' onPress={handleNextChap} />
-                </View>
+          <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+            {renderList}
+            {isLoading && (
+              <View className="flex-1 justify-center items-center">
+                <Text className="text-white"><ActivityIndicator /> Loading images</Text>
               </View>
-            }
-          />
+            )}
+            <View className="flex-row justify-around">
+              <Button title='Prev' onPress={handlePrevChap} />
+              <Button title='Next' onPress={handleNextChap} />
+            </View>
+          </ScrollView>
         )}
       </View>
     </View>

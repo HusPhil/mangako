@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { View, Button, Image, ScrollView, Dimensions } from 'react-native';
+import { View, Button, Image, ScrollView, Dimensions, StatusBar } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import soloLevelingImage from '../../assets/images/soloLeveling.jpg'; // Import the image directly
+import colors from '../../constants/colors';
+
 
 const More = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   return (
     <ScrollView contentContainerStyle={{ justifyContent: 'center', alignItems: 'center' }}>
+      <StatusBar backgroundColor={colors.secondary.DEFAULT} barStyle={'light-content'}/>
       <Image
         source={soloLevelingImage} // Use the imported image directly
         style={{ width: Dimensions.get('window').width * 10, height: Dimensions.get('window').width *10 * 0.5625 }} // Adjust width and height to scale the image

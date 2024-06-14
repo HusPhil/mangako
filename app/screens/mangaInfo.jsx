@@ -1,6 +1,5 @@
-import { View, Text, ScrollView, ImageBackground, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, ImageBackground, Alert, ActivityIndicator, StatusBar } from 'react-native';
 import React, { useEffect, useState } from 'react';
-import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -66,7 +65,7 @@ const MangaInfoScreen = () => {
 
   return (
     <View className="h-full w-full bg-primary">
-      <StatusBar translucent />
+      <StatusBar backgroundColor={'transparent'} barStyle={'light-content'}/>
       <View className="">
 
       <LinearGradient
@@ -75,7 +74,6 @@ const MangaInfoScreen = () => {
         end={{ x: 0, y: 1 }}
       >
         <ScrollView>
-          <StatusBar translucent />
           <View>
             <ImageBackground
               source={{ uri: mangaCover }}
@@ -101,7 +99,7 @@ const MangaInfoScreen = () => {
                 <ScrollView className="rounded-md max-w-[98%] max-h-[60%]" showsVerticalScrollIndicator={false}>
                   <Text className="text-white p-2 font-pregular text-xs text-justify">{details ? details.desc : "Loading"}</Text>
                 </ScrollView>
-                <Text className="text-white p-2 font-pregular text-xs text-justify">{details ? `By: ${details.author}` : ""}</Text>
+                <Text numberOfLines={2} className="text-white p-2 font-pregular text-xs text-justify">{details ? `By: ${details.author}` : ""}</Text>
               </View>
             </View>
           </View>

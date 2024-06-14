@@ -18,7 +18,7 @@ export default function App() {
     try {
       setIsLoading(true);
       const result = await getMangaByOrder(
-        'https://mangakakalot.com/manga_list?type=topview&category=all&state=ongoing&page=1',
+        'https://mangakakalot.com/manga_list?type=topview&category=all&state=ongoing&page=0',
         'div.list-truyen-item-wrap'
       );
       setFetchedMangaData([...fetchedMangaData, ...result]);

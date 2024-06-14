@@ -1,9 +1,9 @@
 import React, {useState, useEffect} from 'react';
-import { View, Button, Platform, StyleSheet, Image, Alert  } from 'react-native';
+import { View, Button, Platform, StyleSheet, Image, Alert,StatusBar  } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import { shareAsync } from 'expo-sharing';
-import { StatusBar } from 'expo-status-bar';
 import { tryScrape } from '../../utils/MangaDexClient';
+import colors from '../../constants/colors';
 
 const Browse = () => {
   const [image, setImage] = useState(null);
@@ -98,6 +98,7 @@ const Browse = () => {
 
   return (
     <View style={styles.container}>
+      <StatusBar backgroundColor={colors.secondary.DEFAULT} barStyle={'light-content'}/>
        <Image source={{ uri: `data:image/jpeg;base64,${image}` }} style={{ height: 300, width: 200 }} />
       <Button title="Download From URL" onPress={testDL} />
       <StatusBar style="auto" />
