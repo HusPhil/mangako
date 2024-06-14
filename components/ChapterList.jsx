@@ -42,7 +42,7 @@ const ChapterList = ({ mangaLink, headerComponent }) => {
   }, [mangaLink]);
 
   const handleChapterPress = useCallback((item, index) => {
-    router.navigate({
+    router.push({
       pathname: "screens/mangaReader",
       params: {
         chId: item.chapId,

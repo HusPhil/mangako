@@ -53,7 +53,8 @@
     "react-native-webview": "^13.10.3",
     "rn-fetch-blob": "^0.12.0",
     "sharp": "^0.33.4",
-    "shorthash": "^0.0.2"
+    "shorthash": "^0.0.2",
+    "expo-image": "~1.12.12"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
