@@ -7,6 +7,7 @@ import { getChapterImage, getChapterImageUrls } from '../../utils/MangakakalotCl
 import ModalPopup from '../../components/ModalPopup';
 import ExpoImage from '../../components/ExpoImage';
 import { FlashList } from '@shopify/flash-list';
+import ChapterPage from '../../components/ChapterPage';
 
 const MangaReaderScreen = () => {
   const { chapterUrl, chData } = useLocalSearchParams();
@@ -79,14 +80,14 @@ const MangaReaderScreen = () => {
           const pageAR = pageSize.width / pageSize.height;
           const calculatedHeight = screenWidth / pageAR;
 
-          newChapterImages.push({ uri: imageUri, width: screenWidth, height: pageSize.height, aspectRatio: pageAR });
+          setChapterImages(prevChapterImages => [...prevChapterImages, { uri: imageUri, width: screenWidth, height: pageSize.height, aspectRatio: pageAR, url: pageUrl }]);
         } catch (error) {
           console.error(error);
         }
       }
 
       if (isMounted.current) {
-        setChapterImages(newChapterImages);
+        // setChapterImages(newChapterImages);
         setCachedImageUris(pageUris);
       }
     } catch (error) {
@@ -161,7 +162,8 @@ const MangaReaderScreen = () => {
     <View className="w-full self-center">
       <TouchableWithoutFeedback onLongPress={handleShowModal}>
         <View>
-          <ExpoImage imgSrc={{ uri: item.uri }} imgWidth={item.width} imgAR={item.aspectRatio} />
+          {/* <ExpoImage imgSrc={ item.url } imgWidth={item.width} imgAR={item.aspectRatio} /> */}
+          <ChapterPage/>
         </View>
       </TouchableWithoutFeedback>
     </View>
