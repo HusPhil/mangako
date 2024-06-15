@@ -43,7 +43,7 @@ const ChapterPage = ({ pageUrl }) => {
       const pageSize = await getImageSize(imageUri);
       const aspectRatio = pageSize.width / pageSize.height;
 
-      setPageImgSource({ uri: imageUri, aspectRatio });
+      setPageImgSource({ uri: imageUri, aspectRatio, height: pageSize.height});
     } catch (error) {
       setErrorData(error);
     } finally {
@@ -60,7 +60,7 @@ const ChapterPage = ({ pageUrl }) => {
   ), [fetchData]);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View>
       {isLoading ? (
         <View style={{ width: screenWidth, height: screenHeight }} className="justify-center items-center">
           <ActivityIndicator size={35} />
@@ -73,7 +73,7 @@ const ChapterPage = ({ pageUrl }) => {
       ) : (
         pageImgSource && (
           <View className="mt-[-1px]">
-            <ExpoImage imgSrc={pageImgSource.uri} imgWidth={screenWidth} imgAR={pageImgSource.aspectRatio} />
+            <ExpoImage imgSrc={pageImgSource.uri} imgWidth={screenWidth} imgHeight={pageImgSource.height} imgAR={pageImgSource.aspectRatio} />
           </View>
         )
       )}

@@ -3,12 +3,13 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useLocalSearchParams } from 'expo-router';
 import shorthash from 'shorthash';
 import * as FileSystem from 'expo-file-system';
-import { getChapterImageUrls } from '../../utils/MangakakalotClient';
 import ModalPopup from '../../components/ModalPopup';
 import ChapterPage from '../../components/ChapterPage';
 import colors from '../../constants/colors';
+import { getChapterImageUrls } from '../../utils/MangakakalotClient';
+import {VerticalReaderMode, HorizontalReaderMode} from '../../components/readerModes';
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const MangaReaderScreen = () => {
   const { chapterUrl, chData } = useLocalSearchParams();
@@ -21,6 +22,7 @@ const MangaReaderScreen = () => {
   const [currentChapterUrl, setCurrentChapterUrl] = useState(chapterUrl);
 
   const isMounted = useRef(true);
+  const scrollViewRef = useRef(null);
 
   const fetchData = useCallback(async (url) => {
     try {
@@ -39,7 +41,10 @@ const MangaReaderScreen = () => {
         await FileSystem.writeAsStringAsync(cachedChapterPageUris, JSON.stringify(pageUrls));
       }
 
-      setChapterUrls(pageUrls);
+      if (isMounted.current) {
+        setChapterUrls(pageUrls);
+        setCachedImageUris(pageUrls);
+      }
     } catch (error) {
       Alert.alert("Error", error.message);
     } finally {
@@ -113,19 +118,16 @@ const MangaReaderScreen = () => {
     }
   }, [currentChapterUrl, chapterData]);
 
-  const renderItem = useCallback((item) => (
+  const renderItem = (item) => (
     <View key={item} className="w-full self-center">
       <TouchableWithoutFeedback onLongPress={handleShowModal}>
-        <View>
+        {/* <View style={{ width: screenWidth, height: screenHeight }}> */}
           <ChapterPage pageUrl={item} />
-        </View>
+        {/* </View> */}
       </TouchableWithoutFeedback>
     </View>
-  ), [handleShowModal]);
+  );
 
-  const renderList = useMemo(() => {
-    return chapterUrls.map(renderItem);
-  }, [chapterUrls, renderItem]);
 
   return (
     <View className="flex-1 bg-primary">
@@ -138,8 +140,11 @@ const MangaReaderScreen = () => {
         {isLoading && chapterUrls.length === 0 ? (
           <ActivityIndicator />
         ) : (
-          <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-            {renderList}
+          <View className="h-full w-full">
+            <HorizontalReaderMode chapterUrls={chapterUrls} onLongPress={handleShowModal} itemSize={{}} />
+            {/* <VerticalReaderMode chapterUrls={chapterUrls} renderItem={renderItem} /> */}
+          </View>
+        )}
             {isLoading && (
               <View className="flex-1 justify-center items-center">
                 <Text className="text-white"><ActivityIndicator /> Loading images</Text>
@@ -149,8 +154,6 @@ const MangaReaderScreen = () => {
               <Button title='Prev' onPress={handlePrevChap} />
               <Button title='Next' onPress={handleNextChap} />
             </View>
-          </ScrollView>
-        )}
       </View>
     </View>
   );
