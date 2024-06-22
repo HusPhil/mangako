@@ -8,7 +8,7 @@ import { getChapterImage } from '../utils/MangakakalotClient';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const ChapterPage = ({ pageUrl }) => {
+const ChapterPage = ({ pageUrl, handleSwipe, maxPanFunc }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [pageImgSource, setPageImgSource] = useState(null);
   const [errorData, setErrorData] = useState(null);
@@ -60,7 +60,7 @@ const ChapterPage = ({ pageUrl }) => {
   ), [fetchData]);
 
   return (
-    <View>
+    <View className="h-full p-0 m-0">
       {isLoading ? (
         <View style={{ width: screenWidth, height: screenHeight }} className="justify-center items-center">
           <ActivityIndicator size={35} />
@@ -72,8 +72,11 @@ const ChapterPage = ({ pageUrl }) => {
         </View>
       ) : (
         pageImgSource && (
-          <View className="mt-[-1px]">
-            <ExpoImage imgSrc={pageImgSource.uri} imgWidth={screenWidth} imgHeight={pageImgSource.height} imgAR={pageImgSource.aspectRatio} />
+          <View className="h-full m-0 p-0">
+            <ExpoImage imgSrc={pageImgSource.uri} imgWidth={screenWidth} imgHeight={pageImgSource.height} imgAR={pageImgSource.aspectRatio}
+              handleSwipe={handleSwipe}
+              maxPanFunc={maxPanFunc}
+            />
           </View>
         )
       )}

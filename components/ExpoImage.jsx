@@ -3,7 +3,7 @@ import { Dimensions, View } from 'react-native';
 import { Image } from 'expo-image';
 import ImageZoom from 'react-native-image-pan-zoom';
 
-const ExpoImage = ({ imgSrc, imgWidth, imgHeight, imgAR, handleSwipe, onMove }) => {
+const ExpoImage = ({ imgSrc, imgWidth, imgHeight, imgAR, handleSwipe, onMove, maxPanFunc }) => {
   const imageStyles = useMemo(() => ({
     width: imgWidth,
     height: undefined,
@@ -13,14 +13,7 @@ const ExpoImage = ({ imgSrc, imgWidth, imgHeight, imgAR, handleSwipe, onMove }) 
   const viewRef = useRef(null);
   const imgZoomRef = useRef(null);
   const scaleValue = useRef(1); 
-  const [maxPan, setMaxPan] = useState(false);
-
-  const handleHorizontalOuterRangeOffset = (offsetX) => {
-    if (Math.abs(offsetX) > Dimensions.get('window').width / 2) {
-      handleSwipe(offsetX > 0 ? 'right' : 'left');
-      setMaxPan(false); // Reset maxPan after swipe
-    }
-  };
+  const [maxPan, setMaxPan] = useState(false)
 
   return (
     <View ref={viewRef}>
@@ -29,33 +22,37 @@ const ExpoImage = ({ imgSrc, imgWidth, imgHeight, imgAR, handleSwipe, onMove }) 
         cropWidth={Dimensions.get('window').width}
         cropHeight={Dimensions.get('window').height}
         imageWidth={imgWidth}
-        imageHeight={imgWidth / imgAR}
+        imageHeight={imgWidth / imgAR} 
         minScale={1}
         useNativeDriver
         onStartShouldSetPanResponder={(e) => {
           return (e.nativeEvent.touches.length === 2 || scaleValue.current > 1) && !maxPan;
         }}
-        onMove={({ scale }) => {
-          scaleValue.current = scale;
-          onMove && onMove({ scale });
+        onPanResponderTerminationRequest={()=>{
+          return true
         }}
-        horizontalOuterRangeOffset={handleHorizontalOuterRangeOffset}
+        onMove={(e) => {
+          console.log(e)
+          scaleValue.current = e.scale;
+          onMove && onMove(e);
+        }}
+        responderRelease={(e) => {
+          console.log(e)
+        }}
+        horizontalOuterRangeOffset={(offSetX)=>{
+          if(offSetX === 100 || offSetX === -100) {
+            const right = offSetX > 0
+            handleSwipe(right)
+          }
+        }}
       >
-        <View
-          style={{ width: '100%', height: '100%' }}
-          onStartShouldSetResponder={(e) => {
-            const maxPanHolder = maxPan;
-            setMaxPan(false);
-            return e.nativeEvent.touches.length < 2 && maxPanHolder;
-          }}
-        >
+        
           <Image 
             source={imgSrc} 
             style={imageStyles} 
             cachePolicy='none' 
             key={`${imgSrc}-${imgWidth}-${imgAR}`}
           />
-        </View>
       </ImageZoom>
     </View> 
   );
