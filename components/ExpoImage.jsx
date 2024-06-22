@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Dimensions, View } from 'react-native';
+import { Dimensions, View, StatusBar } from 'react-native';
 import { Image } from 'expo-image';
 import ImageZoom from 'react-native-image-pan-zoom';
 
@@ -20,7 +20,7 @@ const ExpoImage = ({ imgSrc, imgWidth, imgHeight, imgAR, handleSwipe, onMove, ma
       <ImageZoom 
         ref={imgZoomRef}
         cropWidth={Dimensions.get('window').width}
-        cropHeight={Dimensions.get('window').height}
+        cropHeight={Dimensions.get('window').height + StatusBar.currentHeight}
         imageWidth={imgWidth}
         imageHeight={imgWidth / imgAR} 
         minScale={1}
