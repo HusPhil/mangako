@@ -13,7 +13,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const MangaReaderScreen = () => {
   const { chapterUrl, chData } = useLocalSearchParams();
-  const chapterData = JSON.parse(chData).map(chapter => chapter.chapterUrl);
+  // const chapterData = JSON.parse(chData).map(chapter => chapter.chapterUrl);
 
   const [isLoading, setIsLoading] = useState(true);
   const [chapterUrls, setChapterUrls] = useState([]);
@@ -102,21 +102,6 @@ const MangaReaderScreen = () => {
     setShowModal(!showModal);
   }, [showModal]);
 
-  const handlePrevChap = useCallback(() => {
-    const currentChapterIndex = chapterData.indexOf(currentChapterUrl);
-    if (currentChapterIndex < chapterData.length - 1) {
-      const prevChapterUrl = chapterData[currentChapterIndex + 1];
-      setCurrentChapterUrl(prevChapterUrl);
-    }
-  }, [currentChapterUrl, chapterData]);
-
-  const handleNextChap = useCallback(() => {
-    const currentChapterIndex = chapterData.indexOf(currentChapterUrl);
-    if (currentChapterIndex > 0) {
-      const nextChapterUrl = chapterData[currentChapterIndex - 1];
-      setCurrentChapterUrl(nextChapterUrl);
-    }
-  }, [currentChapterUrl, chapterData]);
 
   const renderItem = (item) => (
     <View key={item} className="w-full self-center">
@@ -151,8 +136,8 @@ const MangaReaderScreen = () => {
               </View>
             )}
             <View className="flex-row justify-around">
-              <Button title='Prev' onPress={handlePrevChap} />
-              <Button title='Next' onPress={handleNextChap} />
+              {/* <Button title='Prev' onPress={handlePrevChap} />
+              <Button title='Next' onPress={handleNextChap} /> */}
             </View>
       </View>
     </View>

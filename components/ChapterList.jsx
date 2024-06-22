@@ -48,8 +48,6 @@ const ChapterList = ({ mangaLink, headerComponent }) => {
         chId: item.chapId,
         chapterUrl: item.chapterUrl,
         chTitle: item.chTitle,
-        chIndex: index,
-        chData: JSON.stringify(chaptersData)
       }
     });
   }, [chaptersData]);
