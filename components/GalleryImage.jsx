@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Image, useWindowDimensions } from 'react-native';
+import {  useWindowDimensions } from 'react-native';
 import { getAspectRatioSize } from 'react-native-zoom-toolkit';
+import { Image } from 'expo-image';
 
 const GalleryImage = ({ uri, index }) => {
   const { width, height } = useWindowDimensions();
@@ -8,6 +9,8 @@ const GalleryImage = ({ uri, index }) => {
     width: 1,
     height: 1,
   });
+
+  
 
   const size = getAspectRatioSize({
     aspectRatio: resolution.width / resolution.height,
@@ -19,14 +22,7 @@ const GalleryImage = ({ uri, index }) => {
     <Image
       source={{ uri }}
       style={size}
-      resizeMethod={'scale'}
-      resizeMode={'cover'}
-      onLoad={(e) => {
-        setResolution({
-          width: e.nativeEvent.source.width,
-          height: e.nativeEvent.source.height,
-        });
-      }}
+
     />
   );
 };

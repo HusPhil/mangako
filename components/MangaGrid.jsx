@@ -4,7 +4,7 @@ import { FlashList } from "@shopify/flash-list";
 import MangaCard from './MangaCard';
 
 
-const MangaGrid = ({ mangaData, limit, numColumns, listStyles, isLoading }) => {
+const MangaGrid = ({ mangaData, limit, numColumns, listStyles, isLoading, ListEmptyComponent }) => {
 
   const placeholderData = new Array(3*10).fill(null).map((_, index) => ({
     id: `placeholder-${index}`,
@@ -50,6 +50,7 @@ const MangaGrid = ({ mangaData, limit, numColumns, listStyles, isLoading }) => {
           estimatedItemSize={limit}
           numColumns={numColumns}
           contentContainerStyle={listStyles}
+          ListEmptyComponent={ListEmptyComponent}
         />
     </View>
   );

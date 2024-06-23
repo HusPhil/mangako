@@ -2,6 +2,7 @@ import { ScrollView, View, Text, TouchableOpacity, Image, Alert } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, StatusBar } from 'expo-router';
 import { useState, useEffect } from 'react';
+import * as NavigationBar from 'expo-navigation-bar';
 
 
 import MangaGrid from '../../components/MangaGrid';
@@ -13,6 +14,7 @@ import icons from '../../constants/icons'
 export default function App() {
   const [fetchedMangaData, setFetchedMangaData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [errors, setErrors] = useState()
 
   const fetchData = async () => {
     try {
@@ -24,6 +26,7 @@ export default function App() {
       setFetchedMangaData([...fetchedMangaData, ...result]);
     } catch (error) {
       Alert.alert("Error", error.message);
+      setErrors(error)
       setFetchedMangaData(placeholderData);
     } finally {
       setIsLoading(false);
@@ -31,6 +34,7 @@ export default function App() {
       };
         
     useEffect(() => {
+      NavigationBar.setVisibilityAsync('hidden')
       fetchData();
       }, []);
           
@@ -47,6 +51,8 @@ export default function App() {
                 end={{x:1, y:1}}
       >
           <View className="h-full">
+            { !errors ? (
+              <View>
             <View className="px-4 py-3 pt-4">
               <TouchableOpacity className="flex-row justify-between  bg-secondary-100 rounded-lg p-2"
                   onPress={handleSearchButton}
@@ -55,18 +61,28 @@ export default function App() {
                 <Image source={icons.search} className="h-[18px] w-[18px]"/>
               </TouchableOpacity>
             </View>
-            <ScrollView 
-            className="w-full mb-2"
-            showsVerticalScrollIndicator={false}
-            showsHorizontalScrollIndicator={false}
-            >
-              <MangaGrid
-                mangaData={isLoading ? null : fetchedMangaData}
-                limit={100}
-                numColumns={3}
-                isLoading={isLoading}
-              />
-            </ScrollView>
+
+              <ScrollView 
+              className="w-full mb-2"
+              showsVerticalScrollIndicator={false}
+              showsHorizontalScrollIndicator={false}
+              >
+                <MangaGrid
+                  mangaData={isLoading ? null : fetchedMangaData}
+                  ListEmptyComponent={()=>{
+                   
+                  }}
+                  limit={100}
+                  numColumns={3}
+                  isLoading={isLoading}
+                  />
+              </ScrollView>
+                  </View>
+            ) : (
+                <View className="h-full justify-center">
+                  <Text className="text-white text-lg font-pregular">Something went wrong. Please check your  internet connection and try again.</Text>
+                </View>
+            )}
           </View>
         </LinearGradient>
       </SafeAreaView>

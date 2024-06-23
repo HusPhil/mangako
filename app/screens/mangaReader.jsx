@@ -8,11 +8,14 @@ import ChapterPage from '../../components/ChapterPage';
 import colors from '../../constants/colors';
 import { getChapterImageUrls } from '../../utils/MangakakalotClient';
 import {VerticalReaderMode, HorizontalReaderMode} from '../../components/readerModes';
+import * as NavigationBar from 'expo-navigation-bar';
+import HorizontalRule from '../../components/HorizontalRule'
+import {Picker} from '@react-native-picker/picker';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const MangaReaderScreen = () => {
-  const { chapterUrl, chData } = useLocalSearchParams();
+  const { chapterUrl, chTitle } = useLocalSearchParams();
   // const chapterData = JSON.parse(chData).map(chapter => chapter.chapterUrl);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -56,6 +59,7 @@ const MangaReaderScreen = () => {
 
   useEffect(() => {
     isMounted.current = true;
+    NavigationBar.setVisibilityAsync('hidden')
     setIsLoading(true);
     setChapterUrls([]);
     setCachedImageUris([]);
@@ -94,6 +98,7 @@ const MangaReaderScreen = () => {
   }, [cachedImageUris, currentChapterUrl]);
 
   const handleShowModal = useCallback(() => {
+    NavigationBar.setVisibilityAsync('hidden')
     if (!showModal) {
       StatusBar.setBackgroundColor(colors.secondary.DEFAULT);
     } else {
@@ -116,17 +121,33 @@ const MangaReaderScreen = () => {
 
   return (
     <View className="flex-1 bg-primary">
-      <ModalPopup visible={showModal} onClose={handleShowModal}>
-        <Text>Hello world</Text>
-        <Button title='Clear cache' onPress={clearCache} />
-        <Button title='Close' onPress={handleShowModal} />
+      <ModalPopup visible={showModal} handleClose={handleShowModal}>
+        <View className="justify-start">
+          <View className="justify-start w-full">
+            <Text numberOfLines={1} className="text-white font-pregular text-base text-center p-2">{chTitle}</Text>
+          </View>
+          <HorizontalRule />
+          <View className="justify-end">
+            <Picker
+              prompt='Reading mode:'
+              mode='dropdown'
+              className="bg-black-200"
+              dropdownIconColor={'#fff'}
+              selectionColor={'blue'}
+            >
+              <Picker.Item  label="Java" value="java" style={{color:'blue', backgroundColor:""}}/>
+              <Picker.Item label="JavaScript" value="js" />
+            </Picker>
+          </View>
+
+        </View>
       </ModalPopup>
       <View className="flex-1">
         {isLoading && chapterUrls.length === 0 ? (
           <ActivityIndicator />
         ) : (
           <View className="h-full w-full">
-            <HorizontalReaderMode chapterUrls={chapterUrls} onLongPress={handleShowModal} itemSize={{}} />
+            <HorizontalReaderMode chapterUrls={chapterUrls} onTap={handleShowModal} inverted />
             {/* <VerticalReaderMode chapterUrls={chapterUrls} renderItem={renderItem} /> */}
           </View>
         )}

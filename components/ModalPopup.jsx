@@ -8,12 +8,15 @@ const ModalPopup = ({otherStyles, children, visible, handleClose}) => {
         visible={visible}
         transparent
         onRequestClose={handleClose}
-        animationType='fade'
+        animationType='slide'
     >
         <View
-            className={`flex-1 justify-center items-center h-full bg-black-100 ${otherStyles}`}
+            className={`justify-end items-center bg-black-100 p-1 h-full ${otherStyles} `}
         >
+            <View className="h-[40%] w-full rounded-lg bg-secondary ">
+
             {children}
+            </View>
         </View>    
     </Modal>
   )

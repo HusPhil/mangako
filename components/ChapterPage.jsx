@@ -43,6 +43,7 @@ const ChapterPage = ({ pageUrl, handleSwipe, maxPanFunc }) => {
       const pageSize = await getImageSize(imageUri);
       const aspectRatio = pageSize.width / pageSize.height;
 
+
       setPageImgSource({ uri: imageUri, aspectRatio, height: pageSize.height});
     } catch (error) {
       setErrorData(error);

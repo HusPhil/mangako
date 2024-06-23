@@ -1,49 +1,47 @@
 import React, { useCallback, useRef } from 'react';
-import { View, Dimensions, TouchableWithoutFeedback, FlatList, Image } from 'react-native';
+import { View, Dimensions, Text, StyleSheet } from 'react-native';
+import { stackTransition, Gallery, GalleryType } from 'react-native-zoom-toolkit';
 import ChapterPage from '../ChapterPage';
+import * as NavigationBar from 'expo-navigation-bar';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const HorizontalReaderMode = ({ chapterUrls, onLongPress }) => {
-  const flRef = useRef(null)
+const HorizontalReaderMode = ({chapterUrls, inverted, onTap}) => {
+  const ref = useRef(null);
 
-  const renderItem = useCallback(({ item, index }) => (
-    <View className="m-0 p-0" >
-        <ChapterPage pageUrl={item} handleSwipe={
-          (swipeRight) => {
-            if(swipeRight) {
-              swipeToItem(index + 1)
-            }
-            else {
-              swipeToItem(index - 1)
-            }
-        }}
-        maxPanFunc={()=>{
-          const scroller = flRef.current.getNativeScrollRef()
-        }}
-        />
-    </View>
-  ), [onLongPress]);
- 
-  const swipeToItem = (index) => {
-    if (flRef.current) {
-      flRef.current.scrollToIndex({ animated: true, index: index });
-    }
-  };
+  const renderItem = useCallback((item, index) => {
+    return (
+      <View className="">
+        <ChapterPage pageUrl={item}/>
+      </View>
+    );
+  }, []);
+
+  const keyExtractor = useCallback((item, index) => {
+    return `${item}-${index}`;
+  }, []);
+
+  const transition = useCallback(stackTransition, []);
 
   return (
-    <FlatList
-    onStartShouldSetResponder={()=>{
-      return true
-    }}
-      ref={flRef}
-      data={chapterUrls}
-      renderItem={renderItem}
-      keyExtractor={(item, index) => `${item}-${index}`}
-      horizontal
-      pagingEnabled
-      inverted
-    />
+    <View className="h-full w-full">
+      <Gallery
+        ref={ref}
+        initialIndex={inverted ? chapterUrls.length - 1 : 0}
+        data={inverted ? [...chapterUrls].reverse() : chapterUrls}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        onTap={onTap}
+        customTransition={transition}
+        onEndReached={()=>{
+          console.log('end')
+        }}
+        allowPinchPanning={false}
+        onIndexChange={()=>{
+          NavigationBar.setVisibilityAsync('hidden')
+        }}
+      />
+    </View>
   );
 };
 
