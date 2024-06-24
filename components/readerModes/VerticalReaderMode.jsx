@@ -1,8 +1,13 @@
-import { ScrollView, TouchableWithoutFeedback, View } from 'react-native';
-import React from 'react';
+import { ScrollView, TouchableWithoutFeedback, View,  } from 'react-native';
+import React, {useImperativeHandle, forwardRef} from 'react';
 import ChapterPage from '../ChapterPage';
 
-const VerticalReaderMode = ({ chapterUrls, onTap }) => {
+const VerticalReaderMode = forwardRef(({ chapterUrls, onTap }, ref) => {
+  useImperativeHandle(ref, () => ({
+    onReadmodeChange: () => {
+      console.log("Hello world")
+    }
+  }));
   const renderItem = (item, index) => (
     <TouchableWithoutFeedback key={`${item}-${index}`} onPress={onTap}>
       <View className="w-full self-center">
@@ -15,6 +20,6 @@ const VerticalReaderMode = ({ chapterUrls, onTap }) => {
         {chapterUrls.map(renderItem)}
     </ScrollView>
   );
-};
+});
 
 export default VerticalReaderMode;

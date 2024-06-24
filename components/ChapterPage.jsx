@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle  } from 'react';
 import { View, Dimensions, ActivityIndicator, Image, Button, Text } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import shorthash from 'shorthash';
@@ -8,10 +8,15 @@ import { getChapterImage } from '../utils/MangakakalotClient';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const ChapterPage = ({ pageUrl }) => {
+const ChapterPage = forwardRef(({ pageUrl }, ref) => {
   const [isLoading, setIsLoading] = useState(true);
   const [pageImgSource, setPageImgSource] = useState(null);
   const [errorData, setErrorData] = useState(null);
+
+  useImperativeHandle(ref, () => ({
+    fetchData,
+    getPageUrl: () =>  pageUrl,
+  }));
 
   const getImageSize = useCallback((imageUri) => {
     return new Promise((resolve, reject) => {
@@ -56,6 +61,8 @@ const ChapterPage = ({ pageUrl }) => {
     fetchData();
   }, [fetchData, ]);
 
+  
+
   const retryButton = useMemo(() => (
     <Button onPress={fetchData} title="Retry" />
   ), [fetchData]);
@@ -81,6 +88,6 @@ const ChapterPage = ({ pageUrl }) => {
       )}
     </View>
   );
-};
+});
 
 export default React.memo(ChapterPage);

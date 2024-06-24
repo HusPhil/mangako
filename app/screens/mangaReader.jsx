@@ -4,7 +4,7 @@ import {
   TouchableWithoutFeedback, 
   StatusBar, ScrollView 
 } from 'react-native';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import shorthash from 'shorthash';
 import * as FileSystem from 'expo-file-system';
@@ -27,6 +27,10 @@ const MangaReaderScreen = () => {
   const [chapterUrls, setChapterUrls] = useState([]);
   const [readingMode, setReadingMode] = useState({ value: 'hor', index: 0 });
   const [errorData, setErrorData] = useState(null);
+  
+  
+  const readerModeRef = useRef(null)
+
 
   const fetchData = useCallback(async (url) => {
     try {
@@ -90,6 +94,7 @@ const MangaReaderScreen = () => {
   }, [showModal]);
 
   return (
+
     <View className="flex-1 bg-primary">
       <ModalPopup visible={showModal} handleClose={handleShowModal}>
         <View className="justify-start w-full">
@@ -117,10 +122,13 @@ const MangaReaderScreen = () => {
             ]}
             onValueChange={(data) => {
               setReadingMode(data);
+              console.log(readerModeRef.current)
+              readerModeRef.current.onReadmodeChange()
             }}
             selectedIndex={readingMode.index}
           />
           <Button title='Retry' onPress={()=>{
+            readerModeRef.current.retryFetch()
           }}/>
         </View>
       </ModalPopup>
@@ -134,16 +142,17 @@ const MangaReaderScreen = () => {
         ) : (
           <View className="h-full w-full">
             {readingMode.value === "hor" ? (
-              <HorizontalReaderMode chapterUrls={chapterUrls} onTap={handleShowModal}/>
+              <HorizontalReaderMode chapterUrls={chapterUrls} onTap={handleShowModal} ref={readerModeRef}/>
             ) : readingMode.value === "hor-inv" ? (
-              <HorizontalReaderMode chapterUrls={chapterUrls} onTap={handleShowModal} inverted />
+              <HorizontalReaderMode chapterUrls={chapterUrls} onTap={handleShowModal} inverted ref={readerModeRef} />
             ) : readingMode.value === "ver" && (
-              <VerticalReaderMode chapterUrls={chapterUrls} onTap={handleShowModal} />
+              <VerticalReaderMode chapterUrls={chapterUrls} onTap={handleShowModal} ref={readerModeRef}/>
             )}
           </View>
         )}
       </View>
     </View>
+
   );
 };
 

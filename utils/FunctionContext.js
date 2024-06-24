@@ -1,4 +1,4 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useContext } from 'react';
 
 const FunctionContext = createContext();
 
@@ -12,4 +12,6 @@ export const FunctionProvider = ({ children }) => {
   );
 };
 
-export default FunctionContext;
+export const useFunctionContext = () => {
+  return useContext(FunctionContext);
+};

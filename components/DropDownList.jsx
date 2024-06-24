@@ -47,6 +47,7 @@ import {
         {opened && (
           <View className="absolute top-5 w-full">
             {listItems.map((item,index) => {
+              if(index != selectedIndex) {
                 return (
                 <TouchableOpacity key={index} className="w-full bg-white p-1 z-50 border"
                     onPress={() => {
@@ -61,6 +62,7 @@ import {
                     <Text numberOfLines={1} className="z-50 font-pregular">{item.label}</Text>
                 </TouchableOpacity>
                 )
+              }
             })}
         
           </View>
