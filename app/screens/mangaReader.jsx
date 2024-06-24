@@ -27,7 +27,6 @@ const MangaReaderScreen = () => {
   const [chapterUrls, setChapterUrls] = useState([]);
   const [readingMode, setReadingMode] = useState({ value: 'hor', index: 0 });
   const [errorData, setErrorData] = useState(null);
-  const [toggleRetry, setToggleRetry] = useState('false')
 
   const fetchData = useCallback(async (url) => {
     try {
@@ -122,7 +121,6 @@ const MangaReaderScreen = () => {
             selectedIndex={readingMode.index}
           />
           <Button title='Retry' onPress={()=>{
-            setToggleRetry(prev => !prev)
           }}/>
         </View>
       </ModalPopup>
@@ -136,7 +134,7 @@ const MangaReaderScreen = () => {
         ) : (
           <View className="h-full w-full">
             {readingMode.value === "hor" ? (
-              <HorizontalReaderMode chapterUrls={chapterUrls} onTap={handleShowModal} toggleRetry={toggleRetry}/>
+              <HorizontalReaderMode chapterUrls={chapterUrls} onTap={handleShowModal}/>
             ) : readingMode.value === "hor-inv" ? (
               <HorizontalReaderMode chapterUrls={chapterUrls} onTap={handleShowModal} inverted />
             ) : readingMode.value === "ver" && (

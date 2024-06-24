@@ -6,23 +6,20 @@ import * as NavigationBar from 'expo-navigation-bar';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const HorizontalReaderMode = ({chapterUrls, inverted, onTap, toggleRetry}) => {
+const HorizontalReaderMode = ({chapterUrls, inverted, onTap}) => {
   const ref = useRef(null);
-  const [toggleChildRetry, setToggleChildRetry] = useState(toggleRetry)
 
   useEffect(() => {
-    setToggleChildRetry(toggleRetry)
-    console.log(toggleChildRetry)
-  }, [toggleRetry]);
+  }, []);
 
   const renderItem = useCallback((item, index) => {
     return (
       <View>
-        <ChapterPage pageUrl={item} toggleRetry={toggleChildRetry}/>
+        <ChapterPage pageUrl={item} />
         {/* <Text>{toggleChildRetry ? "true" : "false"}</Text> */}
       </View>
     );
-  }, [toggleChildRetry]);
+  }, []);
 
   const keyExtractor = useCallback((item, index) => {
     return `${item}-${index}`;

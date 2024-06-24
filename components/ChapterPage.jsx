@@ -8,7 +8,7 @@ import { getChapterImage } from '../utils/MangakakalotClient';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const ChapterPage = ({ pageUrl, toggleRetry }) => {
+const ChapterPage = ({ pageUrl }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [pageImgSource, setPageImgSource] = useState(null);
   const [errorData, setErrorData] = useState(null);
@@ -53,9 +53,8 @@ const ChapterPage = ({ pageUrl, toggleRetry }) => {
   }, [pageUrl, getImageSize]);
 
   useEffect(() => {
-    console.log("called trery" + toggleRetry)
     fetchData();
-  }, [fetchData, toggleRetry]);
+  }, [fetchData, ]);
 
   const retryButton = useMemo(() => (
     <Button onPress={fetchData} title="Retry" />
