@@ -8,7 +8,7 @@ import { getChapterImage } from '../utils/MangakakalotClient';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const ChapterPage = ({ pageUrl, handleSwipe, maxPanFunc }) => {
+const ChapterPage = ({ pageUrl, toggleRetry }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [pageImgSource, setPageImgSource] = useState(null);
   const [errorData, setErrorData] = useState(null);
@@ -53,15 +53,16 @@ const ChapterPage = ({ pageUrl, handleSwipe, maxPanFunc }) => {
   }, [pageUrl, getImageSize]);
 
   useEffect(() => {
+    console.log("called trery" + toggleRetry)
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, toggleRetry]);
 
   const retryButton = useMemo(() => (
     <Button onPress={fetchData} title="Retry" />
   ), [fetchData]);
 
   return (
-    <View className="h-full p-0 m-0">
+    <View>
       {isLoading ? (
         <View style={{ width: screenWidth, height: screenHeight }} className="justify-center items-center">
           <ActivityIndicator size={35} />
@@ -73,10 +74,8 @@ const ChapterPage = ({ pageUrl, handleSwipe, maxPanFunc }) => {
         </View>
       ) : (
         pageImgSource && (
-          <View className="h-full m-0 p-0">
+          <View className="">
             <ExpoImage imgSrc={pageImgSource.uri} imgWidth={screenWidth} imgHeight={pageImgSource.height} imgAR={pageImgSource.aspectRatio}
-              handleSwipe={handleSwipe}
-              maxPanFunc={maxPanFunc}
             />
           </View>
         )
