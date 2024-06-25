@@ -6,7 +6,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const HorizontalReaderMode = forwardRef(({chapterUrls, inverted, onTap, onPageChange, currentPageNum, }, ref) => {
+const InvHorizontalReaderMode = forwardRef(({chapterUrls, inverted, onTap, onPageChange, currentPageNum, }, ref) => {
   const pagesRef = useRef([]);
   const galleryRef = useRef(null)
 
@@ -62,17 +62,17 @@ const HorizontalReaderMode = forwardRef(({chapterUrls, inverted, onTap, onPageCh
     <View className="h-full w-full">
       <Gallery
         ref={galleryRef}
-        data={chapterUrls}
+        data={[...chapterUrls].reverse()}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         onTap={onTap}
         customTransition={transition}
         onIndexChange={() => {
-          console.log("not inverted reader")
+          console.log("inverted reader")
         }}
       />
     </View>
   );
 });
 
-export default HorizontalReaderMode;
+export default InvHorizontalReaderMode;

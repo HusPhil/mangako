@@ -16,6 +16,7 @@ import { VerticalReaderMode, HorizontalReaderMode } from '../../components/reade
 import * as NavigationBar from 'expo-navigation-bar';
 import HorizontalRule from '../../components/HorizontalRule';
 import DropDownList from '../../components/DropDownList';
+import InvHorizontalReaderMode from '../../components/readerModes/InvHorizontalReaderMode';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -25,8 +26,11 @@ const MangaReaderScreen = () => {
   const [showModal, setShowModal] = useState(false);
   const [currentChapterUrl, setCurrentChapterUrl] = useState(chapterUrl);
   const [chapterUrls, setChapterUrls] = useState([]);
-  const [readingMode, setReadingMode] = useState({ value: 'hor', index: 0 });
   const [errorData, setErrorData] = useState(null);
+
+  const [readingMode, setReadingMode] = useState({ value: 'hor', index: 0 });
+  const [currentPageNum, setCurrentPageNum] = useState(0)
+  
   
   
   const readerModeRef = useRef(null)
@@ -93,6 +97,11 @@ const MangaReaderScreen = () => {
     setShowModal(!showModal);
   }, [showModal]);
 
+  const onPageChange = useCallback((currentPage) => {
+    setCurrentPageNum(currentPage)
+    console.log("current page in reader in now:", currentPage)
+  }, [currentPageNum])
+
   return (
 
     <View className="flex-1 bg-primary">
@@ -112,7 +121,7 @@ const MangaReaderScreen = () => {
                 desc: "Standard left-to-right viewing mode. Most commonly used for reading manhwas."
               },
               {
-                label: "Horizontal (inverted)", value: "hor-inv",
+                label: "Horizontal (inverted)", value: "inverted",
                 desc: "Reading direction is right-to-left. Most commonly used for reading mangas."
               },
               {
@@ -122,6 +131,7 @@ const MangaReaderScreen = () => {
             ]}
             onValueChange={(data) => {
               setReadingMode(data);
+              console.log("current in reader:", currentPageNum)
               readerModeRef.current.onReadmodeChange()
             }}
             selectedIndex={readingMode.index}
@@ -141,11 +151,30 @@ const MangaReaderScreen = () => {
         ) : (
           <View className="h-full w-full">
             {readingMode.value === "hor" ? (
-              <HorizontalReaderMode chapterUrls={chapterUrls} onTap={handleShowModal} ref={readerModeRef}/>
-            ) : readingMode.value === "hor-inv" ? (
-              <HorizontalReaderMode chapterUrls={chapterUrls} onTap={handleShowModal} inverted ref={readerModeRef} />
+              <HorizontalReaderMode 
+                currentPageNum={currentPageNum}
+                chapterUrls={chapterUrls} 
+                onPageChange={onPageChange} 
+                onTap={handleShowModal} 
+                inverted={{value: false}}
+                myNum={0}
+                ref={readerModeRef}/>
+            ) : readingMode.value === "inverted" ? (
+              <InvHorizontalReaderMode 
+                currentPageNum={currentPageNum}
+                chapterUrls={chapterUrls} 
+                onPageChange={onPageChange} 
+                myNum={1}
+                onTap={handleShowModal} 
+                inverted={{value: true}}
+                ref={readerModeRef} />
             ) : readingMode.value === "ver" && (
-              <VerticalReaderMode chapterUrls={chapterUrls} onTap={handleShowModal} ref={readerModeRef}/>
+              <VerticalReaderMode 
+              initialPageNum={currentPageNum}
+                chapterUrls={chapterUrls}  
+                onTap={handleShowModal} 
+                onPageChange={onPageChange} 
+                ref={readerModeRef}/>
             )}
           </View>
         )}

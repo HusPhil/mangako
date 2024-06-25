@@ -1,29 +1,71 @@
-import { FlatList, ScrollView, TouchableWithoutFeedback, View,  } from 'react-native';
-import React, {useImperativeHandle, forwardRef, useCallback} from 'react';
+import { FlatList, TouchableWithoutFeedback, View } from 'react-native';
+import React, { useImperativeHandle, forwardRef, useCallback, useEffect, useRef } from 'react';
 import ChapterPage from '../ChapterPage';
-import { FlashList } from '@shopify/flash-list';
 
-const VerticalReaderMode = forwardRef(({ chapterUrls, onTap }, ref) => {
+const ITEM_HEIGHT = 800; // Adjust this value based on your item height
+
+const VerticalReaderMode = forwardRef(({ chapterUrls, onTap, onPageChange, initialPageNum }, ref) => {
+  const flatRef = useRef(null);
+
   useImperativeHandle(ref, () => ({
     onReadmodeChange: () => {
-      console.log("Read mode  in ver")
+      console.log("Read mode in ver");
+    },
+    retryFetch: () => {
+      console.log("retrying to fetch");
     }
   }));
+
+  const onViewableItemsChanged = useCallback(({ viewableItems }) => {
+    if (viewableItems.length > 0) {
+      const currentViewableIndex = viewableItems[0].index;
+      onPageChange(currentViewableIndex);
+    }
+  }, [onPageChange]);
+
+  const viewabilityConfig = {
+    itemVisiblePercentThreshold: 50, // percentage of item that must be visible to be considered viewable
+  };
+
+  useEffect(() => {
+    if (flatRef.current && initialPageNum !== null && initialPageNum !== undefined) {
+      flatRef.current.scrollToIndex({ animated: true, index: initialPageNum });
+    }
+  }, [initialPageNum]);
+
   const renderItem = useCallback(({ item, index }) => (
-    <TouchableWithoutFeedback onPress={onTap}>
+    <TouchableWithoutFeedback onPress={() => onTap(index)}>
       <View>
-        <ChapterPage pageUrl={item}/>
+        <ChapterPage pageUrl={item} />
       </View>
     </TouchableWithoutFeedback>
   ), [chapterUrls, onTap]);
+
+  const getItemLayout = (data, index) => ({
+    length: ITEM_HEIGHT,
+    offset: ITEM_HEIGHT * index,
+    index,
+  });
+
+  const onScrollToIndexFailed = (info) => {
+    const wait = new Promise(resolve => setTimeout(resolve, 500));
+    wait.then(() => {
+      flatRef.current.scrollToIndex({ index: info.index, animated: true });
+    });
+  };
+
   return (
-    <FlatList 
+    <FlatList
+      ref={flatRef}
       disableIntervalMomentum
       disableVirtualization
       data={chapterUrls}
       renderItem={renderItem}
       keyExtractor={(item) => item}
-      on
+      viewabilityConfig={viewabilityConfig}
+      onViewableItemsChanged={onViewableItemsChanged}
+      getItemLayout={getItemLayout}
+      onScrollToIndexFailed={onScrollToIndexFailed}
     />
   );
 });
