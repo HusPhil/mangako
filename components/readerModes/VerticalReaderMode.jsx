@@ -1,24 +1,30 @@
-import { ScrollView, TouchableWithoutFeedback, View,  } from 'react-native';
-import React, {useImperativeHandle, forwardRef} from 'react';
+import { FlatList, ScrollView, TouchableWithoutFeedback, View,  } from 'react-native';
+import React, {useImperativeHandle, forwardRef, useCallback} from 'react';
 import ChapterPage from '../ChapterPage';
+import { FlashList } from '@shopify/flash-list';
 
 const VerticalReaderMode = forwardRef(({ chapterUrls, onTap }, ref) => {
   useImperativeHandle(ref, () => ({
     onReadmodeChange: () => {
-      console.log("Hello world")
+      console.log("Read mode  in ver")
     }
   }));
-  const renderItem = (item, index) => (
-    <TouchableWithoutFeedback key={`${item}-${index}`} onPress={onTap}>
-      <View className="w-full self-center">
-            <ChapterPage pageUrl={item}/>
+  const renderItem = useCallback(({ item, index }) => (
+    <TouchableWithoutFeedback onPress={onTap}>
+      <View>
+        <ChapterPage pageUrl={item}/>
       </View>
     </TouchableWithoutFeedback>
-);
+  ), [chapterUrls, onTap]);
   return (
-    <ScrollView>
-        {chapterUrls.map(renderItem)}
-    </ScrollView>
+    <FlatList 
+      disableIntervalMomentum
+      disableVirtualization
+      data={chapterUrls}
+      renderItem={renderItem}
+      keyExtractor={(item) => item}
+      on
+    />
   );
 });
 

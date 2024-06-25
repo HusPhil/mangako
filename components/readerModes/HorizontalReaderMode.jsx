@@ -17,7 +17,6 @@ const HorizontalReaderMode = forwardRef(({chapterUrls, inverted, onTap}, ref) =>
       pagesRef.current[currentPage].fetchData()
     },
     onReadmodeChange: () => {
-      console.log("Hello world")
       galleryRef.current.setIndex((chapterUrls.length - 1) - currentPage)
     }
   }));

@@ -122,7 +122,6 @@ const MangaReaderScreen = () => {
             ]}
             onValueChange={(data) => {
               setReadingMode(data);
-              console.log(readerModeRef.current)
               readerModeRef.current.onReadmodeChange()
             }}
             selectedIndex={readingMode.index}
