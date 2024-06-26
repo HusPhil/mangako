@@ -98,8 +98,8 @@ const MangaReaderScreen = () => {
   }, [showModal]);
 
   const onPageChange = useCallback((currentPage) => {
-    setCurrentPageNum(currentPage)
     console.log("current page in reader in now:", currentPage)
+    setCurrentPageNum(currentPage)
   }, [currentPageNum])
 
   return (
@@ -121,7 +121,7 @@ const MangaReaderScreen = () => {
                 desc: "Standard left-to-right viewing mode. Most commonly used for reading manhwas."
               },
               {
-                label: "Horizontal (inverted)", value: "inverted",
+                label: "Horizontal (inverted)", value: "hor-inv",
                 desc: "Reading direction is right-to-left. Most commonly used for reading mangas."
               },
               {
@@ -133,6 +133,7 @@ const MangaReaderScreen = () => {
               setReadingMode(data);
               console.log("current in reader:", currentPageNum)
               readerModeRef.current.onReadmodeChange()
+              setShowModal(!showModal)
             }}
             selectedIndex={readingMode.index}
           />
@@ -156,17 +157,15 @@ const MangaReaderScreen = () => {
                 chapterUrls={chapterUrls} 
                 onPageChange={onPageChange} 
                 onTap={handleShowModal} 
-                inverted={{value: false}}
-                myNum={0}
+                inverted={readingMode.value === "hor-inv"}
                 ref={readerModeRef}/>
-            ) : readingMode.value === "inverted" ? (
-              <InvHorizontalReaderMode 
+            ) : readingMode.value === "hor-inv" ? (
+              <HorizontalReaderMode 
                 currentPageNum={currentPageNum}
                 chapterUrls={chapterUrls} 
                 onPageChange={onPageChange} 
-                myNum={1}
                 onTap={handleShowModal} 
-                inverted={{value: true}}
+                inverted
                 ref={readerModeRef} />
             ) : readingMode.value === "ver" && (
               <VerticalReaderMode 

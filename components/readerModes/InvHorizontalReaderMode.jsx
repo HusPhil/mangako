@@ -6,7 +6,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const InvHorizontalReaderMode = forwardRef(({chapterUrls, inverted, onTap, onPageChange, currentPageNum, }, ref) => {
+const InvHorizontalReaderMode = forwardRef(({chapterUrls, onTap, onPageChange, currentPageNum, }, ref) => {
   const pagesRef = useRef([]);
   const galleryRef = useRef(null)
 

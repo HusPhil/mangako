@@ -6,55 +6,46 @@ import * as NavigationBar from 'expo-navigation-bar';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const HorizontalReaderMode = forwardRef(({chapterUrls, inverted, onTap, onPageChange, currentPageNum, }, ref) => {
+const HorizontalReaderMode = forwardRef(({ chapterUrls, inverted, onTap, onPageChange, currentPageNum }, ref) => {
   const pagesRef = useRef([]);
-  const galleryRef = useRef(null)
+  const galleryRef = useRef(null);
+  const [invertedMode, setInvertedMode] = useState(inverted);
+  const invertedModeRef = useRef(inverted); // Ref to hold the latest value of invertedMode
 
   useImperativeHandle(ref, () => ({
     retryFetch: () => {
-      console.log(pagesRef.current[currentPageNum].getPageUrl(), "theindex:", currentPageNum)
-      pagesRef.current[currentPageNum].fetchData()
+      // console.log(pagesRef.current[currentPageNum].getPageUrl(), "theindex:", currentPageNum);
+      pagesRef.current[inverted ? (chapterUrls.length - 1) - currentPageNum : currentPageNum].fetchData();
     },
     onReadmodeChange: () => {
-
+      // Handle read mode change
     }
   }));
 
-  useEffect(()=> {
-    console.log("inverted:", inverted)
+  useEffect(() => {
+
+    setInvertedMode(inverted);
     console.log("currentPageNum:", currentPageNum, "::", "invertedNum:" , (chapterUrls.length - 1) - currentPageNum)
     galleryRef.current.setIndex(inverted ? (chapterUrls.length - 1) - currentPageNum : currentPageNum )
 
-  }, [])
+  }, [inverted]);
 
-  const onChangeIndex = useCallback((index)=>{          
-    console.log("chaneg index", index)
-    // onPageChange(inverted ? index : chapterUrls.length - 1 - index)
-    // onPageChange(index)
-    console.log("i am not inverted:")
-    NavigationBar.setVisibilityAsync('hidden')
-  }, [inverted])
-  
-  const onChangeIndexInv = useCallback((index)=>{          
-    console.log("chaneg index", index)
-
-    // onPageChange(inverted ? index : chapterUrls.length - 1 - index)
-    // onPageChange(index)
-    console.log("inverted:", inverted)
-    NavigationBar.setVisibilityAsync('hidden')
-  }, [inverted])
+  // Update the ref value whenever the state changes
+  useEffect(() => {
+    invertedModeRef.current = invertedMode;
+  }, [invertedMode]);
 
   const renderItem = useCallback((item, index) => {
     return (
-      <View >
-        <ChapterPage ref={(page) => { pagesRef.current[index] = page }} pageUrl={item} />
+      <View>
+        <ChapterPage ref={(page) => { pagesRef.current[index] = page; }} pageUrl={item} />
       </View>
     );
-  }, []);
+  }, [inverted]);
 
   const keyExtractor = useCallback((item, index) => {
     return `${item}-${index}`;
-  }, []);
+  }, [inverted]);
 
   const transition = useCallback(stackTransition, []);
 
@@ -62,16 +53,17 @@ const HorizontalReaderMode = forwardRef(({chapterUrls, inverted, onTap, onPageCh
     <View className="h-full w-full">
       <Gallery
         ref={galleryRef}
-        data={chapterUrls}
+        data={inverted ? [...chapterUrls].reverse() : chapterUrls}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         onTap={onTap}
         customTransition={transition}
-        onIndexChange={() => {
-          console.log("not inverted reader")
+        onIndexChange={(index) => {
+          console.log("not inverted reader:", invertedModeRef.current);
+          onPageChange(invertedModeRef.current ? chapterUrls.length - 1 - index : index)
         }}
       />
-    </View>
+    </View> 
   );
 });
 

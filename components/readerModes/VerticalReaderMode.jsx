@@ -31,7 +31,7 @@ const VerticalReaderMode = forwardRef(({ chapterUrls, onTap, onPageChange, initi
     if (flatRef.current && initialPageNum !== null && initialPageNum !== undefined) {
       flatRef.current.scrollToIndex({ animated: true, index: initialPageNum });
     }
-  }, [initialPageNum]);
+  }, []);
 
   const renderItem = useCallback(({ item, index }) => (
     <TouchableWithoutFeedback onPress={() => onTap(index)}>
