@@ -38,7 +38,7 @@ const HorizontalReaderMode = forwardRef(({ chapterUrls, inverted, onTap, onPageC
   const renderItem = useCallback((item, index) => {
     return (
       <View>
-        <ChapterPage ref={(page) => { pagesRef.current[index] = page; }} pageUrl={item} />
+        <ChapterPage ref={(page) => { pagesRef.current[index] = page; }} pageUrl={item} pageNum={index}/>
       </View>
     );
   }, [inverted]);

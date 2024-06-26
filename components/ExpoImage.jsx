@@ -10,7 +10,6 @@ const ExpoImage = ({ imgSrc, imgWidth, imgAR, }) => {
     aspectRatio: imgAR,
   }), [imgWidth, imgAR]);
 
-  const viewRef = useRef(null);
 
   return (
           <Image 
@@ -19,8 +18,6 @@ const ExpoImage = ({ imgSrc, imgWidth, imgAR, }) => {
             cachePolicy='none' 
             key={`${imgSrc}-${imgWidth}-${imgAR}`}
           />
-    // <View ref={viewRef} className="h-full w-full justify-center">
-    // </View> 
   );
 };
 

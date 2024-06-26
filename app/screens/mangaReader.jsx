@@ -16,7 +16,6 @@ import { VerticalReaderMode, HorizontalReaderMode } from '../../components/reade
 import * as NavigationBar from 'expo-navigation-bar';
 import HorizontalRule from '../../components/HorizontalRule';
 import DropDownList from '../../components/DropDownList';
-import InvHorizontalReaderMode from '../../components/readerModes/InvHorizontalReaderMode';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -34,6 +33,7 @@ const MangaReaderScreen = () => {
   
   
   const readerModeRef = useRef(null)
+  const pageHeights = useRef(Array(chapterUrls.length).fill(Dimensions.get('screen').height))
 
 
   const fetchData = useCallback(async (url) => {
@@ -102,6 +102,11 @@ const MangaReaderScreen = () => {
     setCurrentPageNum(currentPage)
   }, [currentPageNum])
 
+  const onPageLoad = (pageNum, height) => {
+    pageHeights.current[pageNum] = height
+    console.log("pageNum:", pageNum, "height:", pageHeights.current[pageNum])
+  }
+
   return (
 
     <View className="flex-1 bg-primary">
@@ -133,7 +138,7 @@ const MangaReaderScreen = () => {
               setReadingMode(data);
               console.log("current in reader:", currentPageNum)
               readerModeRef.current.onReadmodeChange()
-              setShowModal(!showModal)
+              handleShowModal()
             }}
             selectedIndex={readingMode.index}
           />
