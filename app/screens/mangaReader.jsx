@@ -9,7 +9,6 @@ import { useLocalSearchParams } from 'expo-router';
 import shorthash from 'shorthash';
 import * as FileSystem from 'expo-file-system';
 import ModalPopup from '../../components/ModalPopup';
-import ChapterPage from '../../components/ChapterPage';
 import colors from '../../constants/colors';
 import { getChapterImageUrls } from '../../utils/MangakakalotClient';
 import { VerticalReaderMode, HorizontalReaderMode } from '../../components/readerModes';
@@ -27,13 +26,13 @@ const MangaReaderScreen = () => {
   const [chapterUrls, setChapterUrls] = useState([]);
   const [errorData, setErrorData] = useState(null);
 
-  const [readingMode, setReadingMode] = useState({ value: 'hor', index: 0 });
-  const [currentPageNum, setCurrentPageNum] = useState(0)
+  const [readingMode, setReadingMode] = useState({ value: 'hor-inv', index: 0 });
+  const [currentPageNum, setCurrentPageNum] = useState(5)
   
   
   
   const readerModeRef = useRef(null)
-  const pageHeights = useRef(Array(chapterUrls.length).fill(Dimensions.get('screen').height))
+  const pageHeights = useRef(Array(chapterUrls.length).fill(screenHeight))
 
 
   const fetchData = useCallback(async (url) => {
@@ -102,7 +101,7 @@ const MangaReaderScreen = () => {
     setCurrentPageNum(currentPage)
   }, [currentPageNum])
 
-  const onPageLoad = (pageNum, height) => {
+  const onReaderLoadPage = (pageNum, height) => {
     pageHeights.current[pageNum] = height
     console.log("pageNum:", pageNum, "height:", pageHeights.current[pageNum])
   }
@@ -158,16 +157,19 @@ const MangaReaderScreen = () => {
           <View className="h-full w-full">
             {readingMode.value === "hor" ? (
               <HorizontalReaderMode 
+            
                 currentPageNum={currentPageNum}
                 chapterUrls={chapterUrls} 
-                onPageChange={onPageChange} 
+              onReaderLoadPage={onReaderLoadPage}
+              onPageChange={onPageChange} 
                 onTap={handleShowModal} 
                 inverted={readingMode.value === "hor-inv"}
                 ref={readerModeRef}/>
             ) : readingMode.value === "hor-inv" ? (
               <HorizontalReaderMode 
                 currentPageNum={currentPageNum}
-                chapterUrls={chapterUrls} 
+              onReaderLoadPage={onReaderLoadPage}
+              chapterUrls={chapterUrls} 
                 onPageChange={onPageChange} 
                 onTap={handleShowModal} 
                 inverted
@@ -175,6 +177,8 @@ const MangaReaderScreen = () => {
             ) : readingMode.value === "ver" && (
               <VerticalReaderMode 
               initialPageNum={currentPageNum}
+              pageHeights={pageHeights}
+              onReaderLoadPage={onReaderLoadPage}
                 chapterUrls={chapterUrls}  
                 onTap={handleShowModal} 
                 onPageChange={onPageChange} 

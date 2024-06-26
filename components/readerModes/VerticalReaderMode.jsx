@@ -1,13 +1,12 @@
-import { FlatList, TouchableWithoutFeedback, View, Dimensions } from 'react-native';
+import { FlatList, TouchableWithoutFeedback, View, Dimensions, StatusBar } from 'react-native';
 import React, { useImperativeHandle, forwardRef, useCallback, useEffect, useRef } from 'react';
 import ChapterPage from '../ChapterPage';
 import { PixelRatio } from 'react-native';
 
 const ITEM_HEIGHT = 600; // Adjust this value based on your item height
 
-const VerticalReaderMode = forwardRef(({ chapterUrls, onTap, onPageChange, initialPageNum }, ref) => {
+const VerticalReaderMode = forwardRef(({ chapterUrls, onTap, onPageChange, initialPageNum, onReaderLoadPage, pageHeights, }, ref) => {
   const flatRef = useRef(null);
-  const pageHeights = useRef(Array(chapterUrls.length).fill(Dimensions.get('screen').height))
 
   useImperativeHandle(ref, () => ({
     onReadmodeChange: () => {
@@ -19,8 +18,7 @@ const VerticalReaderMode = forwardRef(({ chapterUrls, onTap, onPageChange, initi
   }));
 
   const onLoadPage = (pageNum, height) => {
-    pageHeights.current[pageNum] = height
-    console.log("pageNum:", pageNum, "height:", pageHeights.current[pageNum])
+    onReaderLoadPage(pageNum, height)
   }
 
   const calculateOffsetY = (pageNum) => {
@@ -48,7 +46,7 @@ const VerticalReaderMode = forwardRef(({ chapterUrls, onTap, onPageChange, initi
     if (flatRef.current && initialPageNum !== null && initialPageNum !== undefined) {
       // flatRef.current.scrollToIndex({ animated: true, index: 1 });
       console.log("offseY:", calculateOffsetY(initialPageNum))
-      flatRef.current.scrollToOffset({ animated: true, offset: ((calculateOffsetY(initialPageNum))/PixelRatio.get())  });
+      flatRef.current.scrollToOffset({ animated: true, offset: ((calculateOffsetY(initialPageNum) )/PixelRatio.get())  });
     }
   }, [pageHeights]);
 

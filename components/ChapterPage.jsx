@@ -53,8 +53,6 @@ const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoadPage }, ref) => {
       const pageSize = await getImageSize(imageUri);
       const aspectRatio = pageSize.width / pageSize.height;
 
-      console.log(pageSize.height)
-
       if(onLoadPage) {
         onLoadPage(pageNum, pageSize.height)
       }
