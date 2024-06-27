@@ -2,7 +2,7 @@ import { View, Text, ActivityIndicator, Alert, RefreshControl, Button } from 're
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 import shorthash from 'shorthash';
 import colors from '../constants/colors';
 import ChapterListItem from './ChapterListItem';
@@ -17,18 +17,36 @@ const ChapterList = ({ mangaLink, headerComponent }) => {
 
   const fetchData = async () => {
     try {
-      const cacheKey = shorthash.unique(mangaLink + "[chapterList]");
-      const cachedData = await AsyncStorage.getItem(cacheKey);
-      if (cachedData !== null) {
-        setChaptersData(JSON.parse(cachedData));
-        setIsLoading(false);
-        return;
+      const parentKey = shorthash.unique(mangaLink)
+      const cachedChapterListPath = `${FileSystem.cacheDirectory}${parentKey}`
+      const cachedChapterListFile = "chapterList.json"
+      let chapterListData;
+
+      console.log(parentKey)
+
+      try {
+        const dirInfo = await FileSystem.getInfoAsync(cachedChapterListPath);
+        if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(cachedChapterListPath, { intermediates: true });
+        }
+      } catch (error) {
+          console.error(`Error creating directory ${cachedChapterListPath}:`, error);
+          throw error;
       }
 
-      setIsLoading(true);
-      const chData = await getChapterList(mangaLink);
-      await AsyncStorage.setItem(cacheKey, JSON.stringify(chData));
-      setChaptersData(chData);
+      const fileInfo = await FileSystem.getInfoAsync(cachedChapterListPath + cachedChapterListFile);
+
+      if (fileInfo.exists) {
+        const cachedChapterListData = await FileSystem.readAsStringAsync(cachedChapterListPath + cachedChapterListFile);
+        chapterListData = JSON.parse(cachedChapterListData);
+        } else {
+        const requestedPageData = await getChapterList(mangaLink);
+        chapterListData = requestedPageData;
+        await FileSystem.writeAsStringAsync(cachedChapterListPath + cachedChapterListFile, JSON.stringify(chapterListData));
+      }
+
+      setChaptersData(chapterListData);
+
     } catch (error) {
       setChaptersData([]);
       Alert.alert("Error", error.message);
@@ -45,9 +63,8 @@ const ChapterList = ({ mangaLink, headerComponent }) => {
     router.push({
       pathname: "screens/mangaReader",
       params: {
-        chId: item.chapId,
-        chapterUrl: item.chapterUrl,
-        chTitle: item.chTitle,
+        currentChapterData: JSON.stringify(item),
+        mangaLink
       }
     });
   }, [chaptersData]);

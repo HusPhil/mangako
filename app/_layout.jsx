@@ -3,6 +3,8 @@ import React, {useEffect} from 'react'
 import { Stack, SplashScreen } from 'expo-router'
 import { useFonts } from 'expo-font'
 import MangaInfoScreen from '../app/screens/mangaInfo'
+import * as NavigationBar from 'expo-navigation-bar';
+
 
 SplashScreen.preventAutoHideAsync()
 
@@ -21,7 +23,7 @@ const RootLayout = () => {
 
   useEffect(() => {
     if(error) throw error
-
+    NavigationBar.setBehaviorAsync('overlay-swipe')
     if(fontLoaded) SplashScreen.hideAsync()
   }, [fontLoaded, error])
 

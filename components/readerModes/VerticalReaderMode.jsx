@@ -5,7 +5,7 @@ import { PixelRatio } from 'react-native';
 
 const ITEM_HEIGHT = 600; // Adjust this value based on your item height
 
-const VerticalReaderMode = forwardRef(({ chapterUrls, onTap, onPageChange, initialPageNum, onReaderLoadPage, pageHeights, }, ref) => {
+const VerticalReaderMode = forwardRef(({ chapterUrls, onTap, initialPageNum,  }, ref) => {
   const flatRef = useRef(null);
 
   useImperativeHandle(ref, () => ({
@@ -17,26 +17,15 @@ const VerticalReaderMode = forwardRef(({ chapterUrls, onTap, onPageChange, initi
     }
   }));
 
-  const onLoadPage = (pageNum, height) => {
-    onReaderLoadPage(pageNum, height)
-  }
 
-  const calculateOffsetY = (pageNum) => {
-    let result = 0
-    pageHeights.current.slice(0, pageNum).forEach((height) => {
-      result += height
-    })
-    // console.log(result)
-    return result
-  }
+
 
   const onViewableItemsChanged = useCallback(({ viewableItems }) => {
-    console.log(pageHeights.current)
+    console.log()
     if (viewableItems.length > 0) {
       const currentViewableIndex = viewableItems[0].index;
-      onPageChange(currentViewableIndex);
     }
-  }, [onPageChange]);
+  }, []);
 
   const viewabilityConfig = {
     itemVisiblePercentThreshold: 50, // percentage of item that must be visible to be considered viewable
@@ -44,16 +33,16 @@ const VerticalReaderMode = forwardRef(({ chapterUrls, onTap, onPageChange, initi
 
   useEffect(() => {
     if (flatRef.current && initialPageNum !== null && initialPageNum !== undefined) {
-      // flatRef.current.scrollToIndex({ animated: true, index: 1 });
-      console.log("offseY:", calculateOffsetY(initialPageNum))
-      flatRef.current.scrollToOffset({ animated: true, offset: ((calculateOffsetY(initialPageNum) )/PixelRatio.get())  });
+      flatRef.current.scrollToIndex({ animated: true, index: initialPageNum });
+      // console.log("offseY:", calculateOffsetY(initialPageNum))
+      // flatRef.current.scrollToOffset({ animated: true, offset: ((calculateOffsetY(initialPageNum) )/PixelRatio.get())  });
     }
-  }, [pageHeights]);
+  }, []);
 
   const renderItem = useCallback(({ item, index }) => (
     <TouchableWithoutFeedback onPress={() => onTap(index)}>
       <View>
-        <ChapterPage pageUrl={item} pageNum={index} onLoadPage={onLoadPage}/>
+        <ChapterPage pageUrl={item} pageNum={index}/>
       </View>
     </TouchableWithoutFeedback>
   ), [chapterUrls, onTap]);
@@ -79,9 +68,9 @@ const VerticalReaderMode = forwardRef(({ chapterUrls, onTap, onPageChange, initi
       data={chapterUrls}
       renderItem={renderItem}
       keyExtractor={(item) => item}
-      viewabilityConfig={viewabilityConfig}
+      // viewabilityConfig={viewabilityConfig}
       onViewableItemsChanged={onViewableItemsChanged}
-      getItemLayout={getItemLayout}
+      // getItemLayout={getItemLayout}
       onScrollToIndexFailed={onScrollToIndexFailed}
     />
   );
