@@ -1,12 +1,18 @@
 import { FlatList, TouchableWithoutFeedback, View, Dimensions, StatusBar } from 'react-native';
-import React, { useImperativeHandle, forwardRef, useCallback, useEffect, useRef } from 'react';
+import React, { useImperativeHandle, forwardRef, useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import ChapterPage from '../ChapterPage';
 import { PixelRatio } from 'react-native';
 
 const ITEM_HEIGHT = 600; // Adjust this value based on your item height
 
-const VerticalReaderMode = forwardRef(({ chapterUrls, onTap, initialPageNum,  }, ref) => {
+const VerticalReaderMode = forwardRef(({ chapterUrls, onTap, currentPageNum, onPageChange  }, ref) => {
+  const [isLoading, setiIsLoading] = useState(true)
+  const thisCurrentPageNum = useRef(currentPageNum)
+  
   const flatRef = useRef(null);
+  const isInteracted = useRef(false)
+  const initialNum = useRef(chapterUrls.length-1 -5)
+  
 
   useImperativeHandle(ref, () => ({
     onReadmodeChange: () => {
@@ -17,14 +23,14 @@ const VerticalReaderMode = forwardRef(({ chapterUrls, onTap, initialPageNum,  },
     }
   }));
 
-
-
-
   const onViewableItemsChanged = useCallback(({ viewableItems }) => {
-    console.log()
+    let currentViewableIndex;
     if (viewableItems.length > 0) {
-      const currentViewableIndex = viewableItems[0].index;
+      currentViewableIndex = viewableItems[0].index;
+      onPageChange(currentViewableIndex)
     }
+    console.log("kineme:", currentViewableIndex,  initialNum.current)
+    setiIsLoading(currentViewableIndex !== initialNum.current && !isInteracted.current)
   }, []);
 
   const viewabilityConfig = {
@@ -32,12 +38,10 @@ const VerticalReaderMode = forwardRef(({ chapterUrls, onTap, initialPageNum,  },
   };
 
   useEffect(() => {
-    if (flatRef.current && initialPageNum !== null && initialPageNum !== undefined) {
-      flatRef.current.scrollToIndex({ animated: true, index: initialPageNum });
-      // console.log("offseY:", calculateOffsetY(initialPageNum))
-      // flatRef.current.scrollToOffset({ animated: true, offset: ((calculateOffsetY(initialPageNum) )/PixelRatio.get())  });
+    if (flatRef.current && currentPageNum !== null && currentPageNum !== undefined && !isInteracted.current) {
+      flatRef.current.scrollToIndex({ animated: true, index: initialNum.current });
     }
-  }, []);
+  }, [onPageChange]);
 
   const renderItem = useCallback(({ item, index }) => (
     <TouchableWithoutFeedback onPress={() => onTap(index)}>
@@ -60,18 +64,22 @@ const VerticalReaderMode = forwardRef(({ chapterUrls, onTap, initialPageNum,  },
     });
   };
 
+  const memoizedData = useMemo(() => chapterUrls, [chapterUrls]);
+
+
   return (
     <FlatList
       ref={flatRef}
       disableIntervalMomentum
       disableVirtualization
-      data={chapterUrls}
+      data={memoizedData}
+      initialNumToRender={initialNum.current + 1}
       renderItem={renderItem}
       keyExtractor={(item) => item}
-      // viewabilityConfig={viewabilityConfig}
       onViewableItemsChanged={onViewableItemsChanged}
-      // getItemLayout={getItemLayout}
       onScrollToIndexFailed={onScrollToIndexFailed}
+      onTouchMove={()=>{isInteracted.current = true}}
+      contentContainerStyle={isLoading ? {opacity: 0} : {opacity: 1}}
     />
   );
 });

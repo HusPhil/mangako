@@ -4,7 +4,7 @@ import {
   TouchableWithoutFeedback, 
   StatusBar, ScrollView 
 } from 'react-native';
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef,  } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import * as FileSystem from 'expo-file-system';
 import ModalPopup from '../../components/ModalPopup';
@@ -24,11 +24,13 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const MangaReaderScreen = () => {
   const { currentChapterData, mangaLink } = useLocalSearchParams();
+  
+  const [currentPageNum, setCurrentPageNum] = useState(0)
   const [isLoading, setIsLoading] = useState(true);
   const [chapterUrls, setChapterUrls] = useState([]);
   const [errorData, setErrorData] = useState(null);
   
-  const currentChaper = useRef(JSON.parse(currentChapterData).chapterUrl)
+  const currentChapter = useRef(JSON.parse(currentChapterData).chapterUrl)
 
   const AsyncEffect = async () => {
     setIsLoading(true);
@@ -36,8 +38,8 @@ const MangaReaderScreen = () => {
     await NavigationBar.setVisibilityAsync('hidden');
     await NavigationBar.setBehaviorAsync('overlay-swipe')
 
-    console.log("current chapter:", currentChaper.current)
-    const fetchedChapterPageUrls = await fetchData(mangaLink, currentChaper.current)
+    console.log("current chapter:", currentChapter.current)
+    const fetchedChapterPageUrls = await fetchData(mangaLink, currentChapter.current)
     if(!fetchedChapterPageUrls.error) {
       setChapterUrls(fetchedChapterPageUrls.data)
     }
@@ -48,7 +50,7 @@ const MangaReaderScreen = () => {
 
   const navigateToChapter = async (next) => {
     setIsLoading(true)
-    const nextChapterPageUrls  = await chapterNavigator(mangaLink, currentChaper.current, next)
+    const nextChapterPageUrls  = await chapterNavigator(mangaLink, currentChapter.current, next)
     
     if(nextChapterPageUrls.error) {
       
@@ -57,13 +59,17 @@ const MangaReaderScreen = () => {
       return
     }
     setChapterUrls(nextChapterPageUrls.data)
-    currentChaper.current = nextChapterPageUrls.url
+    currentChapter.current = nextChapterPageUrls.url
     setIsLoading(false)
   }
 
   useEffect(() => {
     AsyncEffect()
-  }, [currentChaper]);
+  }, [currentChapter]);
+
+  useEffect(() => {
+    console.log(currentPageNum)
+  }, [currentPageNum])
 
   return (
 
@@ -77,20 +83,24 @@ const MangaReaderScreen = () => {
             <Text className="text-white">Error: {errorData.message}</Text>
           </View>
         ) : (
-        // <ScrollView>
-          <View className="h-full w-full justify-center items-center">
+        <View>
+          <View className="h-full w-full justify-center items-center relative">
             <VerticalReaderMode 
               chapterUrls={chapterUrls}
-              onPageChange={()=>{}}
               onReaderLoadPage={()=>{}}
-              initialPageNum={6}
+              currentPageNum={2} 
+              onPageChange={(index) => {setCurrentPageNum(index)}}
             />
                   
             {/* <Button title='Prev' onPress={async () => {await navigateToChapter(false)}}/>
           <Button title='Next' onPress={async() => {await navigateToChapter(true)}}/> */}
           </View>
+
+          <View className="absolute bottom-0 w-full items-center">
+            <Text className="text-white font-pregular">{currentPageNum+1}/{chapterUrls.length-1}</Text>
+          </View>
           
-          // </ScrollView>
+        </View>
         )}
     </View>
 

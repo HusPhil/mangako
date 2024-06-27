@@ -82,6 +82,8 @@ export const chapterNavigator = async (mangaLink, currentChapterUrl, next) => {
 
 
 
+
+
 // -------------------------------- UTILITY FUNCTIONS ---------------------------------------------
 const ensureDirectoryExists = async (directory) => {
     try {
