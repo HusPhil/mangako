@@ -54,6 +54,7 @@ const HorizontalReaderMode = forwardRef(({ chapterUrls, inverted, onTap, onPageC
     <View className="h-full w-full">
       <Gallery
         ref={galleryRef}
+        initialIndex={currentPageNum}
         data={inverted ? [...chapterUrls].reverse() : chapterUrls}
         keyExtractor={keyExtractor}
         renderItem={renderItem}

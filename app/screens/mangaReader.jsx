@@ -26,7 +26,7 @@ const MangaReaderScreen = () => {
   const [chapterUrls, setChapterUrls] = useState([]);
   const [errorData, setErrorData] = useState(null);
   const [showModal, setShowModal] = useState(false)
-  const [readingMode, setReadingMode] = useState({value: 'ver', index: 2})
+  const [readingMode, setReadingMode] = useState(backend.readerModeOptions['0'])
   
   const currentChapter = useRef(JSON.parse(currentChapterData).chapterUrl)
   const readerModeRef = useRef(null)
@@ -38,9 +38,8 @@ const MangaReaderScreen = () => {
     await NavigationBar.setBehaviorAsync('overlay-swipe')
     
     const lastSavePage = await backend.readMangaConfigData(mangaLink, currentChapter.current)
-    setCurrentPageNum(lastSavePage.currentPage)
+    setCurrentPageNum(lastSavePage ? lastSavePage.currentPage : 0)
     
-    console.log("current chapter:", currentChapter.current)
     const fetchedChapterPageUrls = await backend.fetchData(mangaLink, currentChapter.current)
     if(!fetchedChapterPageUrls.error) {
       setChapterUrls(fetchedChapterPageUrls.data)
@@ -93,32 +92,34 @@ const MangaReaderScreen = () => {
         ) : (
         <View>
           <ModalPopup visible={showModal} handleClose={handleShowModal}>
-        <View className="justify-start w-full">
-          <Text numberOfLines={1} className="text-white font-pregular text-base text-center p-2 py-3">{JSON.parse(currentChapterData).chTitle}</Text>
-        </View>
-        <HorizontalRule />
-        <View className="w-full">
-          <DropDownList
-            title={"Reading mode:"}
-            otherContainerStyles={'rounded-md p-2 px-4  z-50 '}
-            details={"hello world"}
-            listItems={backend.readerModeOptions}
-            onValueChange={(data) => {
-              setReadingMode(data);
-            }}
-            selectedIndex={readingMode.index}
-          />
-          <Button title='Retry' onPress={async ()=>{
-            readerModeRef.current.retryFetch()
-            console.log(await backend.readMangaConfigData(mangaLink, currentChapter.current)) // prints {"_h": 0, "_i": 0, "_j": null, "_k": null}
-          }}/>
-          <Button title='Save' onPress={()=>{
-            // backend.saveMangaConfigData(mangaLink, currentChapter.current, {currentPage: 4, finished: true, extraData: "another data"})
-            backend.saveMangaConfigData(mangaLink, currentChapter.current, {finished: false,})
-            // backend.deleteConfigData(mangaLink, currentChapter.current)
-          }}/>
-        </View>
-      </ModalPopup>
+            <View className="justify-start w-full">
+              <Text numberOfLines={1} className="text-white font-pregular text-base text-center p-2 py-3">{JSON.parse(currentChapterData).chTitle}</Text>
+            </View>
+            <HorizontalRule />
+            <View className="w-full">
+              <DropDownList
+                title={"Reading mode:"}
+                otherContainerStyles={'rounded-md p-2 px-4  z-50 '}
+                details={"hello world"}
+                listItems={backend.readerModeOptions}
+                onValueChange={(data) => {
+                  setReadingMode(data);
+                }}
+                selectedIndex={readingMode.index}
+              />
+              <Button title='Retry' onPress={async ()=>{
+                readerModeRef.current.retryFetch()
+                console.log(await backend.readMangaConfigData(mangaLink, currentChapter.current)) // prints {"_h": 0, "_i": 0, "_j": null, "_k": null}
+              }}/>
+              <Button title='Save' onPress={()=>{
+                // backend.saveMangaConfigData(mangaLink, currentChapter.current, {currentPage: 4, finished: true, extraData: "another data"})
+                backend.saveMangaConfigData(mangaLink, currentChapter.current, {finished: false,})
+              }}/>
+              <Button title='Delete' onPress={()=>{
+                backend.deleteConfigData(mangaLink, currentChapter.current)
+              }}/>
+            </View>
+          </ModalPopup>
           <View className="h-full w-full justify-center items-center relative">
             
             {readingMode.value === "hor" ? (
@@ -132,7 +133,6 @@ const MangaReaderScreen = () => {
                   setCurrentPageNum(index)
                 }}
                 onTap={handleShowModal} 
-                inverted={readingMode.value === "hor-inv"}
                 />
             ) : readingMode.value === "hor-inv" ? (
               <HorizontalReaderMode 
@@ -142,22 +142,22 @@ const MangaReaderScreen = () => {
                 onReaderLoadPage={()=>{}}
                 onPageChange={(index) => {
                   backend.saveMangaConfigData(mangaLink, currentChapter.current, {currentPage: index})
-                  setCurrentPageNum(index)}}
+                  setCurrentPageNum(index)
+                }}
                 onTap={handleShowModal} 
                 inverted
                 />
             ) : readingMode.value === "ver" && (
               <VerticalReaderMode 
-              initialNumToRender={currentPageNum+2}
                 ref={readerModeRef}
                 chapterUrls={chapterUrls}
                 currentManga={{manga: mangaLink, chapter: currentChapter.current}}
-              onReaderLoadPage={()=>{}}
-              currentPageNum={2} 
-              onPageChange={(index) => {
-                backend.saveMangaConfigData(mangaLink, currentChapter.current, {currentPage: index})
-                setCurrentPageNum(index)}}
-              onTap={handleShowModal}
+                onReaderLoadPage={()=>{}}
+                onPageChange={(index) => {
+                  backend.saveMangaConfigData(mangaLink, currentChapter.current, {currentPage: index})
+                  setCurrentPageNum(index)
+                }}
+                onTap={handleShowModal}
             />
             )}
                   
