@@ -26,7 +26,7 @@ const MangaReaderScreen = () => {
   const [chapterUrls, setChapterUrls] = useState([]);
   const [errorData, setErrorData] = useState(null);
   const [showModal, setShowModal] = useState(false)
-  const [readingMode, setReadingMode] = useState(backend.readerModeOptions['0'])
+  const [readingMode, setReadingMode] = useState(backend.readerModeOptions['2'])
   
   const currentChapter = useRef(JSON.parse(currentChapterData).chapterUrl)
   const readerModeRef = useRef(null)
@@ -105,7 +105,7 @@ const MangaReaderScreen = () => {
                 onValueChange={(data) => {
                   setReadingMode(data);
                 }}
-                selectedIndex={readingMode.index}
+                selectedIndex={backend.readerModeOptions.indexOf(readingMode)}
               />
               <Button title='Retry' onPress={async ()=>{
                 readerModeRef.current.retryFetch()
@@ -157,6 +157,7 @@ const MangaReaderScreen = () => {
                   backend.saveMangaConfigData(mangaLink, currentChapter.current, {currentPage: index})
                   setCurrentPageNum(index)
                 }}
+                initialScrollIndex={currentPageNum}
                 onTap={handleShowModal}
             />
             )}
