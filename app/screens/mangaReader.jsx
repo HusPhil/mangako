@@ -14,11 +14,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 import HorizontalRule from '../../components/HorizontalRule';
 import DropDownList from '../../components/DropDownList';
 
-
-import {
-  fetchData,
-  chapterNavigator,
-} from "./_mangaReader"
+import * as backend from "./_mangaReader"
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -29,17 +25,23 @@ const MangaReaderScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [chapterUrls, setChapterUrls] = useState([]);
   const [errorData, setErrorData] = useState(null);
+  const [showModal, setShowModal] = useState(false)
+  const [readingMode, setReadingMode] = useState({value: 'ver', index: 2})
   
   const currentChapter = useRef(JSON.parse(currentChapterData).chapterUrl)
+  const readerModeRef = useRef(null)
 
   const AsyncEffect = async () => {
     setIsLoading(true);
 
     await NavigationBar.setVisibilityAsync('hidden');
     await NavigationBar.setBehaviorAsync('overlay-swipe')
-
+    
+    const lastSavePage = await backend.readMangaConfigData(mangaLink, currentChapter.current)
+    setCurrentPageNum(lastSavePage.currentPage)
+    
     console.log("current chapter:", currentChapter.current)
-    const fetchedChapterPageUrls = await fetchData(mangaLink, currentChapter.current)
+    const fetchedChapterPageUrls = await backend.fetchData(mangaLink, currentChapter.current)
     if(!fetchedChapterPageUrls.error) {
       setChapterUrls(fetchedChapterPageUrls.data)
     }
@@ -50,7 +52,7 @@ const MangaReaderScreen = () => {
 
   const navigateToChapter = async (next) => {
     setIsLoading(true)
-    const nextChapterPageUrls  = await chapterNavigator(mangaLink, currentChapter.current, next)
+    const nextChapterPageUrls  = await backend.chapterNavigator(mangaLink, currentChapter.current, next)
     
     if(nextChapterPageUrls.error) {
       
@@ -63,13 +65,19 @@ const MangaReaderScreen = () => {
     setIsLoading(false)
   }
 
+  const handleShowModal = useCallback(() => {
+    NavigationBar.setVisibilityAsync('hidden');
+    if (!showModal) {
+      StatusBar.setBackgroundColor(colors.secondary.DEFAULT);
+    } else {
+      StatusBar.setBackgroundColor('transparent');
+    }
+    setShowModal(!showModal);
+  }, [showModal]);
+
   useEffect(() => {
     AsyncEffect()
   }, [currentChapter]);
-
-  useEffect(() => {
-    console.log(currentPageNum)
-  }, [currentPageNum])
 
   return (
 
@@ -84,20 +92,81 @@ const MangaReaderScreen = () => {
           </View>
         ) : (
         <View>
+          <ModalPopup visible={showModal} handleClose={handleShowModal}>
+        <View className="justify-start w-full">
+          <Text numberOfLines={1} className="text-white font-pregular text-base text-center p-2 py-3">{JSON.parse(currentChapterData).chTitle}</Text>
+        </View>
+        <HorizontalRule />
+        <View className="w-full">
+          <DropDownList
+            title={"Reading mode:"}
+            otherContainerStyles={'rounded-md p-2 px-4  z-50 '}
+            details={"hello world"}
+            listItems={backend.readerModeOptions}
+            onValueChange={(data) => {
+              setReadingMode(data);
+            }}
+            selectedIndex={readingMode.index}
+          />
+          <Button title='Retry' onPress={async ()=>{
+            readerModeRef.current.retryFetch()
+            console.log(await backend.readMangaConfigData(mangaLink, currentChapter.current)) // prints {"_h": 0, "_i": 0, "_j": null, "_k": null}
+          }}/>
+          <Button title='Save' onPress={()=>{
+            // backend.saveMangaConfigData(mangaLink, currentChapter.current, {currentPage: 4, finished: true, extraData: "another data"})
+            backend.saveMangaConfigData(mangaLink, currentChapter.current, {finished: false,})
+            // backend.deleteConfigData(mangaLink, currentChapter.current)
+          }}/>
+        </View>
+      </ModalPopup>
           <View className="h-full w-full justify-center items-center relative">
-            <VerticalReaderMode 
-              chapterUrls={chapterUrls}
+            
+            {readingMode.value === "hor" ? (
+              <HorizontalReaderMode 
+                ref={readerModeRef}
+                currentPageNum={currentPageNum}
+                chapterUrls={chapterUrls} 
+                onReaderLoadPage={()=>{}}
+                onPageChange={(index) => {
+                  backend.saveMangaConfigData(mangaLink, currentChapter.current, {currentPage: index})
+                  setCurrentPageNum(index)
+                }}
+                onTap={handleShowModal} 
+                inverted={readingMode.value === "hor-inv"}
+                />
+            ) : readingMode.value === "hor-inv" ? (
+              <HorizontalReaderMode 
+                ref={readerModeRef}
+                currentPageNum={currentPageNum}
+                chapterUrls={chapterUrls}
+                onReaderLoadPage={()=>{}}
+                onPageChange={(index) => {
+                  backend.saveMangaConfigData(mangaLink, currentChapter.current, {currentPage: index})
+                  setCurrentPageNum(index)}}
+                onTap={handleShowModal} 
+                inverted
+                />
+            ) : readingMode.value === "ver" && (
+              <VerticalReaderMode 
+              initialNumToRender={currentPageNum+2}
+                ref={readerModeRef}
+                chapterUrls={chapterUrls}
+                currentManga={{manga: mangaLink, chapter: currentChapter.current}}
               onReaderLoadPage={()=>{}}
               currentPageNum={2} 
-              onPageChange={(index) => {setCurrentPageNum(index)}}
+              onPageChange={(index) => {
+                backend.saveMangaConfigData(mangaLink, currentChapter.current, {currentPage: index})
+                setCurrentPageNum(index)}}
+              onTap={handleShowModal}
             />
+            )}
                   
             {/* <Button title='Prev' onPress={async () => {await navigateToChapter(false)}}/>
           <Button title='Next' onPress={async() => {await navigateToChapter(true)}}/> */}
           </View>
 
           <View className="absolute bottom-0 w-full items-center">
-            <Text className="text-white font-pregular">{currentPageNum+1}/{chapterUrls.length-1}</Text>
+            <Text className="text-white font-pregular">{currentPageNum+1}/{chapterUrls.length}</Text>
           </View>
           
         </View>

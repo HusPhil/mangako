@@ -22,14 +22,11 @@ const HorizontalReaderMode = forwardRef(({ chapterUrls, inverted, onTap, onPageC
     }
   }));
 
-  const onLoadPage = (pageNum, height) => {
-    onReaderLoadPage(pageNum, height)
-  }
+
 
   useEffect(() => {
 
     setInvertedMode(inverted);
-    console.log("currentPageNum:", currentPageNum, "::", "invertedNum:" , (chapterUrls.length - 1) - currentPageNum)
     galleryRef.current.setIndex(inverted ? (chapterUrls.length - 1) - currentPageNum : currentPageNum )
 
   }, [inverted]);
@@ -42,7 +39,7 @@ const HorizontalReaderMode = forwardRef(({ chapterUrls, inverted, onTap, onPageC
   const renderItem = useCallback((item, index) => {
     return (
       <View>
-        <ChapterPage ref={(page) => { pagesRef.current[index] = page; }} pageUrl={item} pageNum={index} onLoadPage={onLoadPage}/>
+        <ChapterPage ref={(page) => { pagesRef.current[index] = page; }} pageUrl={item} pageNum={index}/>
       </View>
     );
   }, [inverted]);

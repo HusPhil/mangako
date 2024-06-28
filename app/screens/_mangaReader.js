@@ -21,19 +21,19 @@ export const readerModeOptions = [
     },
   ]
 
+
 // --------------------------------------- VARIABLES ONLY ---------------------------------------*/}
 
   
 
   
-export const fetchData = async (mangaLink, url) => {
+export const fetchData = async (mangaUrl, url) => {
     try {
-        const parentKey = shorthash.unique(mangaLink)
+        const parentKey = shorthash.unique(mangaUrl)
         const cacheKey = shorthash.unique(url);
         const cachedChapterPageUris = `${FileSystem.cacheDirectory}${parentKey}/${cacheKey}/chapterPages`;
         const cachedFile = "/data.json"
         let pageUrls = [];
-        console.log(cachedChapterPageUris)
 
         await ensureDirectoryExists(cachedChapterPageUris)
         const fileInfo = await FileSystem.getInfoAsync(cachedChapterPageUris + cachedFile);
@@ -55,11 +55,11 @@ export const fetchData = async (mangaLink, url) => {
     }
 };
 
-export const chapterNavigator = async (mangaLink, currentChapterUrl, next) => {
+export const chapterNavigator = async (mangaUrl, currentChapterUrl, next) => {
     if (!currentChapterUrl) return; 
     
     try {
-        const cachedChapterList = await getCachedChapterList(mangaLink);
+        const cachedChapterList = await getCachedChapterList(mangaUrl);
         if (cachedChapterList.error) {
             return { data: [], error: cachedChapterList.error };
         }
@@ -72,7 +72,7 @@ export const chapterNavigator = async (mangaLink, currentChapterUrl, next) => {
             return { data: [], error: 'Target chapter not found' };
         }
 
-        const fetchedNextData = await fetchData(mangaLink, targetUrl);
+        const fetchedNextData = await fetchData(mangaUrl, targetUrl);
         return { ...fetchedNextData, url: targetUrl };
 
     } catch (error) {
@@ -80,15 +80,80 @@ export const chapterNavigator = async (mangaLink, currentChapterUrl, next) => {
     }
 }
 
+export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject) => {
+  try {
+    const parentKey = shorthash.unique(mangaUrl);
+    const chapterKey = shorthash.unique(chapterUrl);
+    const cachedConfigFilePath = `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`;
+    const cachedFile = "/config.json";
 
+    // Read the existing config data
+    const existingConfig = await readMangaConfigData(mangaUrl, chapterUrl);
 
+    // Merge existing config with new config object
+    const configToSave = { ...existingConfig, ...configObject };
 
+    // Ensure directory exists
+    await ensureDirectoryExists(cachedConfigFilePath);
+
+    // Write the merged config data to the file
+    await FileSystem.writeAsStringAsync(cachedConfigFilePath + cachedFile, JSON.stringify(configToSave));
+
+    return { error: null };
+
+  } catch (error) {
+    console.error("Fetch data error:", error);
+    return { error };
+  }
+};
+
+export const readMangaConfigData = async (mangaUrl, chapterUrl) => {
+  try {
+    const parentKey = shorthash.unique(mangaUrl);
+    const chapterKey = shorthash.unique(chapterUrl);
+    const cachedConfigFilePath = `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`;
+    const cachedFile = "/config.json";
+    let cachedConfig = "";
+
+    await ensureDirectoryExists(cachedConfigFilePath);
+    const fileInfo = await FileSystem.getInfoAsync(cachedConfigFilePath + cachedFile);
+
+    if (fileInfo.exists) {
+      cachedConfig = await FileSystem.readAsStringAsync(cachedConfigFilePath + cachedFile);
+    } else {
+      // Handle the case where the file does not exist
+      return null;  // or any default value you wish to return
+    }
+
+    try {
+      return JSON.parse(cachedConfig);
+    } catch (jsonError) {
+      console.error("Error parsing JSON:", jsonError);
+      return { error: jsonError };
+    }
+
+  } catch (error) {
+    console.error("Fetch data error:", error);
+    return { error };
+  }
+};
+
+export const deleteConfigData = async (mangaUrl, chapterUrl) => {
+  try {
+    const parentKey = shorthash.unique(mangaUrl);
+    const chapterKey = shorthash.unique(chapterUrl);
+    const cachedConfigFilePath = `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`;
+    const cachedFile = "/config.json";
+    await FileSystem.deleteAsync(cachedConfigFilePath + cachedFile)
+  } catch (error) {
+    
+  }
+}
 
 // -------------------------------- UTILITY FUNCTIONS ---------------------------------------------
 const ensureDirectoryExists = async (directory) => {
     try {
         const dirInfo = await FileSystem.getInfoAsync(directory);
-        console.log("make dir:", dirInfo)
         if (!dirInfo.exists) {
         await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
         }
@@ -98,9 +163,9 @@ const ensureDirectoryExists = async (directory) => {
     }
 };
 
-const getCachedChapterList = async (mangaLink) => {
+const getCachedChapterList = async (mangaUrl) => {
     try {
-          const parentKey = shorthash.unique(mangaLink)
+          const parentKey = shorthash.unique(mangaUrl)
           const cachedChapterListPath = `${FileSystem.cacheDirectory}${parentKey}`
           const cachedChapterListFile = "chapterList.json"
           let chapterListData;
@@ -112,7 +177,7 @@ const getCachedChapterList = async (mangaLink) => {
             const cachedChapterListData = await FileSystem.readAsStringAsync(cachedChapterListPath + cachedChapterListFile);
             chapterListData = JSON.parse(cachedChapterListData);
             } else {
-            const requestedPageData = await getChapterList(mangaLink);
+            const requestedPageData = await getChapterList(mangaUrl);
             chapterListData = requestedPageData;
             await FileSystem.writeAsStringAsync(cachedChapterListPath + cachedChapterListFile, JSON.stringify(chapterListData));
           }
