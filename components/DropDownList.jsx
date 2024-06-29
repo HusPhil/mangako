@@ -53,10 +53,7 @@ import {
                     onPress={() => {
                         setSelectedItemIndex(index)
                         setOpened(!opened)
-                        onValueChange({
-                            value: item.value,
-                            index: index
-                        })
+                        onValueChange(item)
                     }}
                 >
                     <Text numberOfLines={1} className="z-50 font-pregular">{item.label}</Text>
