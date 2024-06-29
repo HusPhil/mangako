@@ -1,7 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 import shorthash from 'shorthash';
 import { getChapterImageUrls } from '../../utils/MangakakalotClient';
-import { prev } from 'cheerio/lib/api/traversing';
 
 
 // --------------------------------------- VARIABLES ONLY ---------------------------------------*/}
@@ -138,17 +137,68 @@ export const readMangaConfigData = async (mangaUrl, chapterUrl) => {
   }
 };
 
-export const deleteConfigData = async (mangaUrl, chapterUrl) => {
+export const deleteConfigData = async (mangaUrl, chapterUrl, type) => {
   try {
     const parentKey = shorthash.unique(mangaUrl);
     const chapterKey = shorthash.unique(chapterUrl);
-    const cachedConfigFilePath = `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`;
-    const cachedFile = "/config.json";
+    const cachedConfigFilePath = `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/${type}`;
+    const cachedFile = `/${type}.json`;
     await FileSystem.deleteAsync(cachedConfigFilePath + cachedFile)
   } catch (error) {
     
   }
 }
+
+export const saveItemLayout = async (mangaUrl, chapterUrl, pageUrls, layoutArr) => {
+  const parentKey = shorthash.unique(mangaUrl);
+  const chapterKey = shorthash.unique(chapterUrl);
+  const cachedConfigFilePath = `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/layout`;
+  const cachedFile = "/layout.json";
+  let heightLayout = Array(pageUrls.length).fill(0);
+
+  console.log("layoutArr:",layoutArr)
+
+  try {
+    await ensureDirectoryExists(cachedConfigFilePath);
+    const fileInfo = await FileSystem.getInfoAsync(cachedConfigFilePath + cachedFile);
+
+    await FileSystem.writeAsStringAsync(cachedConfigFilePath + cachedFile, JSON.stringify(layoutArr));
+
+    return { error: null };
+  } catch (error) {
+    console.error('Error saving item layout:', error);
+    return { error };
+  }
+};
+
+export const readItemLayout = async (mangaUrl, chapterUrl) => {
+  const parentKey = shorthash.unique(mangaUrl);
+  const chapterKey = shorthash.unique(chapterUrl);
+  const cachedConfigFilePath = `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/layout`;
+  const cachedFile = "/layout.json";
+
+  await ensureDirectoryExists(cachedConfigFilePath);
+  const fileInfo = await FileSystem.getInfoAsync(cachedConfigFilePath + cachedFile);
+
+  if (fileInfo.exists) {
+    return JSON.parse(await FileSystem.readAsStringAsync(cachedConfigFilePath + cachedFile));
+  } 
+  
+  return null
+}
+
+export const scrollToOffsetByIndex = (index, layoutArr) => {
+  let offset = 0;
+
+  if(index === 0) return index
+  
+  layoutArr.slice(0, index).forEach((item) => {
+    offset += item;
+  });
+
+  return offset;
+};
+
 
 // -------------------------------- UTILITY FUNCTIONS ---------------------------------------------
 const ensureDirectoryExists = async (directory) => {
@@ -191,3 +241,9 @@ const getCachedChapterList = async (mangaUrl) => {
       }
 
 }
+
+const getCacheFilePath = (mangaUrl, chapterUrl, type) => {
+  const parentKey = shorthash.unique(mangaUrl);
+  const chapterKey = shorthash.unique(chapterUrl);
+  return `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/${type}.json`;
+};

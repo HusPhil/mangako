@@ -88,7 +88,7 @@ const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, initialScrollIndex }
         pageImgSource && (
           <View className="" onLayout={()=>{
             if(initialScrollIndex === pageNum && pageNum !== 0){
-              onLoad(pageNum)
+              onLoad(pageNum, pageImgSource.height)
             }
           }}>
             <ExpoImage imgSrc={pageImgSource.uri} imgWidth={screenWidth} imgHeight={pageImgSource.height} imgAR={pageImgSource.aspectRatio}
