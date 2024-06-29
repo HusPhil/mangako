@@ -156,7 +156,6 @@ export const saveItemLayout = async (mangaUrl, chapterUrl, pageUrls, layoutArr) 
   const cachedFile = "/layout.json";
   let heightLayout = Array(pageUrls.length).fill(0);
 
-  console.log("layoutArr:",layoutArr)
 
   try {
     await ensureDirectoryExists(cachedConfigFilePath);

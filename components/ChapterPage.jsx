@@ -9,7 +9,7 @@ import { useImageResolution } from 'react-native-zoom-toolkit';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, initialScrollIndex }, ref) => {
+const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, pageLayout, pushNotif }, ref) => {
   const [isLoading, setIsLoading] = useState(true);
   const [pageImgSource, setPageImgSource] = useState(null);
   const [errorData, setErrorData] = useState(null);
@@ -76,7 +76,7 @@ const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, initialScrollIndex }
   return (
     <View>
       {isLoading ? (
-        <View style={{ width: screenWidth, height: screenHeight }} className="justify-center items-center">
+        <View style={{ width: screenWidth, height: pageLayout ? pageLayout[pageNum] : 50 }} className="justify-center items-center">
           <ActivityIndicator size={35} />
         </View>
       ) : errorData ? (
@@ -87,8 +87,9 @@ const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, initialScrollIndex }
       ) : (
         pageImgSource && (
           <View className="" onLayout={()=>{
-            if(initialScrollIndex === pageNum && pageNum !== 0){
-              onLoad(pageNum, pageImgSource.height)
+            onLoad(pageNum, pageImgSource.height)
+            if(pageNum == 90) {
+              pushNotif({pageNum, pageHeight: pageImgSource.height})
             }
           }}>
             <ExpoImage imgSrc={pageImgSource.uri} imgWidth={screenWidth} imgHeight={pageImgSource.height} imgAR={pageImgSource.aspectRatio}

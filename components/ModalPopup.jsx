@@ -1,9 +1,10 @@
-import { View, Text, Modal, } from 'react-native'
+import { View, Text, Modal, StatusBar} from 'react-native'
 import React, {useState} from 'react'
 
 const ModalPopup = ({otherStyles, children, visible, handleClose}) => {
     const [showModal, setShowModal] = useState(visible)
     return (
+    <View>
     <Modal
         visible={visible}
         transparent
@@ -19,6 +20,7 @@ const ModalPopup = ({otherStyles, children, visible, handleClose}) => {
             </View>
         </View>    
     </Modal>
+        </View>
   )
 }
 
