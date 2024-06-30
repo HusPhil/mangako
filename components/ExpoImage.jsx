@@ -15,7 +15,7 @@ const ExpoImage = ({ imgSrc, imgSize, onLoad, }) => {
           <Image 
             source={imgSrc} 
             style={imageStyles} 
-            cachePolicy='none' 
+            cachePolicy='memory' 
             key={`${imgSrc}-${imgSize.width}-${imgSize.aspectRatio}`}
           />
   );

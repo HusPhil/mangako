@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle  } from 'react';
-import { View, Dimensions, ActivityIndicator, Image, Button, Text } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
+import { View, Dimensions, ActivityIndicator, Image, Button, Text, StyleSheet } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import shorthash from 'shorthash';
-
 import ExpoImage from './ExpoImage';
 import { getChapterImage } from '../utils/MangakakalotClient';
-import { useImageResolution } from 'react-native-zoom-toolkit';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -14,13 +12,10 @@ const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, currentManga }, ref)
   const [pageImgSource, setPageImgSource] = useState(null);
   const [errorData, setErrorData] = useState(null);
 
-  
-  
-
   useImperativeHandle(ref, () => ({
     fetchData,
-    getPageUrl: () =>  pageUrl,
-    getPageNum: () =>  pageNum,
+    getPageUrl: () => pageUrl,
+    getPageNum: () => pageNum,
   }));
 
   const getImageSize = useCallback((imageUri) => {
@@ -53,24 +48,17 @@ const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, currentManga }, ref)
       const pageSize = await getImageSize(imageUri);
       const aspectRatio = pageSize.width / pageSize.height;
 
-      setPageImgSource({ uri: imageUri, aspectRatio, height: pageSize.height});
+      setPageImgSource({ uri: imageUri, aspectRatio, height: pageSize.height });
     } catch (error) {
       setErrorData(error);
     } finally {
       setIsLoading(false);
-      if (pageNum === currentManga.chapterUrls.length - 1) {
-        pushNotif({pageNum})
-      }
     }
   }, [pageUrl, getImageSize]);
 
   useEffect(() => {
     fetchData();
-    
-    
-  }, [fetchData, ]);
-
-  
+  }, [fetchData]);
 
   const retryButton = useMemo(() => (
     <Button onPress={fetchData} title="Retry" />
@@ -79,21 +67,20 @@ const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, currentManga }, ref)
   return (
     <View>
       {isLoading ? (
-        <View style={{ width: screenWidth, height: screenHeight/2 }} className="justify-center items-center">
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size={35} />
         </View>
       ) : errorData ? (
-        <View className="justify-center items-center">
+        <View style={styles.errorContainer}>
           <Text>An error occurred: {errorData.message}</Text>
           {retryButton}
         </View>
       ) : (
         pageImgSource && (
-          <View className="" onLayout={()=>{
-          }}>
+          <View onLayout={() => {}}>
             <ExpoImage 
               imgSrc={pageImgSource.uri} 
-              imgSize={{width:screenWidth, height: pageImgSource.height, aspectRatio: pageImgSource.aspectRatio}} 
+              imgSize={{ width: screenWidth, height: pageImgSource.height, aspectRatio: pageImgSource.aspectRatio }} 
               onLoad={onLoad}
             />
           </View>
@@ -101,6 +88,19 @@ const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, currentManga }, ref)
       )}
     </View>
   );
+});
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    width: screenWidth,
+    height: screenHeight / 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
 export default React.memo(ChapterPage);
