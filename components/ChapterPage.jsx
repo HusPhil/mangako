@@ -9,7 +9,7 @@ import { useImageResolution } from 'react-native-zoom-toolkit';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, pageLayout, pushNotif }, ref) => {
+const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, pageLayout, pushNotif, initialScrollIndex, currentManga }, ref) => {
   const [isLoading, setIsLoading] = useState(true);
   const [pageImgSource, setPageImgSource] = useState(null);
   const [errorData, setErrorData] = useState(null);
@@ -58,6 +58,9 @@ const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, pageLayout, pushNoti
       setErrorData(error);
     } finally {
       setIsLoading(false);
+      if (pageNum === currentManga.chapterUrls.length - 1) {
+        pushNotif({pageNum})
+      }
     }
   }, [pageUrl, getImageSize]);
 
@@ -88,9 +91,7 @@ const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, pageLayout, pushNoti
         pageImgSource && (
           <View className="" onLayout={()=>{
             onLoad(pageNum, pageImgSource.height)
-            if(pageNum == 90) {
-              pushNotif({pageNum, pageHeight: pageImgSource.height})
-            }
+
           }}>
             <ExpoImage imgSrc={pageImgSource.uri} imgWidth={screenWidth} imgHeight={pageImgSource.height} imgAR={pageImgSource.aspectRatio}
             />

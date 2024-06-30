@@ -109,8 +109,8 @@ const MangaReaderScreen = () => {
               />
               <Button title='Retry' onPress={async ()=>{
                 readerModeRef.current.retryFetch()
-                console.log(await backend.readItemLayout(mangaLink, currentChapter.current)) // prints {"_h": 0, "_i": 0, "_j": null, "_k": null}
-                // console.log(await backend.readMangaConfigData(mangaLink, currentChapter.current)) // prints {"_h": 0, "_i": 0, "_j": null, "_k": null}
+                // console.log(await backend.readItemLayout(mangaLink, currentChapter.current)) // prints {"_h": 0, "_i": 0, "_j": null, "_k": null}
+                console.log(await backend.readMangaConfigData(mangaLink, currentChapter.current)) // prints {"_h": 0, "_i": 0, "_j": null, "_k": null}
               }}/>
               <Button title='Save' onPress={()=>{
                 // backend.saveMangaConfigData(mangaLink, currentChapter.current, {currentPage: 4, finished: true, extraData: "another data"})

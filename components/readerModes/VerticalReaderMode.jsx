@@ -4,6 +4,7 @@ import ChapterPage from '../ChapterPage';
 import { readMangaConfigData } from "../../app/screens/_mangaReader";
 
 import * as backend from "../../app/screens/_mangaReader"
+import shorthash from 'shorthash';
 
 
 const VerticalReaderMode = forwardRef(({ 
@@ -13,12 +14,20 @@ const VerticalReaderMode = forwardRef(({
 }, ref) => {
   const [isLoading, setIsLoading] = useState(true);
   const [lastPageReady, setLastPageReady] = useState(null)
+  const [scrollOffset, setScrollOffset] = useState(0);
 
   const flatRef = useRef(null);
   const pagesRef = useRef([]);
   const pageLayout = useRef(Array(chapterUrls.length).fill(0))
   const isInteracted = useRef(false);
+  const isOnLast = useRef(false);
 
+
+  const onScroll =  async (event) => {
+    const offset = event.nativeEvent.contentOffset.y;
+    await backend.saveMangaConfigData( currentManga.manga, currentManga.chapter, {offsetY: offset})
+    setScrollOffset(offset);
+  };
 
 
   useImperativeHandle(ref, () => ({
@@ -41,17 +50,25 @@ const VerticalReaderMode = forwardRef(({
 
   const AsyncEffect = async () => {
     setIsLoading(true)
+    console.log(initialScrollIndex)
     const existingPageLayout = await backend.readItemLayout(currentManga.manga, currentManga.chapter)
+    const savedConfig = await backend.readMangaConfigData(currentManga.manga, currentManga.chapter)
 
-    console.log("existingPageLayout:", existingPageLayout)
     pageLayout.current = existingPageLayout ? existingPageLayout : []
 
-    
-    setIsLoading(false)
+    console.log("savedoffset:", savedConfig)
+    setScrollOffset(savedConfig ? savedConfig.offsetY : 0)
+    if(flatRef.current) {
 
+    }
+    
     setTimeout(() => {
+      setIsLoading(false)
+      
       
     }, 500);
+
+
     
   };
 
@@ -74,15 +91,17 @@ const VerticalReaderMode = forwardRef(({
     <TouchableWithoutFeedback onPress={() => onTap()}>
       <View>
         <ChapterPage ref={(page) => { pagesRef.current[index] = page; }} pageUrl={item} pageNum={index} 
-          initialScrollIndex={initialScrollIndex}
+          // initialScrollIndex={initialScrollIndex}
           pageLayout={pageLayout.current}
           onLoad={ async(pageNum, pageHeight) => {
             pageLayout.current[pageNum] = pageHeight
             await backend.saveItemLayout(currentManga.manga, currentManga.chapter, chapterUrls, pageLayout.current);
           }}
           pushNotif={(data)=>{
+            console.log("nataway:", data)
             setLastPageReady(data)
           }}
+          currentManga={{...currentManga, chapterUrls}}
         />
       </View>
     </TouchableWithoutFeedback>
@@ -98,28 +117,38 @@ const VerticalReaderMode = forwardRef(({
         ref={flatRef}
         data={memoizedData}
         renderItem={renderItem}
-        initialNumToRender={90 + 1}
-        // initialScrollIndex={90}
-        keyExtractor={(item) => item}
+        initialScrollIndex={initialScrollIndex}
+        keyExtractor={(item) => { return shorthash.unique(item)}}
         onViewableItemsChanged={onViewableItemsChanged}
         onTouchMove={() => { isInteracted.current = true }}
-        // onScroll={(e) => {console.log(e)}}
-        getItemLayout={getItemLayout}
+        onScrollToIndexFailed={()=>{}}
+        onContentSizeChange={(w, h) => {
+          console.log("height:", h)
+          if(h > scrollOffset && !isOnLast.current) {
+            flatRef.current.scrollToOffset({ offset: scrollOffset, animated: true });
+            isOnLast.current = true
+          }
+        }}
+        onScroll={onScroll}
+        removeClippedSubviews
+        windowSize={20}
+        maxToRenderPerBatch={15}
         disableVirtualization
       />
-      {lastPageReady && (
+      {/* {lastPageReady && flatRef.current && (
         <TouchableOpacity 
           onPress={() => {
             flatRef.current.scrollToOffset({ offset: backend.scrollToOffsetByIndex(lastPageReady.pageNum, pageLayout.current), animated: true });
+            setLastPageReady(null)
           }}
         >
 
-        <View className="p-3 rounded-xl absolute self-center bottom-10 bg-black-100 opacity-50">
+        <View className="p-3 rounded-xl absolute self-center bottom-10 bg-primary opacity-75">
 
-          <Text className="text-white font-pregular">Go to {lastPageReady.pageNum}</Text>
+          <Text className="text-white font-pregular">Last viewed: {lastPageReady.pageNum}</Text>
         </View>
         </TouchableOpacity>
-      )}
+      )} */}
       </View>
       )}
     </View>
