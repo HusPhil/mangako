@@ -3,12 +3,12 @@ import { Dimensions, View, StatusBar } from 'react-native';
 import { Image } from 'expo-image';
 import ImageZoom from 'react-native-image-pan-zoom';
 
-const ExpoImage = ({ imgSrc, imgWidth, imgAR, }) => {
+const ExpoImage = ({ imgSrc, imgSize, onLoad, }) => {
   const imageStyles = useMemo(() => ({
-    width: imgWidth,
+    width: imgSize.width,
     height: undefined,
-    aspectRatio: imgAR,
-  }), [imgWidth, imgAR]);
+    aspectRatio: imgSize.aspectRatio,
+  }), [imgSize.width, imgSize.aspectRatio]);
 
 
   return (
@@ -16,7 +16,7 @@ const ExpoImage = ({ imgSrc, imgWidth, imgAR, }) => {
             source={imgSrc} 
             style={imageStyles} 
             cachePolicy='none' 
-            key={`${imgSrc}-${imgWidth}-${imgAR}`}
+            key={`${imgSrc}-${imgSize.width}-${imgSize.aspectRatio}`}
           />
   );
 };

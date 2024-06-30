@@ -9,7 +9,7 @@ import { useImageResolution } from 'react-native-zoom-toolkit';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, pageLayout, pushNotif, initialScrollIndex, currentManga }, ref) => {
+const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, currentManga }, ref) => {
   const [isLoading, setIsLoading] = useState(true);
   const [pageImgSource, setPageImgSource] = useState(null);
   const [errorData, setErrorData] = useState(null);
@@ -79,7 +79,7 @@ const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, pageLayout, pushNoti
   return (
     <View>
       {isLoading ? (
-        <View style={{ width: screenWidth, height: pageLayout ? pageLayout[pageNum] : 50 }} className="justify-center items-center">
+        <View style={{ width: screenWidth, height: screenHeight/2 }} className="justify-center items-center">
           <ActivityIndicator size={35} />
         </View>
       ) : errorData ? (
@@ -90,10 +90,11 @@ const ChapterPage = forwardRef(({ pageUrl, pageNum, onLoad, pageLayout, pushNoti
       ) : (
         pageImgSource && (
           <View className="" onLayout={()=>{
-            onLoad(pageNum, pageImgSource.height)
-
           }}>
-            <ExpoImage imgSrc={pageImgSource.uri} imgWidth={screenWidth} imgHeight={pageImgSource.height} imgAR={pageImgSource.aspectRatio}
+            <ExpoImage 
+              imgSrc={pageImgSource.uri} 
+              imgSize={{width:screenWidth, height: pageImgSource.height, aspectRatio: pageImgSource.aspectRatio}} 
+              onLoad={onLoad}
             />
           </View>
         )
