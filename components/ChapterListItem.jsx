@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity } from 'react-native'
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 
-const ChapterListItem = ({id, chTitle, publishedDate, handlePress}) => {
+const ChapterListItem = ({id, currentManga, chTitle, publishedDate, handlePress}) => {
   return (
     <TouchableOpacity className="bg-secondary p-2 rounded-md my-1" onPress={handlePress}>
       <Text numberOfLines={1} style={{ch: 5}} className="font-pregular text-white">{chTitle ? chTitle : "Loading"} </Text>

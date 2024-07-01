@@ -45,6 +45,7 @@ const ChapterList = ({ mangaLink, headerComponent }) => {
         await FileSystem.writeAsStringAsync(cachedChapterListPath + cachedChapterListFile, JSON.stringify(chapterListData));
       }
 
+      console.log(chapterListData[chapterListData.length - 1])
       setChaptersData(chapterListData);
 
     } catch (error) {
@@ -72,6 +73,7 @@ const ChapterList = ({ mangaLink, headerComponent }) => {
   const renderItem = useCallback(({ item, index }) => (
     <View className="w-full px-2">
       <ChapterListItem
+        currentManga={{manga: mangaLink, chapter: item.chapterUrl}}
         chTitle={item.chTitle}
         publishedDate={item.publishDate}
         handlePress={() => handleChapterPress(item, index)}
@@ -87,12 +89,7 @@ const ChapterList = ({ mangaLink, headerComponent }) => {
     console.log("refresh chapters");
     try {
       setRefreshing(true);
-      const cacheKey = shorthash.unique(mangaLink + "[chapterList]");
-      await AsyncStorage.removeItem(cacheKey);
-
-      const chData = await getChapterList(mangaLink);
-      await AsyncStorage.setItem(cacheKey, JSON.stringify(chData));
-      setChaptersData(chData);
+      fetchData()
     } catch (error) {
       Alert.alert("Error", error.message);
     } finally {
