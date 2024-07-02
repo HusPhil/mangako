@@ -27,7 +27,7 @@ const MangaGrid = ({ mangaData, limit, numColumns, listStyles, isLoading }) => {
     <View className="w-full px-2">
       <MangaCard 
         mangaId={item.id}
-        mangaLink={item.link}
+        mangaUrl={item.link}
         mangaTitle={item.title}
         mangaCover={item.cover}
         containerStyles={"my-1 w-[100%]"}

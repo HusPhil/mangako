@@ -3,7 +3,7 @@ import React, {useState, useEffect} from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import icons from '../../constants/icons'
-import MangaGrid from "../../components/MangaMenu/MangaGrid"
+import { MangaGrid } from "../../components/manga_menu"
 import { getMangaByOrder } from '../../services/MangakakalotClient'
 import colors from '../../constants/colors'
 import { useFocusEffect } from 'expo-router'
@@ -16,7 +16,7 @@ const HomeTab = () => {
     try {
       setIsLoading(true);
       const result = await getMangaByOrder(
-        'https://mangakakalot.com/manga_list?type=topview&category=all&state=ongoing&page=3',
+        'https://mangakakalot.com/manga_list?type=hot&category=all&state=completed&page=1',
         'div.list-truyen-item-wrap'
       );
       setFetchedMangaData([...fetchedMangaData, ...result]);

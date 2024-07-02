@@ -156,11 +156,11 @@ export const getChapterPageUrls = async (mangaUrl) => {
       }
 };
 
-export const getChapterList = async (mangaUrl) => {
+export const getChapterList = async (mangaUrl, abortSignal) => {
   try {
     const targetUrl = mangaUrl;
     const source = targetUrl.match(/https?:\/\/([^\/]+)/)[1]
-    const response = await axios.get(targetUrl, { headers });
+    const response = await axios.get(targetUrl, { headers, signal: abortSignal });
 
     if (response.status === 200) {
       const html = response.data;
@@ -201,14 +201,7 @@ export const getChapterList = async (mangaUrl) => {
           break
         
       }
-
       
-    //   chapterList.push({
-    //     chapId: "hello world",
-    //     chTitle:"hello world",
-    //     publishDate:"hello world",
-    //     chapterUrl: "hello world",
-    // })
       return chapterList;
     } else {
       console.log(`Failed to scrape data. Status code: ${response.status}`);
@@ -216,6 +209,84 @@ export const getChapterList = async (mangaUrl) => {
     }
   } catch (error) {
     console.error(`Error: ${error.message}`);
+    return null;
+  }
+};
+
+export const getMangaInfo = async (mangaUrl, abortSignal) => {
+  try {
+    const targetUrl = mangaUrl;
+    const source = new URL(targetUrl).hostname;
+    const response = await axios.get(targetUrl, { headers, signal: abortSignal });
+
+    if (response.status !== 200) {
+      console.log(`Failed to scrape data. Status code: ${response.status}`);
+      return null;
+    }
+
+    const html = response.data;
+    const $ = cheerio.load(html);
+
+    const chapterList = [];
+    let mangaDetails = null;
+
+    if (source === 'chapmanganato.to') {
+      $('ul.row-content-chapter > li').each((index, item) => {
+        const chapterLink = $(item).find('a');
+        const chTitle = chapterLink.text().trim();
+        const publishDate = $(item).find('span.chapter-time.text-nowrap').text().trim();
+        const chapterUrl = chapterLink.attr('href');
+        const chapId = `${chapterUrl}-${chTitle}-${publishDate}`;
+
+        chapterList.push({
+          chapId,
+          chTitle,
+          publishDate,
+          chapterUrl,
+        });
+      });
+
+      mangaDetails = {
+        id: uuid.v4(),
+        author: $('td:contains("Author(s) :")').next().text().trim(),
+        status: $('td:contains("Status :")').next().text().trim(),
+        alternativeNames: $('td:contains("Alternative :")').next().text().trim().split(';').map(altTitle => altTitle.trim()),
+        tags: $('td:contains("Genres :")').next().text().trim().split(' - ').map(genre => genre.trim()),
+        desc: $('#panel-story-info-description').text().trim().substring($('#panel-story-info-description').text().trim().indexOf(":") + 1).trim(),
+      };
+    } else if (source === 'mangakakalot.com') {
+      $('div.chapter-list > div.row').each((index, item) => {
+        const chapterLink = $(item).find('a');
+        const chTitle = chapterLink.text().trim();
+        const publishDate = $(item).find('span').eq(2).text().trim();
+        const chapterUrl = chapterLink.attr('href');
+        const chapId = `${chapterUrl}-${chTitle}-${publishDate}`;
+
+        chapterList.push({
+          chapId,
+          chTitle,
+          publishDate,
+          chapterUrl,
+        });
+      });
+
+      mangaDetails = {
+        id: uuid.v4(),
+        author: $('li:contains("Author(s) :")').contents().filter(function () { return this.nodeType === 3; }).text().trim(),
+        status: $('li:contains("Status :")').contents().filter(function () { return this.nodeType === 3; }).text().trim(),
+        alternativeNames: $('li:contains("Alternative :")').contents().filter(function () { return this.nodeType === 3; }).text().trim().split(';').map(altTitle => altTitle.trim()),
+        tags: $('li:contains("Genres :")').contents().filter(function () { return this.nodeType === 3; }).text().trim().split(",").map(genre => genre.trim()).filter(genre => genre !== ""),
+        desc: $('#noidungm').text().trim().substring($('#noidungm').text().trim().indexOf(":") + 1).trim(),
+      };
+    }
+
+    return { chapterList, mangaDetails };
+  } catch (error) {
+    if (axios.isCancel(error)) {
+      console.error('Request canceled', error.message);
+    } else {
+      console.error('Error:', error.message);
+    }
     return null;
   }
 };

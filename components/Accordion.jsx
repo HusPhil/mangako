@@ -42,7 +42,7 @@ import {
   
         {opened && (
           <View style={[styles.content]}>
-            <Text className={`${otherTitleStyles} text-white font-pregular font-xs`}>{details}</Text>
+            <Text className={`${otherTitleStyles} text-white font-pregular text-xs`}>{details}</Text>
           </View>
         )}
       </View>
@@ -58,6 +58,7 @@ import {
     },
     content: {
       marginTop: 8,
+      // maxHeight: '30%',
     },
     container: {
       margin: 10,
