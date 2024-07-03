@@ -127,10 +127,10 @@ export const getMangaDetails = async (mangaUrl) => {
     }
 };
 
-export const getChapterPageUrls = async (mangaUrl) => {
+export const getChapterPageUrls = async (mangaUrl, abortSignal) => {
     try {
         const targetUrl = mangaUrl;
-        const response = await axios.get(targetUrl, { headers });
+        const response = await axios.get(targetUrl, { headers, signal: abortSignal });
     
         if (response.status === 200) {
           const html = response.data;
@@ -153,7 +153,7 @@ export const getChapterPageUrls = async (mangaUrl) => {
           return null;
         }
       } catch (error) {
-        console.error(`Error: ${error.message}`);
+        console.log(`Error: ${error.message}`);
         return null;
       }
 };
@@ -294,7 +294,7 @@ export const getMangaInfo = async (mangaUrl, abortSignal) => {
   }
 };
 
-export const getChapterPageImage = async (imageUrl) => {
+export const getChapterPageImage = async (imageUrl, abortSignal) => {
   try {
     // Make the request and get the image data as an arraybuffer
     const response = await axios({
@@ -302,6 +302,7 @@ export const getChapterPageImage = async (imageUrl) => {
       url: imageUrl,
       responseType: 'arraybuffer',
       headers: headers,
+      signal: abortSignal
     });
 
     if (response.status === 200) {

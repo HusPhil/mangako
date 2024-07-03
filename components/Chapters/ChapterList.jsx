@@ -1,11 +1,10 @@
-import { View, Text, ActivityIndicator, Alert, RefreshControl, Button, TouchableOpacity } from 'react-native';
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { View, Text, Alert, RefreshControl, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useRef } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
 
-import colors from '../../constants/colors';
 import ChapterListItem from './ChapterListItem';
 
 
@@ -32,7 +31,7 @@ const ChapterList = ({ mangaUrl, chaptersData, headerComponent, listStyles, onRe
 
   const handleChapterPress = useCallback((item, index) => {
     router.push({
-      pathname: "screens/mangaReader",
+      pathname: "screens/manga_reader_test",
       params: {
         currentChapterData: JSON.stringify(item),
         mangaUrl

@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 import shorthash from 'shorthash';
-import { getChapterImageUrls } from '../../services/MangakakalotClient';
+import { getChapterPageUrls } from '../../services/MangakakalotClient';
+import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
 
 
 // --------------------------------------- VARIABLES ONLY ---------------------------------------*/}
@@ -26,24 +27,21 @@ export const readerModeOptions = [
   
 
   
-export const fetchData = async (mangaUrl, url) => {
+export const fetchData = async (mangaUrl, chapterUrl, abortSignal) => {
     try {
-        const parentKey = shorthash.unique(mangaUrl)
-        const cacheKey = shorthash.unique(url);
-        const cachedChapterPageUris = `${FileSystem.cacheDirectory}${parentKey}/${cacheKey}/chapterPages`;
-        const cachedFile = "/data.json"
+        const cachedChapterPagesDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPages", "pages.json")
         let pageUrls = [];
-
-        await ensureDirectoryExists(cachedChapterPageUris)
-        const fileInfo = await FileSystem.getInfoAsync(cachedChapterPageUris + cachedFile);
+        
+        await ensureDirectoryExists(cachedChapterPagesDir.cachedFolderPath)
+        const fileInfo = await FileSystem.getInfoAsync(cachedChapterPagesDir.cachedFilePath);
 
         if (fileInfo.exists) {
-        const cachedPageData = await FileSystem.readAsStringAsync(cachedChapterPageUris + cachedFile);
+        const cachedPageData = await FileSystem.readAsStringAsync(cachedChapterPagesDir.cachedFilePath);
         pageUrls = JSON.parse(cachedPageData);
         } else {
-        const requestedPageData = await getChapterImageUrls(url);
+        const requestedPageData = await getChapterPageUrls(chapterUrl, abortSignal);
         pageUrls = requestedPageData;
-        await FileSystem.writeAsStringAsync(cachedChapterPageUris + cachedFile, JSON.stringify(pageUrls));
+        await FileSystem.writeAsStringAsync(cachedChapterPagesDir.cachedFilePath, JSON.stringify(pageUrls));
         }
 
         return { data: pageUrls, error: null };

@@ -1,114 +1,47 @@
 import * as FileSystem from 'expo-file-system';
 import shorthash from 'shorthash';
-import { getChapterList } from '../../services/MangakakalotClient';
+import { getChapterPageImage } from '../../services/MangakakalotClient';
 import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
 import axios from 'axios';
+import { File } from 'buffer';
 
-// export const fetchData = async (mangaUrl) => {
-//     try {
-//         const controller = new AbortController()
-//         console.log("eto ay controller:", controller)
 
-//         const cachedChapterListDir =  getMangaDirectory(mangaUrl, "N/A", "chapterList", "chapterList.json")
-//         let chapterListData;
+export const fetchData = async (mangaUrl, chapterUrl, pageUrl, abortSignal) => {
+    try {
+        const pageFileName = shorthash.unique(pageUrl)
+        const cachedChapterPageImagesDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPageImages", pageFileName)
+        let pageImg = [];
         
-//         await ensureDirectoryExists(cachedChapterListDir.cachedFolderPath)
-//         const fileInfo = await FileSystem.getInfoAsync(cachedChapterListDir.cachedFilePath);
-        
-//         if (fileInfo.exists) {
-//             const cachedChapterListData = await FileSystem.readAsStringAsync(cachedChapterListDir.cachedFilePath);
-//             chapterListData = JSON.parse(cachedChapterListData);
-//         } 
-//         else {
-//             const requestedChapterListData = await getChapterList(mangaUrl);
-//             chapterListData = requestedChapterListData;
-//             await FileSystem.writeAsStringAsync(cachedChapterListDir.cachedFilePath, JSON.stringify(chapterListData));
-//         }
-        
-//         return {data: chapterListData, error: null}
-//     } 
-//     catch (error) {
-//         return {data: [], error}
-//     }
-// }
+        await ensureDirectoryExists(cachedChapterPageImagesDir.cachedFolderPath)
+        const fileInfo = await FileSystem.getInfoAsync(cachedChapterPageImagesDir.cachedFilePath);
 
-export const fetchData = (mangaUrl, signal) => {
-
-    const myPromise =  new Promise(async (resolve, reject) => {
-        try {
-
-            if(signal.aborted) {
-                console.log("abort")
-                return
-            }
-
-            const cachedChapterListDir = getMangaDirectory(mangaUrl, "N/A", "chapterList", "chapterList.json");
-            let chapterListData;
-            
-            await ensureDirectoryExists(cachedChapterListDir.cachedFolderPath);
-            const fileInfo = await FileSystem.getInfoAsync(cachedChapterListDir.cachedFilePath);
-            
-            if (fileInfo.exists) {
-                const cachedChapterListData = await FileSystem.readAsStringAsync(cachedChapterListDir.cachedFilePath);
-                chapterListData = JSON.parse(cachedChapterListData);
-            } else {
-                const requestedChapterListData = await getChapterList(mangaUrl);
-                chapterListData = requestedChapterListData;
-                await FileSystem.writeAsStringAsync(cachedChapterListDir.cachedFilePath, JSON.stringify(chapterListData));
-            }
-            
-            resolve({ data: chapterListData, error: null });
-        } catch (error) {
-            reject({ data: [], error });
+        if (fileInfo.exists) {
+            return { data: cachedChapterPageImagesDir.cachedFilePath, error: null };
         }
-    });
-    return myPromise
+        
+        const requestedPageData = await getChapterPageImage(pageUrl, abortSignal);
+        pageImg = requestedPageData; 
+        await FileSystem.writeAsStringAsync(cachedChapterPageImagesDir.cachedFilePath, JSON.stringify(pageImg), { encoding: FileSystem.EncodingType.Base64 });
+        return { data: cachedChapterPageImagesDir.cachedFilePath, error: null };
+
+    } catch (error) {
+        console.error("Fetch data error:", error);
+        return { data: [], error };
+    }
 };
 
-// const fetchData = async () => {
-//     try {
-      
-//       const parentKey = shorthash.unique(mangaLink)
-//       const cachedChapterListPath = `${FileSystem.cacheDirectory}${parentKey}`
-//       const cachedChapterListFile = "chapterList.json"
-//       let chapterListData;
 
-//       console.log(parentKey)
+export const tryLang = async (mangaUrl) => {
 
-//       try {
-//         const dirInfo = await FileSystem.getInfoAsync(cachedChapterListPath);
-//         if (!dirInfo.exists) {
-//         await FileSystem.makeDirectoryAsync(cachedChapterListPath, { intermediates: true });
-//         }
-//       } catch (error) {
-//           console.error(`Error creating directory ${cachedChapterListPath}:`, error);
-//           throw error;
-//       }
+    const parentKey = shorthash.unique(mangaUrl)
+   
 
-//       const fileInfo = await FileSystem.getInfoAsync(cachedChapterListPath + cachedChapterListFile);
+    const cachedFolderPath = `${FileSystem.cacheDirectory}${parentKey}/1KawY3`
+    
+    const fileInfo = await FileSystem.getInfoAsync(cachedFolderPath);
 
-//       if (fileInfo.exists) {
-//         const cachedChapterListData = await FileSystem.readAsStringAsync(cachedChapterListPath + cachedChapterListFile);
-//         chapterListData = JSON.parse(cachedChapterListData);
-//         } else {
-//         const requestedPageData = await getChapterList(mangaLink);
-//         chapterListData = requestedPageData;
-//         await FileSystem.writeAsStringAsync(cachedChapterListPath + cachedChapterListFile, JSON.stringify(chapterListData));
-//       }
-
-//       console.log(chapterListData[chapterListData.length - 1])
-//       setChaptersData(chapterListData);
-
-//     } catch (error) {
-//       setChaptersData([]);
-//       Alert.alert("Error", error.message);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-  
-
-  
-
-  
+    if (fileInfo.exists) {
+        console.log(await FileSystem.readDirectoryAsync(cachedFolderPath))
+    }
+    
+}
