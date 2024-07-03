@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, Button, Alert, StyleSheet, ImageBackground, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { View, ImageBackground, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 
 import images  from "../../constants/images"

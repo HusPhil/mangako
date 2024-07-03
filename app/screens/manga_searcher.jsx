@@ -4,11 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { AntDesign } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useFocusEffect, router } from 'expo-router'
+import { useFocusEffect } from 'expo-router'
 
 
-import MangaGrid from '../../components/manga_menu/MangaGrid'
 import colors from '../../constants/colors'
+import MangaGrid from '../../components/manga_menu/MangaGrid'
 import { getMangaBySearch } from '../../services/MangakakalotClient'
 
 

@@ -1,7 +1,6 @@
 import { View, Text, ActivityIndicator, StatusBar, BackHandler } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { getMangaInfo } from '../../services/MangakakalotClient';
 
 import ChapterList from '../../components/chapters/ChapterList';
 import MangaHeader from '../../components/manga_info/MangaHeader';
@@ -30,7 +29,6 @@ const MangaInfoScreen = () => {
     try {
       const res = await backend.fetchData(mangaUrl, signal);
       if (isMounted.current) {
-        // console.log(res.data.mangaDetails)
         setMangaInfo(res.data);
       }
     } catch (error) {

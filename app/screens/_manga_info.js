@@ -1,5 +1,4 @@
 import * as FileSystem from 'expo-file-system';
-import shorthash from 'shorthash';
 import { getMangaInfo } from '../../services/MangakakalotClient';
 import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
 

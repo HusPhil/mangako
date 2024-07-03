@@ -220,7 +220,6 @@ export const getMangaInfo = async (mangaUrl, abortSignal) => {
     const targetUrl = mangaUrl;
     const source = new URL(targetUrl).hostname;
 
-    console.log("source:", targetUrl)
     const response = await axios.get(targetUrl, { headers, signal: abortSignal });
 
     if (response.status !== 200) {
@@ -274,8 +273,6 @@ export const getMangaInfo = async (mangaUrl, abortSignal) => {
         });
       });
 
-
-      console.log($('li:contains("Genres")').text())
       mangaDetails = {
         id: uuid.v4(),
         author: $('li:contains("Author(s)")').text().trim(),

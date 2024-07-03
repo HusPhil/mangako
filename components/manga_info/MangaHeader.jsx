@@ -1,7 +1,5 @@
-import { View, Text, ScrollView, ImageBackground, Alert, ActivityIndicator, StatusBar } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, ImageBackground } from 'react-native';
 
-import colors from '../../constants/colors';
 import { MangaCard } from '../../components/manga_menu';
 
 const MangaHeader = ({
@@ -11,7 +9,6 @@ const MangaHeader = ({
     isLoading,
     details
 }) => {
-  // useEffect(()=> {if(details) {console.log(details.status)}},[])
   return (
     <View className="">
         <ScrollView>

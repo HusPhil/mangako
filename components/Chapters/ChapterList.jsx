@@ -2,9 +2,12 @@ import { View, Text, ActivityIndicator, Alert, RefreshControl, Button, Touchable
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
+import { AntDesign } from '@expo/vector-icons';
+
 import colors from '../../constants/colors';
 import ChapterListItem from './ChapterListItem';
-import { MaterialIcons } from '@expo/vector-icons';
+
 
 const ChapterList = ({ mangaUrl, chaptersData, headerComponent, listStyles, onRefresh }) => {
   const [showBtnToBottom, setShowBtnToBottom] = useState(false)
@@ -107,13 +110,13 @@ const ChapterList = ({ mangaUrl, chaptersData, headerComponent, listStyles, onRe
         />
       </View>
       {showBtnToBottom && (
-        <TouchableOpacity className="absolute bottom-5 p-3 bg-accent-100 rounded-xl self-center" onPress={handleScrollToEnd}>
-          <Text className="font-pregular text-white">Scroll To Bottom</Text>
+        <TouchableOpacity className="absolute bottom-5 p-3 bg-primary rounded-xl self-center" onPress={handleScrollToEnd}>
+          <AntDesign name="downcircle" size={24} color="white" />
         </TouchableOpacity>
       )}
       {showBtnToTop && (
-        <TouchableOpacity className="absolute bottom-5 p-3 bg-accent-100 rounded-xl self-center" onPress={handleScrollToTop}>
-          <Text className="font-pregular text-white">Scroll To Top</Text>
+        <TouchableOpacity className="absolute bottom-5 p-3 bg-primary rounded-xl self-center" onPress={handleScrollToTop}>
+          <AntDesign name="upcircle" size={24} color="white" />
         </TouchableOpacity>
       )}
     </View>
