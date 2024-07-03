@@ -28,7 +28,6 @@ export const fetchData = async (mangaUrl, abortSignal) => {
       return {data: mangaInfodata, error: null}
   } 
   catch (error) {
-      console.log("error")
       return {data: [], error}
   }
 }

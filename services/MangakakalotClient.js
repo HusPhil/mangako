@@ -40,6 +40,7 @@ export const getMangaByOrder = async (targetUrl, selector) => {
         }
     } catch (error) {
         console.error(`Error: ${error.message}`);
+        throw error
     }
 };
 
@@ -71,6 +72,7 @@ export const getMangaBySearch = async (targetUrl, selector) => {
       }
   } catch (error) {
       console.error(`Error: ${error.message}`);
+      throw error
   }
 };
 
@@ -283,9 +285,9 @@ export const getMangaInfo = async (mangaUrl, abortSignal) => {
     return { chapterList, mangaDetails };
   } catch (error) {
     if (axios.isCancel(error)) {
-      console.error('Request canceled', error.message);
+      console.log('Request canceled', error.message);
     } else {
-      console.error('Error:', error.message);
+      console.log('Error:', error.message);
     }
     return null;
   }

@@ -1,10 +1,11 @@
 import React, { memo } from 'react';
 import { View, Text } from 'react-native';
 import { FlashList } from "@shopify/flash-list";
+
 import MangaCard from './MangaCard';
 
 
-const MangaGrid = ({ mangaData, limit, numColumns, listStyles, isLoading }) => {
+const MangaGrid = ({ mangaData, numColumns, listStyles, isLoading, listEmptyComponent, onEndReached }) => {
 
   const placeholderData = new Array(3*10).fill(null).map((_, index) => ({
     id: `placeholder-${index}`,
@@ -44,10 +45,12 @@ const MangaGrid = ({ mangaData, limit, numColumns, listStyles, isLoading }) => {
           data={mangaData ? mangaData : placeholderData}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-          estimatedItemSize={limit}
+          estimatedItemSize={300}
           numColumns={numColumns}
           contentContainerStyle={listStyles}
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={listEmptyComponent}
+          onEndReached={onEndReached}
         />
     </View>
   );

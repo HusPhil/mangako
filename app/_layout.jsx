@@ -35,6 +35,7 @@ const [loaded] = useFonts({
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="screens/manga_info" options={{ headerShown: false }} />
+        <Stack.Screen name="screens/manga_searcher" options={{ headerShown: false }} />
       </Stack>
   );
 }
