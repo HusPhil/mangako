@@ -38,8 +38,10 @@ const MangaCard = ({
         className={`${coverStyles} relative`}
         resizeMode='cover'
       >
-      </ImageBackground>
+        <View className="justify-end h-full bg-acc">
         {children}
+        </View>
+      </ImageBackground>
     </TouchableOpacity>
   );
 }

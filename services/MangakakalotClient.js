@@ -219,6 +219,8 @@ export const getMangaInfo = async (mangaUrl, abortSignal) => {
   try {
     const targetUrl = mangaUrl;
     const source = new URL(targetUrl).hostname;
+
+    console.log("source:", targetUrl)
     const response = await axios.get(targetUrl, { headers, signal: abortSignal });
 
     if (response.status !== 200) {
@@ -251,9 +253,9 @@ export const getMangaInfo = async (mangaUrl, abortSignal) => {
       mangaDetails = {
         id: uuid.v4(),
         author: $('td:contains("Author(s) :")').next().text().trim(),
-        status: $('td:contains("Status :")').next().text().trim(),
+        status: $('td:contains("Status")').next().text().trim().replace(/^\s*Status\s*:\s*/i, '').trim(),
         alternativeNames: $('td:contains("Alternative :")').next().text().trim().split(';').map(altTitle => altTitle.trim()),
-        tags: $('td:contains("Genres :")').next().text().trim().split(' - ').map(genre => genre.trim()),
+        tags: $('td:contains("Genres")').next().text().trim().split(/[\-,]/).map(genre => genre.trim()),
         desc: $('#panel-story-info-description').text().trim().substring($('#panel-story-info-description').text().trim().indexOf(":") + 1).trim(),
       };
     } else if (source === 'mangakakalot.com') {
@@ -272,12 +274,14 @@ export const getMangaInfo = async (mangaUrl, abortSignal) => {
         });
       });
 
+
+      console.log($('li:contains("Genres")').contents().filter(function () { return this.nodeType === 3; }).text())
       mangaDetails = {
         id: uuid.v4(),
         author: $('li:contains("Author(s) :")').contents().filter(function () { return this.nodeType === 3; }).text().trim(),
-        status: $('li:contains("Status :")').contents().filter(function () { return this.nodeType === 3; }).text().trim(),
+        status: $('li:contains("Status")').contents().filter(function () { return this.nodeType === 3; }).text().trim().replace(/^\s*Status\s*:\s*/i, '').trim(),
         alternativeNames: $('li:contains("Alternative :")').contents().filter(function () { return this.nodeType === 3; }).text().trim().split(';').map(altTitle => altTitle.trim()),
-        tags: $('li:contains("Genres :")').contents().filter(function () { return this.nodeType === 3; }).text().trim().split(",").map(genre => genre.trim()).filter(genre => genre !== ""),
+        tags: $('li:contains("Genres")').contents().filter(function () { return this.nodeType === 3; }).text().trim().split(/[\-,]/).map(genre => genre.trim()).filter(genre => genre !== ""),
         desc: $('#noidungm').text().trim().substring($('#noidungm').text().trim().indexOf(":") + 1).trim(),
       };
     }

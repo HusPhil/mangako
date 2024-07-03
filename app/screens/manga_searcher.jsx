@@ -69,14 +69,14 @@ const mangaSearcher = () => {
     <SafeAreaView className="bg-primary">
     <StatusBar backgroundColor={colors.secondary.DEFAULT} barStyle={'light-content'}/>
           <View className="h-full">
-            <View className="flex-row px-4 py-3 pt-4 items-center justify-center">
+            <View className="flex-row px-4 py-3 pt-4 items-center">
               <TextInput 
                   ref={textInputRef}
                   placeholder='ex: One Piece' 
                   placeholderTextColor={'#CDCDE0'} 
                   className="bg-secondary-100 rounded-lg py-1 px-3 text-white font-pregular text-sm w-[90%]"  
                   autoFocus
-                  textAlignVertical='bottom'
+                  textAlignVertical='center'
                   onEndEditing={handleSearch}
                   onChangeText={text => setMangaQuery(text)}
               />

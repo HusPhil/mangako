@@ -24,7 +24,7 @@ const BrowseTab = () => {
       setIsLoading(true);
 
       const newestManga = await getMangaByOrder(
-        'https://mangakakalot.com/manga_list?type=newest&category=all&state=all&page=1',
+        'https://mangakakalot.com/manga_list?type=latest&category=all&state=all&page=1',
         'div.list-truyen-item-wrap'
       );
       const popularManga = await getMangaByOrder(
@@ -78,7 +78,7 @@ const BrowseTab = () => {
       if(type === 'newest') {
         currentNewestMangaPage.current += 1;
         const moreNewestManga = await getMangaByOrder(
-        `https://mangakakalot.com/manga_list?type=newest&category=all&state=all&page=${currentNewestMangaPage.current}`,
+        `https://mangakakalot.com/manga_list?type=latest&category=all&state=all&page=${currentNewestMangaPage.current}`,
         'div.list-truyen-item-wrap'
       );
       setNewestManga([...newestManga, ...moreNewestManga])

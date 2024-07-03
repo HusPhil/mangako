@@ -31,3 +31,12 @@ export const fetchData = async (mangaUrl, abortSignal) => {
       return {data: [], error}
   }
 }
+
+export const deleteSavedMangaInfo = async (mangaUrl) => {
+  try {
+    const cachedMangaInfoDir =  getMangaDirectory(mangaUrl, "N/A", "mangaInfo", "mangaInfo.json")
+    await FileSystem.deleteAsync(cachedMangaInfoDir.cachedFilePath)
+  } catch (error) {
+    throw error
+  }
+}

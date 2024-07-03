@@ -15,6 +15,7 @@ const MangaInfoScreen = () => {
   const { mangaId, mangaCover, mangaTitle, mangaUrl } = params;
   const [mangaInfo, setMangaInfo] = useState();
   const [isLoading, setIsLoading] = useState(true);
+  
 
   const controllerRef = useRef(null);
   const isMounted = useRef(true);
@@ -29,6 +30,7 @@ const MangaInfoScreen = () => {
     try {
       const res = await backend.fetchData(mangaUrl, signal);
       if (isMounted.current) {
+        // console.log(res.data.mangaDetails)
         setMangaInfo(res.data);
       }
     } catch (error) {
@@ -61,6 +63,13 @@ const MangaInfoScreen = () => {
     return true;
   };
 
+  const handleRefresh = async () => {
+    setIsLoading(true)
+    await backend.deleteSavedMangaInfo(mangaUrl)
+    await AsyncEffect()
+    setIsLoading(false)
+  }
+
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
       'hardwareBackPress',
@@ -89,15 +98,19 @@ const MangaInfoScreen = () => {
           <ChapterList 
             mangaUrl={mangaUrl}
             chaptersData={mangaInfo.chapterList}
+            listStyles={{paddingBottom: 8, paddingHorizontal: 8}}
+            onRefresh={handleRefresh}
             headerComponent={
               <View>
-                <View className="flex-row flex-wrap mt-5 mx-4">
+                {mangaInfo.mangaDetails && mangaInfo.mangaDetails.tags.length > 0 && mangaInfo.mangaDetails.tags[0] !== "" && (
+                  <View className="flex-row flex-wrap mt-5 mx-4">
                   {mangaInfo.mangaDetails.tags.map((g, i) => (
                     <Text key={i} className="p-2 m-1 font-pregular text-xs rounded-md text-white bg-accent-100">
                       {g}
                     </Text>
                   ))}
                 </View>
+                )}
                 {mangaInfo.mangaDetails && (
                   <View>
                     <Accordion details={mangaInfo.mangaDetails.alternativeNames.join('\n')}>
@@ -111,6 +124,7 @@ const MangaInfoScreen = () => {
           />
         )}
       </View>
+
     </View>
   );
 };
