@@ -21,7 +21,7 @@ const MangaHeader = ({
               className="h-[250px] w-full relative opacity-30"
               resizeMode="cover"
             />
-            <View className="flex-row w-full px-2 absolute bottom-3 min-h-[120px] max-h-[185px]">
+            <View className="flex-row w-full px-2 absolute bottom-3 min-h-[170px] max-h-[185px]">
               <View className="max-h-[172px] max-w-[100px]">
                 <MangaCard
                   mangaId={mangaId}
