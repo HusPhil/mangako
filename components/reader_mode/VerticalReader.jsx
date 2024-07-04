@@ -1,16 +1,19 @@
 import { View, ScrollView, TouchableWithoutFeedback } from 'react-native'
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { debounce } from 'lodash'
 
 import ChapterPage from '../chapters/ChapterPage'
-import { savePageLayout, readPageLayout } from './_reader'
+import { savePageLayout, readPageLayout, scrollToPageNum } from './_reader'
 
 
 const VerticalReader = ({currentManga, chapterPages}) => {
+    const [contentLoaded, setContentLoaded] = useState(false)
 
     const isMounted = useRef(true)
     const scrollRef = useRef(null)
     const pageLayout = useRef([])
+
+    const prevPageNumOffset = useRef(0)
 
 
     const renderItem = useCallback((item, index) => {
@@ -31,7 +34,8 @@ const VerticalReader = ({currentManga, chapterPages}) => {
     }), 500), []);
 
     const onPageLoad = useCallback((pageNum, pageHeight) => {
-        if(pageLayout.current[pageNum] != -1 && isMounted.current) return
+        // if(pageLayout.current[pageNum] != -1 && isMounted.current) return
+        console.log(pageLayout.current)
         pageLayout.current[pageNum] = pageHeight
         debouncedSaveDataToCache()
     }, [pageLayout])
@@ -40,6 +44,10 @@ const VerticalReader = ({currentManga, chapterPages}) => {
         if(!isMounted.current) return
         const savedPageLayout = await readPageLayout(currentManga.manga, currentManga.chapter)
         if(!savedPageLayout.error) pageLayout.current = savedPageLayout.data
+
+        
+
+         
     } 
 
     useEffect(() => {
@@ -52,9 +60,26 @@ const VerticalReader = ({currentManga, chapterPages}) => {
 
     }, [isMounted])
 
+    const handleContentSizeChange = useCallback((contentHeight) => {
+        console.log("status:", prevPageNumOffset.current, contentHeight)
+        if (contentHeight > prevPageNumOffset.current && !contentLoaded) {
+            scrollRef.current.scrollTo({ y: prevPageNumOffset.current, animated: true })
+            setContentLoaded(true)
+        }
+    }, [contentLoaded])
+
+    useEffect(() => {
+        prevPageNumOffset.current = scrollToPageNum(chapterPages.length - 1, pageLayout.current)
+    }, [contentLoaded, chapterPages.length])
+
+
 
     return (
-        <ScrollView ref={scrollRef}>
+        <ScrollView ref={scrollRef}
+            onContentSizeChange={(width, height) => {
+                handleContentSizeChange(height)
+            }}
+        >
             {chapterPages && (
                 <TouchableWithoutFeedback onPress={()=>{console.log("tapped")}}>
                 <View className="flex-1">

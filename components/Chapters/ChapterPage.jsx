@@ -35,7 +35,7 @@ const ChapterPage = ({currentManga, pageUrl, pageNum, onPageLoad}) => {
                 throw error;
             }
             
-            onPageLoad(pageNum, imgSize.height);
+            
             setImgSrc({ imgUri: fetchedImgSrc.data, imgSize });
         } catch (error) {
             setErrorData(error);
@@ -43,7 +43,7 @@ const ChapterPage = ({currentManga, pageUrl, pageNum, onPageLoad}) => {
             setIsLoading(false);
         }
     };
-    
+
     useEffect(() => {
         
         AsyncEffect()
@@ -56,6 +56,8 @@ const ChapterPage = ({currentManga, pageUrl, pageNum, onPageLoad}) => {
 
 
 
+
+
     return (
         <View className="mt-[-1px]">
         {!isLoading && imgSrc ? (
@@ -65,6 +67,11 @@ const ChapterPage = ({currentManga, pageUrl, pageNum, onPageLoad}) => {
                     height: undefined, 
                     width: screenWidth, 
                     aspectRatio: imgSrc.imgSize.width/imgSrc.imgSize.height
+                }}
+                onLoad={(event) => {
+                    console.log("hello world the image has been loaded!")
+                    const { height: pageHeight } = event
+                    onPageLoad(pageNum, pageHeight);
                 }}
             />
         ) : (

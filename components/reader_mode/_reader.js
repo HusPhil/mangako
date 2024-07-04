@@ -1,8 +1,8 @@
 import * as FileSystem from 'expo-file-system';
 import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
+import { PixelRatio } from 'react-native';
 
 export const savePageLayout = async (mangaUrl, chapterUrl, pageLayout) => {
-    console.log("save page layout called")
     try {
         const cachedChapterPageLayoutDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPageLayout", "pageLayout.json")
         await ensureDirectoryExists(cachedChapterPageLayoutDir.cachedFolderPath)
@@ -14,7 +14,6 @@ export const savePageLayout = async (mangaUrl, chapterUrl, pageLayout) => {
 }
 
 export const readPageLayout = async (mangaUrl, chapterUrl) => {
-    console.log("read page layout called")
     try {
         
         const cachedChapterPageLayoutDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPageLayout", "pageLayout.json")
@@ -27,5 +26,13 @@ export const readPageLayout = async (mangaUrl, chapterUrl) => {
     } catch (error) {
         console.error(error)
     }
+}
+
+export const scrollToPageNum = (pageNum, pageLayout) => {
+    let offSet = 0
+    pageLayout.slice(0, pageNum).forEach(height => {
+        offSet += height
+    })
+    return offSet / PixelRatio.get()
 }
 
