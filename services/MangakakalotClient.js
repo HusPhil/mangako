@@ -313,7 +313,6 @@ export const getChapterPageImage = async (imageUrl, abortSignal) => {
       return null; // Handle failure case as needed
     }
   } catch (error) {
-    console.error(`Error: ${error.message}`);
-    throw error; // Re-throw error to handle it in the calling function
+    console.log(`Error: ${error.message}`);
   }
 };

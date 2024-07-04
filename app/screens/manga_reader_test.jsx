@@ -1,10 +1,9 @@
-import { View, Text, ScrollView } from 'react-native'
+import { View, Text, ScrollView, Image } from 'react-native'
 import React, {useState, useRef, useEffect} from 'react'
 import { useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import * as backend from "./_manga_reader"
-import ChapterPage from '../../components/chapters/ChapterPage';
+import VerticalReader from '../../components/reader_mode/VerticalReader';
 
 
 const MangaReaderScreen = () => {
@@ -18,8 +17,6 @@ const MangaReaderScreen = () => {
 
     const AsyncEffect = async () => {
         setIsLoading(true)
-
-        
 
         controllerRef.current = new AbortController()
         const signal = controllerRef.current.signal
@@ -39,22 +36,17 @@ const MangaReaderScreen = () => {
     }, [])
 
     return (
-        <ScrollView>
+        <View className="h-full">
             {!isLoading && (
-                chapterPages.map((item, index) => {
-                    return (
-                        <ChapterPage  
-                        key={index}
-                            pageUrl={item}
-                            currentManga={{
-                                manga: mangaUrl,
-                                chapter: parsedCurrentChapterData.current.chapterUrl
-                            }}
-                        />
-                    )
-                })
+                <VerticalReader 
+                    chapterPages={chapterPages}
+                    currentManga={{
+                        manga: mangaUrl,
+                        chapter: parsedCurrentChapterData.current.chapterUrl
+                    }}
+                />
             )}
-        </ScrollView>
+        </View>
     )
 }
 

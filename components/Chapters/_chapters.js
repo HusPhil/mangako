@@ -2,9 +2,7 @@ import * as FileSystem from 'expo-file-system';
 import shorthash from 'shorthash';
 import { getChapterPageImage } from '../../services/MangakakalotClient';
 import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
-import axios from 'axios';
-import { File } from 'buffer';
-
+import { Image } from 'react-native';
 
 export const fetchData = async (mangaUrl, chapterUrl, pageUrl, abortSignal) => {
     try {
@@ -25,7 +23,7 @@ export const fetchData = async (mangaUrl, chapterUrl, pageUrl, abortSignal) => {
         return { data: cachedChapterPageImagesDir.cachedFilePath, error: null };
 
     } catch (error) {
-        console.error("Fetch data error:", error);
+        console.log("Fetch data error:", error);
         return { data: [], error };
     }
 };
@@ -36,7 +34,7 @@ export const tryLang = async (mangaUrl) => {
     const parentKey = shorthash.unique(mangaUrl)
    
 
-    const cachedFolderPath = `${FileSystem.cacheDirectory}${parentKey}/1KawY3`
+    const cachedFolderPath = `${FileSystem.cacheDirectory}${parentKey}/Zpk3Al/chapterPageLayout`
     
     const fileInfo = await FileSystem.getInfoAsync(cachedFolderPath);
 
@@ -45,3 +43,19 @@ export const tryLang = async (mangaUrl) => {
     }
     
 }
+
+export const getImageDimensions = (imageUri) => {
+    return new Promise((resolve, reject) => {
+      Image.getSize(
+        imageUri,
+        (width, height) => {
+          resolve({ width, height });
+        },
+        (error) => {
+          reject(error);
+        }
+      );
+    });
+  };
+
+
