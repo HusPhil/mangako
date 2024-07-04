@@ -18,9 +18,14 @@ export const fetchData = async (mangaUrl, chapterUrl, pageUrl, abortSignal) => {
         }
         
         const requestedPageData = await getChapterPageImage(pageUrl, abortSignal);
-        pageImg = requestedPageData; 
-        await FileSystem.writeAsStringAsync(cachedChapterPageImagesDir.cachedFilePath, JSON.stringify(pageImg), { encoding: FileSystem.EncodingType.Base64 });
-        return { data: cachedChapterPageImagesDir.cachedFilePath, error: null };
+        
+        if(requestedPageData) {
+          pageImg = requestedPageData; 
+          await FileSystem.writeAsStringAsync(cachedChapterPageImagesDir.cachedFilePath, JSON.stringify(pageImg), { encoding: FileSystem.EncodingType.Base64 });
+          return { data: cachedChapterPageImagesDir.cachedFilePath, error: null };
+        }
+
+        return { data: [], error: new Error("failed to save") };
 
     } catch (error) {
         console.log("Fetch data error:", error);

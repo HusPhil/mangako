@@ -36,16 +36,19 @@ export const fetchData = async (mangaUrl, chapterUrl, abortSignal) => {
         const fileInfo = await FileSystem.getInfoAsync(cachedChapterPagesDir.cachedFilePath);
 
         if (fileInfo.exists) {
-        const cachedPageData = await FileSystem.readAsStringAsync(cachedChapterPagesDir.cachedFilePath);
-        pageUrls = JSON.parse(cachedPageData);
-        } else {
+          const cachedPageData = await FileSystem.readAsStringAsync(cachedChapterPagesDir.cachedFilePath);
+          pageUrls = JSON.parse(cachedPageData);
+          return { data: pageUrls, error: null };
+        } 
+
         const requestedPageData = await getChapterPageUrls(chapterUrl, abortSignal);
-        pageUrls = requestedPageData;
-        await FileSystem.writeAsStringAsync(cachedChapterPagesDir.cachedFilePath, JSON.stringify(pageUrls));
+        if(requestedPageData) {
+          pageUrls = requestedPageData;
+          await FileSystem.writeAsStringAsync(cachedChapterPagesDir.cachedFilePath, JSON.stringify(pageUrls));
+          return { data: pageUrls, error: null };
         }
 
-        return { data: pageUrls, error: null };
-
+        return { data: [], error };
     } catch (error) {
         console.error("Fetch data error:", error);
         return { data: [], error };

@@ -1,44 +1,67 @@
-import { View, Text, ScrollView } from 'react-native'
+import { View } from 'react-native'
 import React, {useState, useRef, useEffect} from 'react'
 import { useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import * as backend from "./_manga_reader"
+import VerticalReader from '../../components/reader_mode/VerticalReader';
 
 
 const MangaReaderScreen = () => {
     const {mangaUrl, currentChapterData } = useLocalSearchParams()
     
-    const [chapterPages, setChapterPages] = useState(null)
+    const [chapterPages, setChapterPages] = useState([])
     const [isLoading, setIsLoading] = useState(false)
+    const [errorData, setErrorData] = useState(null)
 
+    const isMounted = useRef(true)
     const controllerRef = useRef(null)
     const parsedCurrentChapterData = useRef(JSON.parse(currentChapterData))
 
     const AsyncEffect = async () => {
-        setIsLoading(true)
+        setIsLoading(true);
 
-        controllerRef.current = new AbortController()
-        const signal = controllerRef.current.signal
+        controllerRef.current = new AbortController();
+        const signal = controllerRef.current.signal;
 
-        const fetchedChapterPages = await backend.fetchData(mangaUrl, parsedCurrentChapterData.current.chapterUrl, signal)
-        setChapterPages(setChapterPages.data)
-
-        setIsLoading(false)
+        try {
+            const fetchedChapterPages = await backend.fetchData(mangaUrl, parsedCurrentChapterData.current.chapterUrl, signal);
+            setChapterPages(fetchedChapterPages.data);
+        } 
+        catch (error) {
+            if (signal.aborted) {
+                console.log("Fetch aborted");
+            } else {
+                console.log("Error fetching chapter pages:", error);
+            }
+            setChapterPages([])
+            setErrorData(error)
+        } 
+        finally {
+            setIsLoading(false);
+        }
     }
 
     useEffect(() => {
         AsyncEffect()
         return () => {
+            isMounted.current = false
             controllerRef.current.abort()
+            setChapterPages([])
         }
     }, [])
 
     return (
-        <SafeAreaView>
-        <Text>{mangaUrl}</Text>
-        <Text>{currentChapterData}</Text>
-        </SafeAreaView>
+        <View className="h-full">
+            {!isLoading && (
+                <VerticalReader 
+                    chapterPages={chapterPages}
+                    currentManga={{
+                        manga: mangaUrl,
+                        chapter: parsedCurrentChapterData.current.chapterUrl
+                    }}
+                />
+            )}
+        </View>
     )
 }
 

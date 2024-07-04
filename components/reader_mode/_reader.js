@@ -1,10 +1,8 @@
 import * as FileSystem from 'expo-file-system';
-import shorthash from 'shorthash';
-import { getChapterPageImage } from '../../services/MangakakalotClient';
 import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
-import { Image } from 'react-native';
 
 export const savePageLayout = async (mangaUrl, chapterUrl, pageLayout) => {
+    console.log("save page layout called")
     try {
         const cachedChapterPageLayoutDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPageLayout", "pageLayout.json")
         await ensureDirectoryExists(cachedChapterPageLayoutDir.cachedFolderPath)
@@ -14,3 +12,20 @@ export const savePageLayout = async (mangaUrl, chapterUrl, pageLayout) => {
         console.error(error)
     }
 }
+
+export const readPageLayout = async (mangaUrl, chapterUrl) => {
+    console.log("read page layout called")
+    try {
+        
+        const cachedChapterPageLayoutDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPageLayout", "pageLayout.json")
+        const fileInfo = await FileSystem.getInfoAsync(cachedChapterPageLayoutDir.cachedFilePath);
+        if (!fileInfo.exists) return {data: [], error: new Error("No page layout found")}
+
+        const pageLayout = await FileSystem.readAsStringAsync(cachedChapterPageLayoutDir.cachedFilePath);
+        return {data: JSON.parse(pageLayout), error: null}
+
+    } catch (error) {
+        console.error(error)
+    }
+}
+

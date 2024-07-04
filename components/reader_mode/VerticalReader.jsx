@@ -1,15 +1,17 @@
-import { View, Text, ScrollView, TouchableWithoutFeedback, BackHandler } from 'react-native'
+import { View, ScrollView, TouchableWithoutFeedback } from 'react-native'
 import React, { useCallback, useEffect, useRef } from 'react'
 import { debounce } from 'lodash'
 
 import ChapterPage from '../chapters/ChapterPage'
-import { savePageLayout } from './_reader'
+import { savePageLayout, readPageLayout } from './_reader'
 
 
 const VerticalReader = ({currentManga, chapterPages}) => {
 
+    const isMounted = useRef(true)
     const scrollRef = useRef(null)
     const pageLayout = useRef([])
+
 
     const renderItem = useCallback((item, index) => {
         return (
@@ -29,24 +31,37 @@ const VerticalReader = ({currentManga, chapterPages}) => {
     }), 500), []);
 
     const onPageLoad = useCallback((pageNum, pageHeight) => {
+        if(pageLayout.current[pageNum] != -1 && isMounted.current) return
         pageLayout.current[pageNum] = pageHeight
-        console.log(pageLayout.current)
         debouncedSaveDataToCache()
     }, [pageLayout])
 
+    const AsyncEffect = async () => {
+        if(!isMounted.current) return
+        const savedPageLayout = await readPageLayout(currentManga.manga, currentManga.chapter)
+        if(!savedPageLayout.error) pageLayout.current = savedPageLayout.data
+    } 
+
     useEffect(() => {
-        pageLayout.current = Array(chapterPages.length).fill(0)
-        scrollRef.current.scrollTo({y: 500, animated: true})
-    }, [])
+        pageLayout.current = Array(chapterPages.length).fill(-1)
+        AsyncEffect()
+
+        return () => {
+            isMounted.current = false
+        }
+
+    }, [isMounted])
 
 
     return (
         <ScrollView ref={scrollRef}>
-            <TouchableWithoutFeedback onPress={()=>{console.log("tapped")}}>
-            <View className="flex-1">
-                {chapterPages.map((item, index) => renderItem(item, index))}
-            </View>
-            </TouchableWithoutFeedback>
+            {chapterPages && (
+                <TouchableWithoutFeedback onPress={()=>{console.log("tapped")}}>
+                <View className="flex-1">
+                    {chapterPages.map((item, index) => renderItem(item, index))}
+                </View>
+                </TouchableWithoutFeedback>
+            )}
         </ScrollView>
     )
 }

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Image } from 'react-native'
+import { View } from 'react-native'
 import React, {useState, useRef, useEffect} from 'react'
 import { useLocalSearchParams } from 'expo-router';
 
@@ -11,25 +11,40 @@ const MangaReaderScreen = () => {
     
     const [chapterPages, setChapterPages] = useState([])
     const [isLoading, setIsLoading] = useState(false)
+    const [errorData, setErrorData] = useState(null)
 
+    const isMounted = useRef(true)
     const controllerRef = useRef(null)
     const parsedCurrentChapterData = useRef(JSON.parse(currentChapterData))
 
     const AsyncEffect = async () => {
-        setIsLoading(true)
+        setIsLoading(true);
 
-        controllerRef.current = new AbortController()
-        const signal = controllerRef.current.signal
+        controllerRef.current = new AbortController();
+        const signal = controllerRef.current.signal;
 
-        const fetchedChapterPages = await backend.fetchData(mangaUrl, parsedCurrentChapterData.current.chapterUrl, signal)
-        setChapterPages(fetchedChapterPages.data)
-
-        setIsLoading(false)
+        try {
+            const fetchedChapterPages = await backend.fetchData(mangaUrl, parsedCurrentChapterData.current.chapterUrl, signal);
+            setChapterPages(fetchedChapterPages.data);
+        } 
+        catch (error) {
+            if (signal.aborted) {
+                console.log("Fetch aborted");
+            } else {
+                console.log("Error fetching chapter pages:", error);
+            }
+            setChapterPages([])
+            setErrorData(error)
+        } 
+        finally {
+            setIsLoading(false);
+        }
     }
 
     useEffect(() => {
         AsyncEffect()
         return () => {
+            isMounted.current = false
             controllerRef.current.abort()
             setChapterPages([])
         }
