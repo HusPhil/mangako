@@ -3,6 +3,7 @@ import React, {useState, useEffect, useRef} from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, router } from 'expo-router'
 import { MaterialIcons } from '@expo/vector-icons';
+import Toast from 'react-native-simple-toast';
 
 import colors from '../../constants/colors'
 import icons from '../../constants/icons'
@@ -65,6 +66,13 @@ const BrowseTab = () => {
   }
 
   const getMoreManga = async (type) => {
+    if(isLoading) return
+
+    Toast.show(
+      'Fetching more manga..',
+      Toast.LONG,
+    );
+
     if(type === 'popular'){
       currentPopularMangaPage.current += 1;
       const morePopularManga = await getMangaByOrder(

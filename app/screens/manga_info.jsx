@@ -9,6 +9,7 @@ import HorizontalRule from '../../components/HorizontalRule';
 
 import * as backend from "./_manga_info";
 
+
 const MangaInfoScreen = () => {
   const params = useLocalSearchParams();
   const { mangaId, mangaCover, mangaTitle, mangaUrl } = params;
@@ -32,12 +33,14 @@ const MangaInfoScreen = () => {
         setMangaInfo(res.data);
       }
     } catch (error) {
+      setMangaInfo([]);
       if (error.name !== 'AbortError') {
         console.error(error);
       }
     } finally {
       if (isMounted.current) {
         setIsLoading(false);
+        console.log("loader destroyed")
       }
     }
   };
@@ -46,6 +49,8 @@ const MangaInfoScreen = () => {
     AsyncEffect();
 
     return () => {
+      setIsLoading(false);
+      setMangaInfo([]);
       isMounted.current = false;
       if (controllerRef.current) {
         controllerRef.current.abort();
@@ -91,7 +96,12 @@ const MangaInfoScreen = () => {
           isLoading={isLoading}
         />
         {isLoading ? (
-          <ActivityIndicator />
+          <View className="flex-1 justify-center items-center">
+           <ActivityIndicator color={'white'} size={'large'}/>
+           <Text className="font-pregular text-white text-md mt-3">Loading chapter list..</Text>
+          </View>
+
+            
         ) : (
           <ChapterList 
             mangaUrl={mangaUrl}

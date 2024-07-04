@@ -51,6 +51,7 @@ const MangaGrid = ({ mangaData, numColumns, listStyles, isLoading, listEmptyComp
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={listEmptyComponent}
           onEndReached={onEndReached}
+          onEndReachedThreshold={0.5}
         />
     </View>
   );

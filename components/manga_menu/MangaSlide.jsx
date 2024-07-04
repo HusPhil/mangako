@@ -56,6 +56,7 @@ const MangaSlide = ({ mangaData, listStyles, isLoading, listEmptyComponent, onEn
         horizontal        
         ListEmptyComponent={listEmptyComponent}
         onEndReached={onEndReached}
+        onEndReachedThreshold={0.5}
     />
     </View>
     )

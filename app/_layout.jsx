@@ -34,10 +34,10 @@ const [loaded] = useFonts({
   return (
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/manga_info" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/manga_searcher" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/manga_reader" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/manga_reader_test" options={{ headerShown: false }} />
+        <Stack.Screen name="screens/manga_info" options={{ headerShown: false, animationEnabled: false, animation:"none" }} />
+        <Stack.Screen name="screens/manga_searcher" options={{ headerShown: false, animationEnabled: false, animation:"none" }} />
+        <Stack.Screen name="screens/manga_reader" options={{ headerShown: false, animationEnabled: false, animation:"none" }} />
+        <Stack.Screen name="screens/manga_reader_test" options={{ headerShown: false, animationEnabled: false, animation:"none", }} />
       </Stack>
   );
 }

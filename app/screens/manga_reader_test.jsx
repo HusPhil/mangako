@@ -19,6 +19,8 @@ const MangaReaderScreen = () => {
     const AsyncEffect = async () => {
         setIsLoading(true)
 
+        
+
         controllerRef.current = new AbortController()
         const signal = controllerRef.current.signal
 
