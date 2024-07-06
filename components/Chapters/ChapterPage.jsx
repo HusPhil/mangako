@@ -1,8 +1,6 @@
 import { View, Dimensions, ActivityIndicator, Text, Button } from 'react-native'
-import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react'
+import React, { forwardRef, useImperativeHandle,  } from 'react'
 import { Image } from 'expo-image'
-
-import { fetchData, getImageDimensions, tryLang } from './_chapters'
 
 const ChapterPage = forwardRef(({currentManga, imgSrc, pageUrl, pageNum, onPageLoad, onRetry}, ref) => {
     const { height: screenHeight, width: screenWidth } = Dimensions.get('screen')

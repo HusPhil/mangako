@@ -33,7 +33,6 @@ export const fetchData = async (mangaUrl, chapterUrl, pageUrl, abortSignal) => {
     }
 };
 
-
 export const tryLang = async (mangaUrl) => {
 
     const parentKey = shorthash.unique(mangaUrl)
@@ -61,6 +60,6 @@ export const getImageDimensions = (imageUri) => {
         }
       );
     });
-  };
+};
 
 
