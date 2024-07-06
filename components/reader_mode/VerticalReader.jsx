@@ -7,7 +7,7 @@ import { savePageLayout, readPageLayout, scrollToPageNum, fetchPageData, getImag
 import { FlashList } from '@shopify/flash-list';
 
 const VerticalReader = ({ currentManga, chapterPages }) => {
-    const [pageImages, setPageImages] = useState(Array(chapterPages.length).fill(0));
+    const [pageImages, setPageImages] = useState(Array(chapterPages.length).fill(undefined));
 
     const pagesRef = useRef([]);
 
@@ -23,6 +23,7 @@ const VerticalReader = ({ currentManga, chapterPages }) => {
             key={index}
             ref={(page) => { pagesRef.current[index] = page;}}
             imgSrc={item}
+            pageUrl={chapterPages[index]}
             currentManga={currentManga}
             onPageLoad={onPageLoad}
             pageNum={index}
@@ -48,7 +49,14 @@ const VerticalReader = ({ currentManga, chapterPages }) => {
             const pageDataPromises = chapterPages.map(async (pageUrl, index) => {
                 try {
                     const fetchedImgSrc = await fetchPageData(currentManga.manga, currentManga.chapter, pageUrl, signal);
-                    if (fetchedImgSrc.error) throw fetchedImgSrc.error;
+                    if (fetchedImgSrc.error) {
+                        setPageImages(prev => {
+                            const newPageImages = [...prev];
+                            newPageImages[index] = { imgUri: undefined, imgSize, error: fetchedImgSrc.error };
+                            return newPageImages;
+                        });
+                        throw fetchedImgSrc.error
+                    };
 
                     const imgSize = await getImageDimensions(fetchedImgSrc.data);
                     if (isMounted.current) {
@@ -59,12 +67,12 @@ const VerticalReader = ({ currentManga, chapterPages }) => {
                         });
                     }
                 } catch (error) {
-                    console.log(error);
+                    console.log("Error loading pages:", error);
                 }
             });
 
-            await Promise.allSettled(pageDataPromises);
-
+            await Promise.allSettled(pageDataPromises)
+            
             const savedPageLayout = await readPageLayout(currentManga.manga, currentManga.chapter);
             if (!savedPageLayout.error) pageLayout.current = savedPageLayout.data;
         } catch (error) {
@@ -106,16 +114,15 @@ const VerticalReader = ({ currentManga, chapterPages }) => {
 
     return (
         <View className="h-full">
-            <View className="flex-1 relative">
-                <FlashList
-                    ref={flashRef}
-                    data={pageImages}
-                    renderItem={renderItem}
-                    keyExtractor={(item, index) => index.toString()}
-                    estimatedItemSize={200} 
-                />
-            </View>
-
+                <View className="flex-1 relative">
+                    <FlashList
+                        ref={flashRef}
+                        data={pageImages}
+                        renderItem={renderItem}
+                        keyExtractor={(item, index) => index.toString()}
+                        estimatedItemSize={200} 
+                        />
+                </View>
             <View className="absolute bg-white bottom-3 self-center">
                 <Button title="set imgSrc" onPress={handleTestSetButton}/>
                 <Button title="get imgSrc" onPress={handleTestGetButton}/>
