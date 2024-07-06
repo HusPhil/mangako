@@ -27,8 +27,38 @@ const VerticalReader = ({ currentManga, chapterPages }) => {
             currentManga={currentManga}
             onPageLoad={onPageLoad}
             pageNum={index}
+            onRetry={handleRetry}
         />
     ), [currentManga, onPageLoad]);
+
+    const handleRetry = async (pageNum) => {
+        console.log("handle retry from parent called")
+        controllerRef.current = new AbortController()
+        const signal = controllerRef.current.signal;
+
+        try {
+            const fetchedImgSrc = await fetchPageData(currentManga.manga, currentManga.chapter, chapterPages[pageNum], signal);
+            if (fetchedImgSrc.error) {
+                setPageImages(prev => {
+                    const newPageImages = [...prev];
+                    newPageImages[pageNum] = { imgUri: "N/A", imgSize, error: fetchedImgSrc.error };
+                    return newPageImages;
+                });
+                throw fetchedImgSrc.error
+            };
+
+            const imgSize = await getImageDimensions(fetchedImgSrc.data);
+            if (isMounted.current) {
+                setPageImages(prev => {
+                    const newPageImages = [...prev];
+                    newPageImages[pageNum] = { imgUri: fetchedImgSrc.data, imgSize };
+                    return newPageImages;
+                });
+            }
+        } catch (error) {
+            console.log("Error loading pages:", error);
+        }
+    }
 
     const debouncedSaveDataToCache = useCallback(debounce(async () => {
         console.log("called debounced func");
@@ -45,6 +75,7 @@ const VerticalReader = ({ currentManga, chapterPages }) => {
         if (!isMounted.current) return;
 
         try {
+            controllerRef.current = new AbortController()
             const signal = controllerRef.current.signal;
             const pageDataPromises = chapterPages.map(async (pageUrl, index) => {
                 try {
@@ -75,6 +106,8 @@ const VerticalReader = ({ currentManga, chapterPages }) => {
             
             const savedPageLayout = await readPageLayout(currentManga.manga, currentManga.chapter);
             if (!savedPageLayout.error) pageLayout.current = savedPageLayout.data;
+
+            console.log(savePageLayout.data)
         } catch (error) {
             setErrorData(error);
         }
