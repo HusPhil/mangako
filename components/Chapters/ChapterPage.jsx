@@ -1,79 +1,40 @@
-import { View, Dimensions, ActivityIndicator } from 'react-native'
-import React, { useEffect, useRef, useState } from 'react'
+import { View, Dimensions, ActivityIndicator, Text } from 'react-native'
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
 import { Image } from 'expo-image'
 
 import { fetchData, getImageDimensions, tryLang } from './_chapters'
 
-const ChapterPage = ({currentManga, pageUrl, pageNum, onPageLoad}) => {
+const ChapterPage = forwardRef(({currentManga, imgSrc, pageNum, onPageLoad}, ref) => {
     const { height: screenHeight, width: screenWidth } = Dimensions.get('screen')
 
-    const [isLoading, setIsLoading] = useState(false)
-    const [errorData, setErrorData] = useState(null)
-    const [imgSrc, setImgSrc] = useState(null)
-    
+    const imgSrcTest = useRef(null)
 
-    const isMounted = useRef(true)
-    const controllerRef = useRef(null)
-
-    const AsyncEffect = async () => {
-        setIsLoading(true);
-    
-        if (!isMounted.current) return;
-    
-        controllerRef.current = new AbortController();
-        const signal = controllerRef.current.signal;
-    
-        try {
-            const fetchedImgSrc = await fetchData(currentManga.manga, currentManga.chapter, pageUrl, signal);
-            if(fetchedImgSrc.error) throw fetchedImgSrc.error
-            
-            let imgSize;
-            
-            try {
-                imgSize = await getImageDimensions(fetchedImgSrc.data);
-            } catch (error) {
-                throw error;
-            }
-            
-            
-            setImgSrc({ imgUri: fetchedImgSrc.data, imgSize });
-        } catch (error) {
-            setErrorData(error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        
-        AsyncEffect()
-        return () => {
-            isMounted.current = false
-            controllerRef.current.abort()
-            setImgSrc(null)
-        }
-    }, [])
-
-
-
+    useImperativeHandle(ref, () => ({
+        getPageNum: () => pageNum,
+        getImageSrc: () => {
+            if(imgSrcTest.current) return imgSrcTest.current
+            return "No image src available"
+        },
+        setImageSrc: (src) => imgSrcTest.current = src
+    }));
 
 
     return (
         <View className="mt-[-1px]">
-        {!isLoading && imgSrc ? (
+        {imgSrc ? (
             <Image
-                source={{uri: imgSrc.imgUri}}
-                style={{
-                    height: undefined, 
-                    width: screenWidth, 
-                    aspectRatio: imgSrc.imgSize.width/imgSrc.imgSize.height
-                }}
-                onLoad={(event) => {
-                    console.log("hello world the image has been loaded!")
-                    const { height: pageHeight } = event
-                    onPageLoad(pageNum, pageHeight);
-                }}
-            />
+            source={{uri: imgSrc.imgUri}}
+            style={{
+                height: undefined, 
+                width: screenWidth, 
+                aspectRatio: imgSrc.imgSize.width/imgSrc.imgSize.height
+            }}
+            onLoad={(event) => {
+                const { height: pageHeight } = event.source
+                onPageLoad(pageNum, pageHeight);
+                console.log(event.source.url)
+            }}
+        />
         ) : (
             <View 
                 className="justify-center items-center bg-primary"
@@ -84,6 +45,6 @@ const ChapterPage = ({currentManga, pageUrl, pageNum, onPageLoad}) => {
         )}
         </View>
     )
-}
+})
 
 export default ChapterPage

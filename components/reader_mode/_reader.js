@@ -1,6 +1,9 @@
 import * as FileSystem from 'expo-file-system';
 import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
 import { PixelRatio } from 'react-native';
+import shorthash from 'shorthash';
+import { getChapterPageImage } from '../../services/MangakakalotClient';
+import { Image } from 'react-native';
 
 export const savePageLayout = async (mangaUrl, chapterUrl, pageLayout) => {
     try {
@@ -35,4 +38,52 @@ export const scrollToPageNum = (pageNum, pageLayout) => {
     })
     return offSet / PixelRatio.get()
 }
+
+export const fetchPageData = async (mangaUrl, chapterUrl, pageUrl, abortSignal) => {
+    try {
+        const pageFileName = shorthash.unique(pageUrl)
+        const cachedChapterPageImagesDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPageImages", pageFileName)
+        let pageImg = [];
+        
+        await ensureDirectoryExists(cachedChapterPageImagesDir.cachedFolderPath)
+        const fileInfo = await FileSystem.getInfoAsync(cachedChapterPageImagesDir.cachedFilePath);
+
+        if (fileInfo.exists) {
+            return { data: cachedChapterPageImagesDir.cachedFilePath, error: null };
+        }
+        
+        const requestedPageData = await getChapterPageImage(pageUrl, abortSignal);
+        
+        if(requestedPageData) {
+          pageImg = requestedPageData; 
+          await FileSystem.writeAsStringAsync(cachedChapterPageImagesDir.cachedFilePath, JSON.stringify(pageImg), { encoding: FileSystem.EncodingType.Base64 });
+          return { data: cachedChapterPageImagesDir.cachedFilePath, error: null };
+        }
+
+        return { data: [], error: new Error("failed to save") };
+
+    } catch (error) {
+        console.log("Fetch data error:", error);
+        return { data: [], error };
+    }
+};
+
+
+export const getImageDimensions = (imageUri) => {
+    return new Promise((resolve, reject) => {
+      Image.getSize(
+        imageUri,
+        (width, height) => {
+          resolve({ width, height });
+        },
+        (error) => {
+          reject(error);
+        }
+      );
+    });
+  };
+
+
+
+
 
