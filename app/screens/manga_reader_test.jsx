@@ -4,6 +4,7 @@ import { useLocalSearchParams } from 'expo-router';
 
 import * as backend from "./_manga_reader"
 import VerticalReader from '../../components/reader_mode/VerticalReader';
+import HorizontalReader from '../../components/reader_mode/HorizontalReader';
 
 
 const MangaReaderScreen = () => {
@@ -51,15 +52,23 @@ const MangaReaderScreen = () => {
     }, [])
 
     return (
-        <View className="h-full">
+        <View className="h-full bg-primary">
             {!isLoading && (
-                <VerticalReader 
+                // <VerticalReader 
+                //     chapterPages={chapterPages}
+                //     currentManga={{
+                //         manga: mangaUrl,
+                //         chapter: parsedCurrentChapterData.current.chapterUrl
+                //     }}
+                // />
+                <HorizontalReader 
                     chapterPages={chapterPages}
                     currentManga={{
                         manga: mangaUrl,
                         chapter: parsedCurrentChapterData.current.chapterUrl
                     }}
                 />
+
             )}
         </View>
     )

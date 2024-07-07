@@ -2,6 +2,7 @@ import { View, TouchableWithoutFeedback, Button } from 'react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { debounce } from 'lodash';
 
+
 import ChapterPage from '../chapters/ChapterPage';
 import { savePageLayout, readPageLayout, scrollToPageNum, fetchPageData, getImageDimensions } from './_reader';
 import { FlashList } from '@shopify/flash-list';
@@ -123,7 +124,7 @@ const VerticalReader = ({ currentManga, chapterPages }) => {
                         keyExtractor={(item, index) => index.toString()}
                         estimatedItemSize={200} 
                         initialScrollIndex={2}
-                        onContentSizeChange={(w,h) => {handleContentSizeChange(h)}}
+                        // onContentSizeChange={(w,h) => {handleContentSizeChange(h)}}
                         />
                 </View>
             <View className="absolute bg-white bottom-3 self-center">
