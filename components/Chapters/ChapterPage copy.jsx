@@ -2,7 +2,6 @@ import { View, Dimensions, ActivityIndicator, Text, Button } from 'react-native'
 import React, { forwardRef, useEffect, useImperativeHandle, useState, useMemo, useCallback } from 'react';
 import { Image } from 'expo-image';
 import { fetchData, getImageDimensions } from './_chapters';
-import * as FileSystem from 'expo-file-system';
 
 const ChapterPage = forwardRef(({
     currentManga, imgSrc, 
@@ -11,13 +10,10 @@ const ChapterPage = forwardRef(({
 }, ref) => {
     const { height: screenHeight, width: screenWidth } = useMemo(() => Dimensions.get('screen'), []);
 
+
     useImperativeHandle(ref, () => ({
         getPageNum: () => pageNum,
     }), [pageNum]);
-
-    const [tick, setTick] = useState(0);
-    const [imageLoaded, setImageLoaded] = useState(false);
-    const [renderCount, setRenderCount] = useState(0);
 
     const loadPageData = useCallback(async (signal) => {
         try {
@@ -27,7 +23,7 @@ const ChapterPage = forwardRef(({
             const imgSize = await getImageDimensions(fetchedImgSrc.data);
             const pageData = { imgUri: fetchedImgSrc.data, imgSize };
             
-            setImageLoaded(true);
+            onPageLoad(pageNum, pageData);
         } catch (error) {
             console.log(error);
         }
@@ -44,20 +40,6 @@ const ChapterPage = forwardRef(({
         };
     }, [loadPageData]);
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (true) {
-                setTick(prev => prev + 1);
-                setRenderCount(prev => prev + 1);
-                console.log(pageNum);
-            } else if (renderCount >= 3) {
-                clearInterval(interval); // Stop interval after 3 renders
-            }
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, [pageNum, imageLoaded, renderCount]);
-
     const handleRetry = useCallback(() => {
         const controller = new AbortController();
         const signal = controller.signal;
@@ -70,15 +52,14 @@ const ChapterPage = forwardRef(({
             if (!imgSrc.error) {
                 return (
                     <Image
-                        source={imgSrc}
+                        source={{ uri: imgSrc.imgUri }}
                         style={{
                             height: undefined, 
                             width: screenWidth, 
-                            aspectRatio: 1
+                            aspectRatio: imgSrc.imgSize.width / imgSrc.imgSize.height
                         }}
-                        onLoad={async (event) => {
-                            const loadedDimension = await getImageDimensions(event.source.url);
-                            console.log(loadedDimension);
+                        onLoad={(event) => {
+                            const { height: pageHeight } = event.source;
                         }}
                         contentFit='scale'
                     />
@@ -107,7 +88,7 @@ const ChapterPage = forwardRef(({
     }, [imgSrc, screenHeight, screenWidth, handleRetry]);
 
     return ( 
-        <View key={tick}>
+        <View>
             {renderContent}
         </View>
     );
