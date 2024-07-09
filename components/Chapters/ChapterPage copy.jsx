@@ -29,6 +29,7 @@ const ChapterPage = forwardRef(({
         }
     }, [currentManga, pageUrl, pageNum, onPageLoad]);
 
+    
     useEffect(() => {
         const controller = new AbortController();
         const signal = controller.signal;

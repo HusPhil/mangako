@@ -5,6 +5,7 @@ import { useLocalSearchParams } from 'expo-router';
 import * as backend from "./_manga_reader"
 import VerticalReader from '../../components/reader_mode/VerticalReader';
 import HorizontalReader from '../../components/reader_mode/HorizontalReader';
+import ZoomableFlatlist from '../../components/reader_mode/ZoomableFlatlist';
 
 
 const MangaReaderScreen = () => {
@@ -68,6 +69,13 @@ const MangaReaderScreen = () => {
                         chapter: parsedCurrentChapterData.current.chapterUrl
                     }}
                 />
+                // <ZoomableFlatlist
+                //     chapterPages={chapterPages}
+                //     currentManga={{
+                //         manga: mangaUrl,
+                //         chapter: parsedCurrentChapterData.current.chapterUrl
+                //     }}
+                // />
 
             )}
         </View>

@@ -32,6 +32,7 @@
     "react-native-simple-toast": "^3.3.1",
     "react-native-uuid": "^2.0.2",
     "react-native-zoom-toolkit": "^2.0.1",
+    "react-native-zoomable-view": "^0.3.1",
     "shorthash": "^0.0.2"
   },
   "devDependencies": {
