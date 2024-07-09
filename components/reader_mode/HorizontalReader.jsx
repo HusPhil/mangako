@@ -8,8 +8,7 @@ import { Gallery } from 'react-native-zoom-toolkit';
 import * as FileSystem from 'expo-file-system'
 import shorthash from 'shorthash';
 import { getMangaDirectory } from '../../services/Global';
-import { fetchData } from '../chapters/_chapters';
-import { fetchPageData, getImageDimensions } from './_reader';
+import { getImageDimensions, fetchPageData } from './_reader';
 
 const HorizontalReader = ({ currentManga, chapterPages }) => {
   const [pageImages, setPageImages] = useState(Array(chapterPages.length).fill(undefined));
@@ -17,11 +16,40 @@ const HorizontalReader = ({ currentManga, chapterPages }) => {
 
   const controllerRef = useRef(null)
   const isMounted = useRef(true);
+  const pagesRef = useRef([])
 
   const AsyncEffect = async () => {
+    console.log("natawag asynceffect")
+
     controllerRef.current = new AbortController();
     const signal = controllerRef.current.signal;
   
+    const pageDataPromises = chapterPages.map(async (pageUrl, index) => {
+      try {
+        const fetchedImgSrc = await fetchPageData(currentManga.manga, currentManga.chapter, pageUrl, signal);
+        if (fetchedImgSrc.error) {
+            throw fetchedImgSrc.error
+        };
+  
+        const imgSize = await getImageDimensions(fetchedImgSrc.data);
+
+        if(pagesRef.current[index]) pagesRef.current[index].toggleRender({aspectRatio: imgSize.width/imgSize.height})
+
+        console.log("Page:", index + 1, "has been loaded!")
+  
+    } catch (error) {
+        console.log("Error loading pages:", error);
+    }
+    });
+    
+    await Promise.allSettled(pageDataPromises)
+
+    
+
+  };
+
+  const loadPageImages = async () => {
+    console.log("natawag")
     const hashedPagePaths = await Promise.all(chapterPages.map(async (pageUrl) => {
       const pageFileName = shorthash.unique(pageUrl);
       const cachedChapterPageImagesDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName);
@@ -31,15 +59,20 @@ const HorizontalReader = ({ currentManga, chapterPages }) => {
 
       if(fileInfo.exists) imgSize = await getImageDimensions(cachedChapterPageImagesDir.cachedFilePath)
       
-      return {imgUri: cachedChapterPageImagesDir.cachedFilePath, fileExist: fileInfo.exists, imgSize};
+      return {imgUri: cachedChapterPageImagesDir.cachedFilePath, fileExist: fileInfo.exists, imgSize, tryFunc: () => {
+        return 1
+      }};
     }));
   
     setPageImages(hashedPagePaths);
-  };
+  }
+
   useEffect(() => {
+    loadPageImages()
+  }, [])
 
+  useEffect(() => {
       AsyncEffect();
-
       return () => {
         controllerRef.current.abort();
       };
@@ -49,13 +82,14 @@ const HorizontalReader = ({ currentManga, chapterPages }) => {
     return (
       <View>
        <ChapterPage
-            // ref={(page) => { pagesRef.current[index] = page;}}
+            ref={(page) => { pagesRef.current[index] = page;}}
             currentManga={currentManga}
             imgSrc={item}
             pageUrl={chapterPages[index]}
             pageNum={index}
             onPageLoad={()=>{}}
             onRetry={()=>{}}
+            horizontal
         />
       </View>
     );
@@ -75,7 +109,7 @@ const HorizontalReader = ({ currentManga, chapterPages }) => {
             onTap={()=>{console.log("gallery pressed")}}
           />
           ) : (
-            <ActivityIndicator/>
+            <ActivityIndicator size='large' color='red'/>
           )}
         </View>
   

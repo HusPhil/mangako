@@ -3,7 +3,7 @@ import React, {useState, useRef, useEffect} from 'react'
 import { useLocalSearchParams } from 'expo-router';
 
 import * as backend from "./_manga_reader"
-import VerticalReader from '../../components/reader_mode/aVerticalReader';
+import VerticalReader from '../../components/reader_mode/VerticalReader';
 import HorizontalReader from '../../components/reader_mode/HorizontalReader';
 import ZoomableFlatlist from '../../components/reader_mode/ZoomableFlatlist';
 
@@ -55,20 +55,20 @@ const MangaReaderScreen = () => {
     return (
         <View className="h-full bg-primary">
             {!isLoading && (
-                <VerticalReader 
-                    chapterPages={chapterPages}
-                    currentManga={{
-                        manga: mangaUrl,
-                        chapter: parsedCurrentChapterData.current.chapterUrl
-                    }}
-                />
-                // <HorizontalReader 
+                // <VerticalReader 
                 //     chapterPages={chapterPages}
                 //     currentManga={{
                 //         manga: mangaUrl,
                 //         chapter: parsedCurrentChapterData.current.chapterUrl
                 //     }}
                 // />
+                <HorizontalReader 
+                    chapterPages={chapterPages}
+                    currentManga={{
+                        manga: mangaUrl,
+                        chapter: parsedCurrentChapterData.current.chapterUrl
+                    }}
+                />
                 // <ZoomableFlatlist
                 //     chapterPages={chapterPages}
                 //     currentManga={{
