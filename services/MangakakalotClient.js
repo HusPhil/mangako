@@ -314,6 +314,6 @@ export const getChapterPageImage = async (imageUrl, abortSignal) => {
     }
   } catch (error) {
     console.log(`Error: ${error.message}`);
-    // throw error
+    throw error
   }
 };

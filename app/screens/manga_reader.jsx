@@ -3,7 +3,7 @@ import React, {useState, useRef, useEffect} from 'react'
 import { useLocalSearchParams } from 'expo-router';
 
 import * as backend from "./_manga_reader"
-import VerticalReader from '../../components/reader_mode/VerticalReader';
+import VerticalReader from '../../components/reader_mode/aVerticalReader';
 
 
 const MangaReaderScreen = () => {

@@ -5,8 +5,11 @@ import useLoadPageImages from './useLoadPageImages'; // Adjust the path as neede
 import ChapterPage from '../chapters/ChapterPage';
 import { Gallery } from 'react-native-zoom-toolkit';
 
-
-import { fetchPageData, getImageDimensions } from "./_reader";
+import * as FileSystem from 'expo-file-system'
+import shorthash from 'shorthash';
+import { getMangaDirectory } from '../../services/Global';
+import { fetchData } from '../chapters/_chapters';
+import { fetchPageData, getImageDimensions } from './_reader';
 
 const HorizontalReader = ({ currentManga, chapterPages }) => {
   const [pageImages, setPageImages] = useState(Array(chapterPages.length).fill(undefined));
@@ -18,14 +21,21 @@ const HorizontalReader = ({ currentManga, chapterPages }) => {
   const AsyncEffect = async () => {
     controllerRef.current = new AbortController();
     const signal = controllerRef.current.signal;
-
-    const pageDataPromises = chapterPages.map(async (pageUrl, index) => {
-      await loadPageImages(index, pageUrl, signal)
-  });
   
-  await Promise.allSettled(pageDataPromises)
-  }
+    const hashedPagePaths = await Promise.all(chapterPages.map(async (pageUrl) => {
+      const pageFileName = shorthash.unique(pageUrl);
+      const cachedChapterPageImagesDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName);
+      const fileInfo = await FileSystem.getInfoAsync(cachedChapterPageImagesDir.cachedFilePath)
 
+      let imgSize = {width: 1, height: 1}
+
+      if(fileInfo.exists) imgSize = await getImageDimensions(cachedChapterPageImagesDir.cachedFilePath)
+      
+      return {imgUri: cachedChapterPageImagesDir.cachedFilePath, fileExist: fileInfo.exists, imgSize};
+    }));
+  
+    setPageImages(hashedPagePaths);
+  };
   useEffect(() => {
 
       AsyncEffect();
@@ -34,31 +44,6 @@ const HorizontalReader = ({ currentManga, chapterPages }) => {
         controllerRef.current.abort();
       };
   }, [currentManga]);
-
-  const loadPageImages = async (pageNum, pageUrl, signal) => {
-    try {
-        const fetchedImgSrc = await fetchPageData(currentManga.manga, currentManga.chapter, pageUrl, signal);
-        if (fetchedImgSrc.error) {
-            setPageImages(prev => {
-                const newPageImages = [...prev];
-                newPageImages[pageNum] = { imgUri: undefined, imgSize, error: fetchedImgSrc.error };
-                return newPageImages;
-            });
-            throw fetchedImgSrc.error
-        };
-
-        const imgSize = await getImageDimensions(fetchedImgSrc.data);
-        if (isMounted.current) {
-            setPageImages(prev => {
-                const newPageImages = [...prev];
-                newPageImages[pageNum] = { imgUri: fetchedImgSrc.data, imgSize };
-                return newPageImages;
-            });
-        }
-    } catch (error) {
-        console.log("Error loading pages:", error);
-    }
-}
 
   const renderItem = useCallback((item, index) => {
     return (
@@ -88,14 +73,6 @@ const HorizontalReader = ({ currentManga, chapterPages }) => {
             keyExtractor={keyExtractor}
             renderItem={renderItem}
             onTap={()=>{console.log("gallery pressed")}}
-            onIndexChange={(currentIndex) => {
-              if(currentIndex === visibleRange - 1) {
-                // console.log(currentIndex, visibleRange)
-                setVisibleRange(prev => prev + 3)
-              }
-              console.log(currentIndex, visibleRange)
-
-            }}
           />
           ) : (
             <ActivityIndicator/>
