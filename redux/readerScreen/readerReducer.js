@@ -6,7 +6,7 @@ export const INITIAL_STATE = {
     isLoading: false,
     errorData: null,
     showModal: false,
-    readingMode: readerModeOptions['0'],
+    readingMode: readerModeOptions['2'],
 }
 
 export const readerReducer = (state, action) => {

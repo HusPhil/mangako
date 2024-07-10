@@ -31,7 +31,7 @@ const ChapterList = ({ mangaUrl, chaptersData, headerComponent, listStyles, onRe
 
   const handleChapterPress = useCallback((item, index) => {
     router.push({
-      pathname: "screens/manga_reader_test",
+      pathname: "screens/manga_reader",
       params: {
         currentChapterData: JSON.stringify(item),
         mangaUrl

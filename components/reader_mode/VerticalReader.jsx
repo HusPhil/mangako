@@ -52,25 +52,16 @@ const VerticalReader = ({ currentManga, chapterPages, onTap }) => {
     }, []);
 
     const renderItem = useCallback(({ item, index }) => (
-        <View className="overflow-hidden">
-            <ResumableZoom
-                scaleMode={ScaleMode.BOUNCE}
-                maxScale={1.5}
-                onTap={onTap}
-            >
-
-                <ChapterPage
-                    ref={(page) => { pagesRef.current[index] = page;}}
-                    currentManga={currentManga}
-                    imgSrc={item}
-                    pageUrl={chapterPages[index]}
-                    pageNum={index}
-                    onPageLoad={handlePageChange}
-                    onRetry={handleRetry}
-                    vertical
-                />
-            </ResumableZoom>
-        </View>
+            <ChapterPage
+                ref={(page) => { pagesRef.current[index] = page;}}
+                currentManga={currentManga}
+                imgSrc={item}
+                pageUrl={chapterPages[index]}
+                pageNum={index}
+                onPageLoad={handlePageChange}
+                onRetry={handleRetry}
+                vertical
+            />
     ), [handlePageChange]);
 
     const loadPageImages = async (pageNum, pageUrl, signal) => {

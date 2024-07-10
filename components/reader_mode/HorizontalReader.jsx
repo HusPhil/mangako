@@ -1,7 +1,5 @@
 import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { View, Text, Button, Dimensions, ActivityIndicator } from 'react-native';
-import { Image } from 'expo-image';
-import useLoadPageImages from './useLoadPageImages'; // Adjust the path as needed
 import ChapterPage from '../chapters/ChapterPage';
 import { Gallery } from 'react-native-zoom-toolkit';
 

@@ -47,6 +47,7 @@ const ChapterPage = forwardRef(({
                     allowDownscaling={false}
                     contentFit='cover'
                     placeholder={"loading the image yet"}
+                    keyExtractor={imgSrc.imgUri}
                 />
                 {horizontal && tick >= 0 && (
                   <View 
