@@ -10,9 +10,8 @@ import shorthash from 'shorthash';
 import { getMangaDirectory } from '../../services/Global';
 import { getImageDimensions, fetchPageData } from './_reader';
 
-const HorizontalReader = ({ currentManga, chapterPages }) => {
+const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap }) => {
   const [pageImages, setPageImages] = useState(Array(chapterPages.length).fill(undefined));
-  const [visibleRange, setVisibleRange] = useState(3)
 
   const controllerRef = useRef(null)
   const isMounted = useRef(true);
@@ -76,7 +75,7 @@ const HorizontalReader = ({ currentManga, chapterPages }) => {
       return () => {
         controllerRef.current.abort();
       };
-  }, [currentManga]);
+  }, []);
 
   const renderItem = useCallback((item, index) => {
     return (
@@ -93,7 +92,7 @@ const HorizontalReader = ({ currentManga, chapterPages }) => {
         />
       </View>
     );
-  }, [visibleRange]);
+  }, []);
   const keyExtractor = useCallback((item, index) => {
     return ` ${item}-${index}`;
   }, []);
@@ -103,10 +102,11 @@ const HorizontalReader = ({ currentManga, chapterPages }) => {
         <View className="flex-1">
           {chapterPages && chapterPages.length > 0 ? (
             <Gallery
-            data={pageImages}
-            keyExtractor={keyExtractor}
-            renderItem={renderItem}
-            onTap={()=>{console.log("gallery pressed")}}
+              data={inverted ? [...pageImages].reverse() : pageImages}
+              keyExtractor={keyExtractor}
+              renderItem={renderItem}
+              onTap={onTap}
+              maxScale={2.5}
           />
           ) : (
             <ActivityIndicator size='large' color='red'/>

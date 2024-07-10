@@ -1,7 +1,9 @@
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useFocusEffect } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import * as NavigationBar from 'expo-navigation-bar';
+
 
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -22,6 +24,11 @@ const [loaded] = useFonts({
   });
 
   useEffect(() => {
+    const hideNavigationBar = async () => {
+      await NavigationBar.setVisibilityAsync('hidden');
+      await NavigationBar.setBehaviorAsync('overlay-swipe')
+    }
+    hideNavigationBar()
     if (loaded) {
       SplashScreen.hideAsync();
     }
@@ -30,6 +37,7 @@ const [loaded] = useFonts({
   if (!loaded) {
     return null;
   }
+
 
   return (
       <Stack>

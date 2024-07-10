@@ -1,0 +1,73 @@
+import { View, Modal, StatusBar, Animated, Easing } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import colors from '../../constants/colors';
+
+const ModalPopup = ({ otherStyles, children, visible, handleClose }) => {
+  const [showModal, setShowModal] = useState(visible);
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      setShowModal(true);
+      Animated.timing(slideAnim, {
+        toValue: 1,
+        duration: 200,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 200,
+        easing: Easing.in(Easing.ease),
+        useNativeDriver: true,
+      }).start(() => setShowModal(false));
+    }
+  }, [visible]);
+
+  const slideUp = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [300, 0], // Slide up from 300px to 0px
+  });
+
+  return (
+    <View>
+      <Modal
+        visible={showModal}
+        onRequestClose={handleClose}
+        animationType='fade'
+        transparent
+        statusBarTranslucent
+      >
+        <View
+          style={[
+            {
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              padding: 10,
+              height: '100%',
+            },
+            otherStyles,
+          ]}
+        >
+          <Animated.View
+            style={{
+              transform: [{ translateY: slideUp }],
+              height: '40%',
+              width: '100%',
+              borderRadius: 10,
+              backgroundColor: colors.secondary.DEFAULT,
+              shadowColor: 'black',
+              elevation: 3,
+            }}
+          >
+            {children}
+          </Animated.View>
+        </View>
+      </Modal>
+    </View>
+  );
+};
+
+export default ModalPopup;

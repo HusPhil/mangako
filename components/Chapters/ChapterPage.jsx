@@ -1,11 +1,6 @@
-import { View, Dimensions, ActivityIndicator, Text, Button } from 'react-native';
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { View, Dimensions, ActivityIndicator, Text, } from 'react-native';
+import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { Image } from 'expo-image';
-import { fetchData } from './_chapters';
-
-import { getImageDimensions } from './_chapters';
-import * as FileSystem from 'expo-file-system'
-import images from "../../constants/images"
 
 
 const ChapterPage = forwardRef(({

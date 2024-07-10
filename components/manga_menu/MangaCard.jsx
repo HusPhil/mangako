@@ -25,7 +25,7 @@ const MangaCard = ({
     }
   }
 
-  const source = autoload ? coverImgUrl : mangaCover;
+  const source = autoload ? null : mangaCover;
   
   return (
     <TouchableOpacity 
