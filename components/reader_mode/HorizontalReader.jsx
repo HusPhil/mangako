@@ -16,10 +16,9 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap }) => {
   const controllerRef = useRef(null)
   const isMounted = useRef(true);
   const pagesRef = useRef([])
+  const galleryRef = useRef(null)
 
   const AsyncEffect = async () => {
-    console.log("natawag asynceffect")
-
     controllerRef.current = new AbortController();
     const signal = controllerRef.current.signal;
   
@@ -42,13 +41,9 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap }) => {
     });
     
     await Promise.allSettled(pageDataPromises)
-
-    
-
   };
 
   const loadPageImages = async () => {
-    console.log("natawag")
     const hashedPagePaths = await Promise.all(chapterPages.map(async (pageUrl) => {
       const pageFileName = shorthash.unique(pageUrl);
       const cachedChapterPageImagesDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName);
@@ -64,6 +59,7 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap }) => {
     }));
   
     setPageImages(hashedPagePaths);
+    // if(galleryRef.current) galleryRef.current.setIndex({animated: true, index: inverted ? chapterPages.length - 1 : 0})
   }
 
   useEffect(() => {
@@ -103,6 +99,7 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap }) => {
           {chapterPages && chapterPages.length > 0 ? (
             <Gallery
               data={inverted ? [...pageImages].reverse() : pageImages}
+              initialIndex={inverted ? chapterPages.length - 1 : 0}
               keyExtractor={keyExtractor}
               renderItem={renderItem}
               onTap={onTap}

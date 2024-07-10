@@ -18,7 +18,7 @@ const MangaReaderScreen = () => {
     const [errorData, setErrorData] = useState(null)
 
     const [showModal, setShowModal] = useState(false)
-    const [readingMode, setReadingMode] = useState(backend.readerModeOptions['0'])
+    const [readingMode, setReadingMode] = useState(backend.readerModeOptions['2'])
 
     const isMounted = useRef(true)
     const controllerRef = useRef(null)
@@ -77,49 +77,51 @@ const MangaReaderScreen = () => {
                         details={"hello world"}
                         listItems={backend.readerModeOptions}
                         onValueChange={(data) => {
-                        //   setReadingMode(data);
+                          setReadingMode(data);
                         }}
                         selectedIndex={backend.readerModeOptions.indexOf(readingMode)}
                     />
-                    <Button title='Retry' onPress={async ()=>{
-                        // readerModeRef.current.retryFetch()
-                        // console.log(await backend.readItemLayout(mangaLink, currentChapter.current)) // prints {"_h": 0, "_i": 0, "_j": null, "_k": null}
-                        // console.log(await backend.readMangaConfigData(mangaLink, currentChapter.current)) // prints {"_h": 0, "_i": 0, "_j": null, "_k": null}
-                    }}/>
-                    <Button title='Save' onPress={()=>{
-                        // backend.saveMangaConfigData(mangaLink, currentChapter.current, {currentPage: 4, finished: true, extraData: "another data"})
-                        // backend.saveMangaConfigData(mangaLink, currentChapter.current, {finished: false,})
-                    }}/>
-                    <Button title='Delete' onPress={()=>{
-                        // backend.deleteConfigData(mangaLink, currentChapter.current, 'layout')
-                    }}/>
                     </View>
                 </View>
           </ModalPopup>
             {!isLoading && (
-                // <VerticalReader 
-                //     chapterPages={chapterPages}
-                //     currentManga={{
-                //         manga: mangaUrl,
-                //         chapter: parsedCurrentChapterData.current.chapterUrl
-                //     }}
-                // />
-                <HorizontalReader 
-                    chapterPages={chapterPages}
-                    currentManga={{
-                        manga: mangaUrl,
-                        chapter: parsedCurrentChapterData.current.chapterUrl
-                    }}
-                    onTap={handleShowModal}
-                />
-                // <ZoomableFlatlist
-                //     chapterPages={chapterPages}
-                //     currentManga={{
-                //         manga: mangaUrl,
-                //         chapter: parsedCurrentChapterData.current.chapterUrl
-                //     }}
-                // />
+                <>
+                {readingMode === backend.readerModeOptions[0] && (
+                    <HorizontalReader 
+                        chapterPages={chapterPages}
+                        currentManga={{
+                            manga: mangaUrl,
+                            chapter: parsedCurrentChapterData.current.chapterUrl
+                        }}
+                        onTap={handleShowModal}
+                    />
+                )}
 
+                {readingMode === backend.readerModeOptions[1] && (
+                    <HorizontalReader 
+                        chapterPages={chapterPages}
+                        currentManga={{
+                            manga: mangaUrl,
+                            chapter: parsedCurrentChapterData.current.chapterUrl
+                        }}
+                        onTap={handleShowModal}
+                        inverted
+                    />
+                )}
+
+                {readingMode === backend.readerModeOptions[2] && (
+                    <VerticalReader 
+                        chapterPages={chapterPages}
+                        currentManga={{
+                            manga: mangaUrl,
+                            chapter: parsedCurrentChapterData.current.chapterUrl
+                        }}
+                        onTap={handleShowModal}
+                        inverted
+                    />
+                )}
+                </>
+                
             )}
         </View>
     )

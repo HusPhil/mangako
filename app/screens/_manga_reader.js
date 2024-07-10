@@ -9,7 +9,7 @@ import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global'
 export const readerModeOptions = [
     {
       label: "Horizontal", value: "hor",
-      desc: "Standard left-to-right viewing mode. Most commonly used for reading manhwas."
+      desc: "Standard left-to-right viewing mode. Most commonly used for reading manhuas."
     },
     {
       label: "Horizontal (inverted)", value: "hor-inv",
@@ -17,16 +17,14 @@ export const readerModeOptions = [
     },
     {
       label: "Vertical", value: "ver",
-      desc: "Vertical top-to-bottom viewing mode. Perfect fit for reading manhuas."
+      desc: "Vertical top-to-bottom viewing mode. Perfect fit for reading manhwas."
     },
   ]
 
 
 // --------------------------------------- VARIABLES ONLY ---------------------------------------*/}
 
-  
 
-  
 export const fetchData = async (mangaUrl, chapterUrl, abortSignal) => {
     try {
         const cachedChapterPagesDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPages", "pages.json")

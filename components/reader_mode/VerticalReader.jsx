@@ -6,8 +6,9 @@ import { debounce } from 'lodash';
 import ChapterPage from '../chapters/ChapterPage';
 import { savePageLayout, readPageLayout, scrollToPageNum, fetchPageData, getImageDimensions } from './_reader';
 import { FlashList } from '@shopify/flash-list';
+import { ResumableZoom, ScaleMode } from 'react-native-zoom-toolkit';
 
-const VerticalReader = ({ currentManga, chapterPages }) => {
+const VerticalReader = ({ currentManga, chapterPages, onTap }) => {
     const [pageImages, setPageImages] = useState(Array(chapterPages.length).fill(undefined));
     const [errorData, setErrorData] = useState(null)
 
@@ -48,20 +49,29 @@ const VerticalReader = ({ currentManga, chapterPages }) => {
             isMounted.current = false;
             controllerRef.current.abort();
         };
-    }, [chapterPages, currentManga]);
+    }, []);
 
     const renderItem = useCallback(({ item, index }) => (
-        <ChapterPage
-            ref={(page) => { pagesRef.current[index] = page;}}
-            currentManga={currentManga}
-            imgSrc={item}
-            pageUrl={chapterPages[index]}
-            pageNum={index}
-            onPageLoad={handlePageChange}
-            onRetry={handleRetry}
-            vertical
-        />
-    ), [currentManga, handlePageChange]);
+        <View className="overflow-hidden">
+            <ResumableZoom
+                scaleMode={ScaleMode.BOUNCE}
+                maxScale={1.5}
+                onTap={onTap}
+            >
+
+                <ChapterPage
+                    ref={(page) => { pagesRef.current[index] = page;}}
+                    currentManga={currentManga}
+                    imgSrc={item}
+                    pageUrl={chapterPages[index]}
+                    pageNum={index}
+                    onPageLoad={handlePageChange}
+                    onRetry={handleRetry}
+                    vertical
+                />
+            </ResumableZoom>
+        </View>
+    ), [handlePageChange]);
 
     const loadPageImages = async (pageNum, pageUrl, signal) => {
         try {
@@ -82,6 +92,9 @@ const VerticalReader = ({ currentManga, chapterPages }) => {
                     newPageImages[pageNum] = { imgUri: fetchedImgSrc.data, imgSize };
                     return newPageImages;
                 });
+            }
+            if(pageNum === chapterPages.length - 1) {
+                // flashRef.current.scrollToIndex({ index: pageNum, animated: true });
             }
         } catch (error) {
             console.log("Error loading pages:", error);
@@ -108,10 +121,10 @@ const VerticalReader = ({ currentManga, chapterPages }) => {
         console.log("status:", prevPageNumOffset.current, contentHeight);
         if (contentHeight > prevPageNumOffset.current) {
             prevPageNumOffset.current = scrollToPageNum(chapterPages.length - 1, pageLayout.current);
-            flashRef.current.scrollToIndex({ index: chapterPages.length - 1, animated: true });
+            
             // contentLoaded.current = true;
         }
-    }, [chapterPages]);
+    }, []);
 
 
     return (
@@ -123,17 +136,9 @@ const VerticalReader = ({ currentManga, chapterPages }) => {
                         renderItem={renderItem}
                         keyExtractor={(item, index) => index.toString()}
                         estimatedItemSize={200} 
-                        initialScrollIndex={2}
-                        // onContentSizeChange={(w,h) => {handleContentSizeChange(h)}}
                         />
                 </View>
-            <View className="absolute bg-white bottom-3 self-center">
-                <Button title="log saved pagelayout" onPress={ async() => {
-                     const savedPageLayout = await readPageLayout(currentManga.manga, currentManga.chapter);
-                    console.log(savedPageLayout)
-                }}/>
-                {/* <Button title="get imgSrc" onPress={handleTestGetButton}/> */}
-            </View>
+            
         </View>
     );
 };
