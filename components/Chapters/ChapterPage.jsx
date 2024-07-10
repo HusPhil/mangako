@@ -15,80 +15,52 @@ const ChapterPage = forwardRef(({
   horizontal, vertical,
 }, ref) => {
   const { height: screenHeight, width: screenWidth } = Dimensions.get('screen');
-  const [pageImgSrc, setPageImgSrc] = useState(imgSrc);
   const [tick, setTick] = useState(0)
   const [aspectRatio, setAspectRatio] = useState(null)
 
   useImperativeHandle(ref, () => ({
     getPageNum: () => pageNum,
-    toggleRender: ({aspectRatio}) => {
+    toggleRender: async ({aspectRatio}) => {
         setTick(prev => prev + 1)
         setAspectRatio(aspectRatio)
     }
   }));
 
-  return (
-    <View>
-        {false && (
-            <View key={pageImgSrc}>
-            {pageImgSrc?.fileExist ? (
-              <Image
-                source={{ uri: pageImgSrc.imgUri }}
-                recyclingKey={imgSrc.imgUri}
-                style={{
-                  height: undefined, 
-                  width: screenWidth, 
-                  aspectRatio: pageImgSrc.imgSize.width/pageImgSrc.imgSize.height
-                }}
-                onLoad={(event) => {
-                  const { height: pageHeight } = event.source;
-                  onPageLoad(pageNum, pageHeight);
-                }}
-                allowDownscaling={false}
-                contentFit='cover'
-                placeholder={{uri: images.pageTest}}
-                alt='Loading image'
-              />
-            ) : (
-              <View 
-                className="justify-center items-center bg-primary"
-                style={{ height: screenHeight / 2, width: screenWidth }}
-              >
-                <ActivityIndicator color={'white'} size={30} />
-              </View>
-            )}
-          </View>
-        ) }
+  useEffect(() => {
+    return () => {
+      setTick(-1)
+    }
+  })
 
+  return (
+    <>
         {imgSrc ? (
             <View className="mt-[-1px]" key={tick}>
-                {imgSrc ? (
                 <Image
                     source={{ uri: imgSrc.imgUri }}
                     style={{
                     height: undefined, 
                     width: screenWidth, 
-                    aspectRatio: aspectRatio ? aspectRatio : imgSrc.imgSize.width/imgSrc.imgSize.height
+                    aspectRatio: aspectRatio ? aspectRatio : imgSrc.imgSize.width/imgSrc.imgSize.height,
+                    position: 'relative'
                     }}
                     onLoad={async (event) => {
                     const { width: pageWidth, height: pageHeight } = event.source;
                     onPageLoad(pageNum, pageHeight);
-                    // const imgSize = await getImageDimensions(imgSrc.imgUri)
-                    if(!vertical) setAspectRatio(pageWidth/pageHeight)
+                    if(horizontal) setAspectRatio(pageWidth/pageHeight)
                     }}
                     allowDownscaling={false}
-                contentFit='cover'
-                placeholder={"loading the image yet"}
+                    contentFit='cover'
+                    placeholder={"loading the image yet"}
                 />
-                ) : (
-                <View 
-                    className="justify-center items-center bg-primary"
-                    style={{ height: screenHeight / 2, width: screenWidth }}
-                >
-                    <ActivityIndicator color={'white'} size='large' />
-                    <Text className="font-pregular text-white">Loading pages..</Text>
-                </View>
+                {horizontal && tick >= 0 && (
+                  <View 
+                      className="h-full w-full justify-center items-center bg-primary absolute -z-50"
+                  >
+                      <ActivityIndicator color={'white'} size='large' />
+                  </View>
                 )}
+                
             </View>
         ) : (
                 <View 
@@ -100,7 +72,7 @@ const ChapterPage = forwardRef(({
                 </View>
         )}
         
-    </View>
+    </>
   );
 });
 
