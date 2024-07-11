@@ -42,7 +42,7 @@ const ChapterPage = forwardRef(({
                     style={{
                       height: undefined, 
                       width: screenWidth, 
-                      aspectRatio: aspectRatio ? aspectRatio : imgSrc.imgSize.width/imgSrc.imgSize.height,
+                      aspectRatio: aspectRatio ? aspectRatio : imgSrc?.imgSize?.width/imgSrc?.imgSize?.height,
                       position: 'relative'
                     }}
                     onLoad={async (event) => {

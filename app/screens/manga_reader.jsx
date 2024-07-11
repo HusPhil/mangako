@@ -1,4 +1,4 @@
-import { View, Text } from 'react-native'
+import { View, Text, Button } from 'react-native'
 import React, {useRef, useEffect, useReducer, useCallback } from 'react'
 import { router, useLocalSearchParams } from 'expo-router';
 
@@ -24,6 +24,15 @@ const MangaReaderScreen = () => {
     const AsyncEffect = useCallback(async () => {
         
         dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
+        const savedConfig = await backend.readMangaConfigData(mangaUrl, parsedCurrentChapterData.chapterUrl)
+
+        console.log("savedVong:", savedConfig)
+       
+        if(savedConfig) dispatch({type: READER_ACTIONS.LOAD_CONFIG, payload: {
+            currentPage: savedConfig?.chapter?.currentPage || 0,
+            readingModeIndex: savedConfig?.manga?.readingModeIndex || 0,
+        }})
+        
         controllerRef.current = new AbortController();
         const signal = controllerRef.current.signal;
 
@@ -58,6 +67,11 @@ const MangaReaderScreen = () => {
         dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
     }, [])
 
+    const handlePageChange = useCallback(async (currentPage) => {
+        dispatch({type: READER_ACTIONS.SET_CURRENT_PAGE, payload: currentPage})
+        await backend.saveMangaConfigData(mangaUrl, parsedCurrentChapterData.chapterUrl, {"currentPage": currentPage})
+    }, [state.currentPage])
+
     return (
         <View className="h-full bg-primary">
             <ModalPopup visible={state.showModal} handleClose={() => {dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})}}>
@@ -71,16 +85,21 @@ const MangaReaderScreen = () => {
                         title={"Reading mode:"}
                         otherContainerStyles={'rounded-md p-2 px-4  z-50 '}
                         listItems={backend.readerModeOptions}
-                        onValueChange={(data) => {
-                          dispatch({type: READER_ACTIONS.SET_READER_MODE, payload: data})
+                        onValueChange={async (data) => {
+                            await backend.saveMangaConfigData(mangaUrl, parsedCurrentChapterData.chapterUrl, {"readingModeIndex": backend.readerModeOptions.indexOf(data)}, true)
+                            dispatch({type: READER_ACTIONS.SET_READER_MODE, payload: data})
                         }}
                         selectedIndex={backend.readerModeOptions.indexOf(state.readingMode)}
                     />
                     </View>
                 </View>
+
+                <Button title='delete config' onPress={async () => {
+                    await backend.deleteConfigData(mangaUrl, parsedCurrentChapterData.chapterUrl, "manga")
+                }} />
           </ModalPopup>
             {!state.isLoading && (
-                <>
+            <View>
                 {state.readingMode === backend.readerModeOptions[0] && (
                     <HorizontalReader 
                         chapterPages={state.chapterPages}
@@ -89,6 +108,8 @@ const MangaReaderScreen = () => {
                             chapter: parsedCurrentChapterData.chapterUrl
                         }}
                         onTap={handleTap}
+                        currentPage={state.currentPage}
+                        onPageChange={handlePageChange}
                     />
                 )}
 
@@ -99,9 +120,9 @@ const MangaReaderScreen = () => {
                             manga: mangaUrl,
                             chapter: parsedCurrentChapterData.chapterUrl
                         }}
-                        onTap={() => {
-                            dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
-                        }}
+                        onPageChange={handlePageChange}
+                        onTap={handleTap}
+                        currentPage={state.chapterPages.length - 1 - state.currentPage}
                         inverted
                     />
                 )}
@@ -113,15 +134,18 @@ const MangaReaderScreen = () => {
                             manga: mangaUrl,
                             chapter: parsedCurrentChapterData.chapterUrl
                         }}
-                        onTap={() => {
-                            dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
-                        }}
+                        onPageChange={handlePageChange}
+                        onTap={handleTap}
+                        currentPage={state.currentPage}
                         inverted
                     />
                 )}
-                </>
-                
+            </View>
             )}
+
+            <View pointerEvents='none' className="bg-transparent absolute bottom-2 items-center w-full">
+                <Text className="font-pregular text-white text-xs">{state.currentPage + 1}/{state.chapterPages.length}</Text>
+            </View>
         </View>
     )
 }

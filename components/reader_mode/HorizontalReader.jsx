@@ -2,14 +2,19 @@ import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { View, Text, Button, Dimensions, ActivityIndicator } from 'react-native';
 import ChapterPage from '../chapters/ChapterPage';
 import { Gallery } from 'react-native-zoom-toolkit';
+import { useReducer } from 'react';
 
 import * as FileSystem from 'expo-file-system'
 import shorthash from 'shorthash';
 import { getMangaDirectory } from '../../services/Global';
 import { getImageDimensions, fetchPageData } from './_reader';
 
-const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap }) => {
+import { readerReducer, INITIAL_STATE } from '../../redux/readerScreen/readerReducer';
+import { READER_ACTIONS } from '../../redux/readerScreen/readerActions';
+
+const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap, onPageChange, currentPage }) => {
   const [pageImages, setPageImages] = useState(Array(chapterPages.length).fill(undefined));
+  const [state, dispatch] = useReducer(readerReducer, INITIAL_STATE)
 
   const controllerRef = useRef(null)
   const isMounted = useRef(true);
@@ -30,8 +35,6 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap }) => {
         const imgSize = await getImageDimensions(fetchedImgSrc.data);
 
         if(pagesRef.current[index]) pagesRef.current[index].toggleRender({aspectRatio: imgSize.width/imgSize.height})
-
-        console.log("Page:", index + 1, "has been loaded!")
   
     } catch (error) {
         console.log("Error loading pages:", error);
@@ -96,10 +99,13 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap }) => {
             <Gallery
               ref={galleryRef}
               data={inverted ? [...pageImages].reverse() : pageImages}
-              initialIndex={inverted ? chapterPages.length - 1 : 0}
+              initialIndex={currentPage}
               keyExtractor={keyExtractor}
               renderItem={renderItem}
               onTap={onTap}
+              onIndexChange={(currentPage) => {
+                onPageChange(inverted ? chapterPages.length - 1 - currentPage : currentPage)
+              }}
               maxScale={2.5}
           />
           ) : (

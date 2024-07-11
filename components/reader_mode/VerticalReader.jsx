@@ -5,7 +5,7 @@ import { FlashList } from '@shopify/flash-list';
 import ChapterPage from '../chapters/ChapterPage';
 import { savePageLayout, readPageLayout, scrollToPageNum, fetchPageData, getImageDimensions } from './_reader';
 
-const VerticalReader = ({ currentManga, chapterPages, onTap }) => {
+const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, currentPage }) => {
   const [pageImages, setPageImages] = useState(Array(chapterPages.length).fill(undefined));
   const [errorData, setErrorData] = useState(null);
 
@@ -74,14 +74,20 @@ const VerticalReader = ({ currentManga, chapterPages, onTap }) => {
     await loadPageImages(pageNum, chapterPages[pageNum], signal);
   }, []);
 
-  const debouncedSaveDataToCache = useCallback(debounce(async () => {
-    await savePageLayout(currentManga.manga, currentManga.chapter, pageLayout.current);
-  }, 1000), [currentManga]);
-
-  const handlePageChange = useCallback((pageNum, pageHeight) => {
+  const handleViewableItemsChanged = useCallback(({ viewableItems }) => {
+    if(viewableItems.length > 0) {
+      onPageChange(viewableItems.slice(-1)[0].index)
+    }
+  }, [])
+  
+  const handlePageLoad = useCallback((pageNum, pageHeight) => {
     pageLayout.current[pageNum] = pageHeight;
     debouncedSaveDataToCache();
   }, [debouncedSaveDataToCache]);
+  
+  const debouncedSaveDataToCache = useCallback(debounce(async () => {
+    await savePageLayout(currentManga.manga, currentManga.chapter, pageLayout.current);
+  }, 1000), [currentManga]);
 
   const renderItem = useCallback(({ item, index }) => (
     <ChapterPage
@@ -90,7 +96,7 @@ const VerticalReader = ({ currentManga, chapterPages, onTap }) => {
       imgSrc={item}
       pageUrl={chapterPages[index]}
       pageNum={index}
-      onPageLoad={handlePageChange}
+      onPageLoad={handlePageLoad}
       onRetry={handleRetry}
       onTap={onTap}
       vertical
@@ -103,9 +109,11 @@ const VerticalReader = ({ currentManga, chapterPages, onTap }) => {
         <FlashList
           ref={flashRef}
           data={pageImages}
+          initialScrollIndex={currentPage}
           renderItem={renderItem}
           keyExtractor={(item, index) => index.toString()}
           estimatedItemSize={500}
+          onViewableItemsChanged={handleViewableItemsChanged}
         />
       </View>
     </View>

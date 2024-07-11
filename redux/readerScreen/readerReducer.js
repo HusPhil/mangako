@@ -6,11 +6,12 @@ export const INITIAL_STATE = {
     isLoading: false,
     errorData: null,
     showModal: false,
+    currentPage: 0,
     readingMode: readerModeOptions['0'],
 }
 
 export const readerReducer = (state, action) => {
-    console.log(action.type)
+    // console.log(action.type)
     switch (action.type) {
         case READER_ACTIONS.GET_CHAPTER_PAGES:
             return {
@@ -32,6 +33,17 @@ export const readerReducer = (state, action) => {
             return {
                 ...state,
                 readingMode: action.payload,
+            };
+        case READER_ACTIONS.SET_CURRENT_PAGE:
+            return {
+                ...state,
+                currentPage: action.payload,
+            };
+        case READER_ACTIONS.LOAD_CONFIG:
+            return {
+                ...state,
+                currentPage: action.payload.currentPage,
+                readingMode: readerModeOptions[action.payload.readingModeIndex.toString()]
             };
         case READER_ACTIONS.SHOW_MODAL:
             return {

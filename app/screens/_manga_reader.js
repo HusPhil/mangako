@@ -78,23 +78,23 @@ export const chapterNavigator = async (mangaUrl, currentChapterUrl, next) => {
     }
 }
 
-export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject) => {
+export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject, mangaOnly) => {
   try {
     const parentKey = shorthash.unique(mangaUrl);
     const chapterKey = shorthash.unique(chapterUrl);
-    const cachedConfigFilePath = `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`;
+    const cachedConfigFilePath = mangaOnly ? 
+      `${FileSystem.cacheDirectory}${parentKey}/configs` :
+      `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`;;
     const cachedFile = "/config.json";
 
-    // Read the existing config data
     const existingConfig = await readMangaConfigData(mangaUrl, chapterUrl);
 
-    // Merge existing config with new config object
-    const configToSave = { ...existingConfig, ...configObject };
+    const configToSave = mangaOnly ? 
+        { ...existingConfig?.manga, ...configObject } : 
+        { ...existingConfig?.chapter, ...configObject };
 
-    // Ensure directory exists
     await ensureDirectoryExists(cachedConfigFilePath);
 
-    // Write the merged config data to the file
     await FileSystem.writeAsStringAsync(cachedConfigFilePath + cachedFile, JSON.stringify(configToSave));
 
     return { error: null };
@@ -110,25 +110,27 @@ export const readMangaConfigData = async (mangaUrl, chapterUrl) => {
     const parentKey = shorthash.unique(mangaUrl);
     const chapterKey = shorthash.unique(chapterUrl);
     const cachedConfigFilePath = `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`;
+    const cachedConfigParentPath = `${FileSystem.cacheDirectory}${parentKey}/configs`;
     const cachedFile = "/config.json";
+    let savedMangaConfig = {}
     let cachedConfig = "";
 
     await ensureDirectoryExists(cachedConfigFilePath);
+    await ensureDirectoryExists(cachedConfigParentPath);
+
     const fileInfo = await FileSystem.getInfoAsync(cachedConfigFilePath + cachedFile);
+    const parentFileInfo = await FileSystem.getInfoAsync(cachedConfigParentPath + cachedFile);
 
     if (fileInfo.exists) {
       cachedConfig = await FileSystem.readAsStringAsync(cachedConfigFilePath + cachedFile);
-    } else {
-      // Handle the case where the file does not exist
-      return null;  // or any default value you wish to return
+      savedMangaConfig["chapter"] = (JSON.parse(cachedConfig))
     }
+    
+    if (!parentFileInfo.exists) return savedMangaConfig;  
+    cachedConfig = await FileSystem.readAsStringAsync(cachedConfigParentPath + cachedFile);
+    savedMangaConfig["manga"] = (JSON.parse(cachedConfig))
 
-    try {
-      return JSON.parse(cachedConfig);
-    } catch (jsonError) {
-      console.error("Error parsing JSON:", jsonError);
-      return { error: jsonError };
-    }
+    return savedMangaConfig;  
 
   } catch (error) {
     console.error("Fetch data error:", error);
@@ -140,9 +142,9 @@ export const deleteConfigData = async (mangaUrl, chapterUrl, type) => {
   try {
     const parentKey = shorthash.unique(mangaUrl);
     const chapterKey = shorthash.unique(chapterUrl);
-    const cachedConfigFilePath = `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/${type}`;
-    const cachedFile = `/${type}.json`;
-    await FileSystem.deleteAsync(cachedConfigFilePath + cachedFile)
+    const cachedConfigFilePath = `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`;
+    // const cachedFile = `/config.json`;
+    await FileSystem.deleteAsync(cachedConfigFilePath)
   } catch (error) {
     
   }
