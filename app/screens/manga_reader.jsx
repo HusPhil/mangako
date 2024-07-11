@@ -1,6 +1,6 @@
 import { View, Text } from 'react-native'
-import React, {useRef, useEffect, useReducer } from 'react'
-import { useLocalSearchParams } from 'expo-router';
+import React, {useRef, useEffect, useReducer, useCallback } from 'react'
+import { router, useLocalSearchParams } from 'expo-router';
 
 import * as backend from "./_manga_reader"
 import VerticalReader from '../../components/reader_mode/VerticalReader';
@@ -21,7 +21,7 @@ const MangaReaderScreen = () => {
     const isMounted = useRef(true)
     const controllerRef = useRef(null)
 
-    const AsyncEffect = async () => {
+    const AsyncEffect = useCallback(async () => {
         
         dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
         controllerRef.current = new AbortController();
@@ -39,17 +39,23 @@ const MangaReaderScreen = () => {
                 console.log("Error fetching chapter pages:", error);
             }
             dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_ERROR})
+            router.back()
+            
         } 
         
-    }
+    }, [])
 
     useEffect(() => {
         AsyncEffect()
         return () => {
             isMounted.current = false
             controllerRef.current.abort()
-            // dispatch({type: READER_ACTIONS.EFFECT_CLEAN_UP})
+            dispatch({type: READER_ACTIONS.EFFECT_CLEAN_UP})
         }
+    }, [])
+
+    const handleTap = useCallback(() => {
+        dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
     }, [])
 
     return (
@@ -64,7 +70,6 @@ const MangaReaderScreen = () => {
                     <DropDownList
                         title={"Reading mode:"}
                         otherContainerStyles={'rounded-md p-2 px-4  z-50 '}
-                        details={"hello world"}
                         listItems={backend.readerModeOptions}
                         onValueChange={(data) => {
                           dispatch({type: READER_ACTIONS.SET_READER_MODE, payload: data})
@@ -83,9 +88,7 @@ const MangaReaderScreen = () => {
                             manga: mangaUrl,
                             chapter: parsedCurrentChapterData.chapterUrl
                         }}
-                        onTap={() => {
-                            dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
-                        }}
+                        onTap={handleTap}
                     />
                 )}
 

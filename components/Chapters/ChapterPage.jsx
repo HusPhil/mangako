@@ -1,4 +1,4 @@
-import { View, Dimensions, ActivityIndicator, Text, } from 'react-native';
+import { View, Dimensions, ActivityIndicator, Text, TouchableWithoutFeedback } from 'react-native';
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { Image } from 'expo-image';
 
@@ -7,6 +7,7 @@ const ChapterPage = forwardRef(({
   currentManga, imgSrc, 
   pageUrl, pageNum, 
   onPageLoad, onRetry,
+  onTap,
   horizontal, vertical,
 }, ref) => {
   const { height: screenHeight, width: screenWidth } = Dimensions.get('screen');
@@ -25,24 +26,29 @@ const ChapterPage = forwardRef(({
     return () => {
       setTick(-1)
     }
-  })
+  }, [])
+
+
 
   return (
+   
     <>
+        <TouchableWithoutFeedback disabled={!onTap} onPress={onTap}>
         {imgSrc ? (
+
             <View className="mt-[-1px]" key={tick}>
                 <Image
                     source={{ uri: imgSrc.imgUri }}
                     style={{
-                    height: undefined, 
-                    width: screenWidth, 
-                    aspectRatio: aspectRatio ? aspectRatio : imgSrc.imgSize.width/imgSrc.imgSize.height,
-                    position: 'relative'
+                      height: undefined, 
+                      width: screenWidth, 
+                      aspectRatio: aspectRatio ? aspectRatio : imgSrc.imgSize.width/imgSrc.imgSize.height,
+                      position: 'relative'
                     }}
                     onLoad={async (event) => {
-                    const { width: pageWidth, height: pageHeight } = event.source;
-                    onPageLoad(pageNum, pageHeight);
-                    if(horizontal) setAspectRatio(pageWidth/pageHeight)
+                      const { width: pageWidth, height: pageHeight } = event.source;
+                      onPageLoad(pageNum, pageHeight);
+                      if(horizontal) setAspectRatio(pageWidth/pageHeight)
                     }}
                     allowDownscaling={false}
                     contentFit='cover'
@@ -51,7 +57,7 @@ const ChapterPage = forwardRef(({
                 />
                 {horizontal && tick >= 0 && (
                   <View 
-                      className="h-full w-full justify-center items-center bg-primary absolute -z-50"
+                      className="h-full w-full justify-center items-cente bg-transparent absolute -z-50"
                   >
                       <ActivityIndicator color={'white'} size='large' />
                   </View>
@@ -59,14 +65,15 @@ const ChapterPage = forwardRef(({
                 
             </View>
         ) : (
-                <View 
-                    className="justify-center items-center bg-primary"
+          <View 
+          className="justify-center items-center bg-primary"
                     style={{ height: screenHeight / 2, width: screenWidth }}
                 >
                     <ActivityIndicator color={'white'} size='large' />
                     <Text className="font-pregular text-white">Loading page: {pageNum + 1}</Text>
                 </View>
         )}
+        </TouchableWithoutFeedback>
         
     </>
   );

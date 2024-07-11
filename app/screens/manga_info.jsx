@@ -1,4 +1,4 @@
-import { View, Text, ActivityIndicator, StatusBar, BackHandler } from 'react-native';
+import { View, Text, ActivityIndicator, StatusBar, BackHandler, TouchableOpacity } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
@@ -80,6 +80,7 @@ const MangaInfoScreen = () => {
     );
 
     return () => {
+      controllerRef.current.abort();
       backHandler.remove();
     };
   }, []);
@@ -97,11 +98,9 @@ const MangaInfoScreen = () => {
         />
         {isLoading ? (
           <View className="flex-1 justify-center items-center">
-           <ActivityIndicator color={'white'} size={'large'}/>
-           <Text className="font-pregular text-white text-md mt-3">Loading chapter list..</Text>
-          </View>
-
-            
+            <ActivityIndicator color={'white'} size={'large'}/>
+            <Text className="font-pregular text-white text-md mt-3">Loading chapter list..</Text>
+          </View>            
         ) : (
           <ChapterList 
             mangaUrl={mangaUrl}

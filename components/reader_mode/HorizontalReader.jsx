@@ -16,7 +16,7 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap }) => {
   const pagesRef = useRef([])
   const galleryRef = useRef(null)
 
-  const AsyncEffect = async () => {
+  const AsyncEffect = useCallback(async () => {
     controllerRef.current = new AbortController();
     const signal = controllerRef.current.signal;
   
@@ -39,9 +39,9 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap }) => {
     });
     
     await Promise.allSettled(pageDataPromises)
-  };
+  }, [])
 
-  const loadPageImages = async () => {
+  const loadPageImages = useCallback(async () => {
     const hashedPagePaths = await Promise.all(chapterPages.map(async (pageUrl) => {
       const pageFileName = shorthash.unique(pageUrl);
       const cachedChapterPageImagesDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName);
@@ -58,18 +58,15 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap }) => {
   
     setPageImages(hashedPagePaths);
     // if(galleryRef.current) galleryRef.current.setIndex({animated: true, index: inverted ? chapterPages.length - 1 : 0})
-  }
-
-  useEffect(() => {
-    loadPageImages()
   }, [])
 
   useEffect(() => {
+      loadPageImages()
       AsyncEffect();
       return () => {
         controllerRef.current.abort();
       };
-  }, []);
+  }, [chapterPages, onTap]);
 
   const renderItem = useCallback((item, index) => {
     return (
@@ -87,6 +84,7 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap }) => {
       </View>
     );
   }, []);
+
   const keyExtractor = useCallback((item, index) => {
     return ` ${item}-${index}`;
   }, []);
@@ -96,6 +94,7 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap }) => {
         <View className="flex-1">
           {chapterPages && chapterPages.length > 0 ? (
             <Gallery
+              ref={galleryRef}
               data={inverted ? [...pageImages].reverse() : pageImages}
               initialIndex={inverted ? chapterPages.length - 1 : 0}
               keyExtractor={keyExtractor}
