@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 import shorthash from 'shorthash';
-import { getChapterPageUrls } from '../../services/MangakakalotClient';
+import { getChapterPageUrls, getChapterList } from '../../services/MangakakalotClient';
 import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
 
 
@@ -24,6 +24,7 @@ export const READER_MODES = [
 export const CHAPTER_NAVIGATION = {
     NEXT: "NEXT",
     PREV: "PREV",
+    JUMP: "JUMP",
 }
 
 
@@ -58,29 +59,23 @@ export const fetchData = async (mangaUrl, chapterUrl, abortSignal) => {
     }
 };
 
-export const chapterNavigator = async (mangaUrl, currentChapterUrl, navigationMode) => {
-    if (!currentChapterUrl) return; 
+export const chapterNavigator = async (mangaUrl, targetIndex, abortSignal) => {
     
-    try {
-        const cachedChapterList = await getCachedChapterList(mangaUrl);
-        if (cachedChapterList.error) {
-            return { data: [], error: cachedChapterList.error };
-        }
+   try {
+    const cachedChapterList = await getChapterList(mangaUrl, abortSignal)
+    const targetChapter = cachedChapterList[targetIndex] 
 
-        const currentIndex = cachedChapterList.data.indexOf(currentChapterUrl);
-        const targetIndex = navigationMode === CHAPTER_NAVIGATION.NEXT ? currentIndex - 1 : currentIndex + 1;
-        const targetUrl = cachedChapterList.data[targetIndex];
+    if(!targetChapter) throw new Error("Target chapter undefined")
 
-        if (!targetUrl) {
-            return { data: [], error: 'Target chapter not found' };
-        }
+    const fetchedNextChapter = await fetchData(mangaUrl, targetChapter.chapterUrl, abortSignal)
 
-        const fetchedNextData = await fetchData(mangaUrl, targetUrl);
-        return { ...fetchedNextData, url: targetUrl };
+    return { ...fetchedNextChapter, targetChapter}
 
-    } catch (error) {
-      return { data: [], error };
-    }
+  } catch (error) {
+    console.log(error)
+    return {data: [], error}
+   }
+
 }
 
 export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject, mangaOnly) => {

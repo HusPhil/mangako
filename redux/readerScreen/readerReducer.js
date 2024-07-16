@@ -27,9 +27,13 @@ export const readerReducer = (state, action) => {
                 isLoading: false,
             };
         case READER_ACTIONS.GET_CHAPTER_PAGES_ERROR:
+            console.log(action.payload.chapterPages)
+
             return {
                 ...state,
-                error: action.payload,
+                isLoading: false,
+                error: action.payload.error,
+                chapterPages: action.payload.chapterPages,
             };
         case READER_ACTIONS.SET_READER_MODE:
             return {

@@ -14,20 +14,21 @@ import { readerReducer, INITIAL_STATE } from '../../redux/readerScreen/readerRed
 import { READER_ACTIONS } from '../../redux/readerScreen/readerActions';
 
 const MangaReaderScreen = () => {
-    const {mangaUrl, currentChapterData } = useLocalSearchParams()
+    const {mangaUrl, currentChapterData, currentChapterIndex } = useLocalSearchParams()
     const parsedCurrentChapterData = JSON.parse(currentChapterData)
 
     const [state, dispatch] = useReducer(readerReducer, INITIAL_STATE)
 
-    const chapterRef = useRef(parsedCurrentChapterData.chapterUrl)
+    const chapterDataRef = useRef(parsedCurrentChapterData)
+    const chapterNumRef = useRef(parseInt(currentChapterIndex))
     const isMounted = useRef(true)
     const controllerRef = useRef(null)
 
     const AsyncEffect = useCallback(async () => {
         
         dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
-        const savedConfig = await backend.readMangaConfigData(mangaUrl, chapterRef.current)
-        const savedPageLayout = await readPageLayout(mangaUrl, chapterRef.current);
+        const savedConfig = await backend.readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl)
+        const savedPageLayout = await readPageLayout(mangaUrl, chapterDataRef.current.chapterUrl);
         
         if(savedConfig) dispatch({type: READER_ACTIONS.LOAD_CONFIG, payload: {
             currentPage: savedConfig?.chapter?.currentPage || 0,
@@ -40,7 +41,7 @@ const MangaReaderScreen = () => {
         const signal = controllerRef.current.signal;
 
         try {
-            const fetchedChapterPages = await backend.fetchData(mangaUrl, chapterRef.current, signal);
+            const fetchedChapterPages = await backend.fetchData(mangaUrl, chapterDataRef.current.chapterUrl, signal);
             if(fetchedChapterPages.error) throw fetchedChapterPages.error
             dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_SUCCESS, payload: fetchedChapterPages.data})
         } 
@@ -50,7 +51,7 @@ const MangaReaderScreen = () => {
             } else {
                 console.log("Error fetching chapter pages:", error);
             }
-            dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_ERROR})
+            dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_ERROR, payload: {error}})
             router.back()
             
         } 
@@ -72,28 +73,39 @@ const MangaReaderScreen = () => {
 
     const handlePageChange = useCallback(async (currentPage) => {
         dispatch({type: READER_ACTIONS.SET_CURRENT_PAGE, payload: currentPage})
-        await backend.saveMangaConfigData(mangaUrl, chapterRef.current, {"currentPage": currentPage})
+        await backend.saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {"currentPage": currentPage})
     }, [state.currentPage])
 
     const handleVertScroll = useCallback(async (scrollOffSetY) => {
         console.log("save:", scrollOffSetY)
-        await backend.saveMangaConfigData(mangaUrl, chapterRef.current, {scrollOffSetY})
+        await backend.saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {scrollOffSetY})
     }, [])
 
     const handleChapterNavigation = async (navigationMode) => {
-        setIsLoading(true)
-        const nextChapterPageUrls  = await backend.chapterNavigator(mangaLink, chapterRef.current, navigationMode)
-        
-        if(nextChapterPageUrls.error) {
-          
-          alert(navigationMode === backend.CHAPTER_NAVIGATION.NEXT ? "Next chapter not found." : "Previous chapter not found")
-          setIsLoading(false)
-          return
+        dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
+        controllerRef.current =  new AbortController()
+        const signal = controllerRef.current.signal
+
+        const currentChapterPages = state.chapterPages
+
+        console.log(currentChapterPages)
+
+        const currentIndex = chapterNumRef.current
+        const targetIndex = navigationMode === backend.CHAPTER_NAVIGATION.NEXT ? 
+            currentIndex - 1 : currentIndex + 1
+    
+        const chapterNavigator = await backend.chapterNavigator(mangaUrl, targetIndex, signal)
+
+        if(chapterNavigator.error) {
+            dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_ERROR, payload: {chapterPages: currentChapterPages}})
+            alert(navigationMode === backend.CHAPTER_NAVIGATION.NEXT ? "Next chapter no found." : "Previous chapter not found.")
+            return
         }
-        setChapterUrls(nextChapterPageUrls.data)
-        currentChapter.current = nextChapterPageUrls.url
-        setIsLoading(false)
-      }
+        dispatch({type: READER_ACTIONS.SET_CURRENT_PAGE, payload: 0})
+        dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_SUCCESS, payload: chapterNavigator.data})
+        chapterDataRef.current = chapterNavigator.targetChapter
+        chapterNumRef.current = targetIndex
+    }
 
     return (
         <View className="h-full bg-primary">
@@ -109,7 +121,7 @@ const MangaReaderScreen = () => {
                         otherContainerStyles={'rounded-md p-2 px-4  z-50 '}
                         listItems={backend.READER_MODES}
                         onValueChange={async (data) => {
-                            await backend.saveMangaConfigData(mangaUrl, chapterRef.current, {"readingModeIndex": backend.READER_MODES.indexOf(data)}, true)
+                            await backend.saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {"readingModeIndex": backend.READER_MODES.indexOf(data)}, true)
                             dispatch({type: READER_ACTIONS.SET_READER_MODE, payload: data})
                         }}
                         selectedIndex={backend.READER_MODES.indexOf(state.readingMode)}
@@ -118,7 +130,13 @@ const MangaReaderScreen = () => {
                 </View>
 
                 <Button title='delete config' onPress={async () => {
-                    await backend.deleteConfigData(mangaUrl, chapterRef.current, "manga")
+                    await backend.deleteConfigData(mangaUrl, chapterDataRef.current.chapterUrl, "manga")
+                }} />
+                <Button title='NEXT' onPress={async () => {
+                    await handleChapterNavigation(backend.CHAPTER_NAVIGATION.NEXT)
+                }} />
+                <Button title='PREV' onPress={async () => {
+                    await handleChapterNavigation(backend.CHAPTER_NAVIGATION.PREV)
                 }} />
           </ModalPopup>
             {!state.isLoading && (
@@ -128,7 +146,7 @@ const MangaReaderScreen = () => {
                         chapterPages={state.chapterPages}
                         currentManga={{
                             manga: mangaUrl,
-                            chapter: chapterRef.current
+                            chapter: chapterDataRef.current.chapterUrl
                         }}
                         onTap={handleTap}
                         currentPage={state.currentPage}
@@ -141,7 +159,7 @@ const MangaReaderScreen = () => {
                         chapterPages={state.chapterPages}
                         currentManga={{
                             manga: mangaUrl,
-                            chapter: chapterRef.current
+                            chapter: chapterDataRef.current.chapterUrl
                         }}
                         onPageChange={handlePageChange}
                         onTap={handleTap}
@@ -155,7 +173,7 @@ const MangaReaderScreen = () => {
                         chapterPages={state.chapterPages}
                         currentManga={{
                             manga: mangaUrl,
-                            chapter: chapterRef.current
+                            chapter: chapterDataRef.current.chapterUrl
                         }}
                         onPageChange={handlePageChange}
                         onTap={handleTap}

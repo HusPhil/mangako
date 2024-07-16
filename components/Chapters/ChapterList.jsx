@@ -34,7 +34,8 @@ const ChapterList = ({ mangaUrl, chaptersData, headerComponent, listStyles, onRe
       pathname: "screens/manga_reader",
       params: {
         currentChapterData: JSON.stringify(item),
-        mangaUrl
+        currentChapterIndex: index,
+        mangaUrl,
       }
     });
   }, [chaptersData]);

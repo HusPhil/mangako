@@ -40,7 +40,6 @@ const MangaInfoScreen = () => {
     } finally {
       if (isMounted.current) {
         setIsLoading(false);
-        console.log("loader destroyed")
       }
     }
   };
