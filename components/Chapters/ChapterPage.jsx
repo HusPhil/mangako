@@ -6,8 +6,8 @@ import { Image } from 'expo-image';
 const ChapterPage = forwardRef(({
   currentManga, imgSrc, 
   pageUrl, pageNum, 
-  onPageLoad, onRetry,
-  onTap,
+  onRetry,
+  onTap, pageLayout,
   horizontal, vertical,
 }, ref) => {
   const { height: screenHeight, width: screenWidth } = Dimensions.get('screen');
@@ -23,6 +23,7 @@ const ChapterPage = forwardRef(({
   }));
 
   useEffect(() => {
+    console.log("PAGE:", pageNum, "SIZE:", imgSrc?.imgSize)
     return () => {
       setTick(-1)
     }
@@ -47,7 +48,6 @@ const ChapterPage = forwardRef(({
                     }}
                     onLoad={async (event) => {
                       const { width: pageWidth, height: pageHeight } = event.source;
-                      onPageLoad(pageNum, pageHeight);
                       if(horizontal) setAspectRatio(pageWidth/pageHeight)
                     }}
                     allowDownscaling={false}
@@ -65,13 +65,17 @@ const ChapterPage = forwardRef(({
                 
             </View>
         ) : (
-          <View 
-          className="justify-center items-center bg-primary"
-                    style={{ height: screenHeight / 2, width: screenWidth }}
-                >
-                    <ActivityIndicator color={'white'} size='large' />
-                    <Text className="font-pregular text-white">Loading page: {pageNum + 1}</Text>
-                </View>
+          <View
+            className="justify-center items-center"
+            style={{
+              height: undefined,
+              width: screenWidth,
+              aspectRatio: pageLayout && pageLayout[pageNum] ? pageLayout[pageNum].width/pageLayout[pageNum].height : 1,
+            }}
+          >
+              <ActivityIndicator color={'white'} size='large' />
+              <Text className="font-pregular text-white">Loading page: {pageNum + 1}</Text>
+          </View>
         )}
         </TouchableWithoutFeedback>
         

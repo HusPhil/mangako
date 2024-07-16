@@ -1,4 +1,4 @@
-import { readerModeOptions } from "../../app/screens/_manga_reader"
+import { READER_MODES } from "../../app/screens/_manga_reader"
 import { READER_ACTIONS } from "./readerActions"
 
 export const INITIAL_STATE = {
@@ -7,7 +7,9 @@ export const INITIAL_STATE = {
     errorData: null,
     showModal: false,
     currentPage: 0,
-    readingMode: readerModeOptions['0'],
+    readingMode: READER_MODES['0'],
+    pageLayout: [],
+    scrollOffSetY: 0,
 }
 
 export const readerReducer = (state, action) => {
@@ -43,7 +45,13 @@ export const readerReducer = (state, action) => {
             return {
                 ...state,
                 currentPage: action.payload.currentPage,
-                readingMode: readerModeOptions[action.payload.readingModeIndex.toString()]
+                readingMode: READER_MODES[action.payload.readingModeIndex.toString()],
+                pageLayout: action.payload.pageLayout,
+                scrollOffSetY: action.payload.scrollOffSetY,
+            };
+        case READER_ACTIONS.CHAPTER_NAVIGATION:
+            return {
+                ...state,
             };
         case READER_ACTIONS.SHOW_MODAL:
             return {

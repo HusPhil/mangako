@@ -6,7 +6,7 @@ import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global'
 
 // --------------------------------------- VARIABLES ONLY ---------------------------------------*/}
 
-export const readerModeOptions = [
+export const READER_MODES = [
     {
       label: "Horizontal", value: "hor",
       desc: "Standard left-to-right viewing mode. Most commonly used for reading manhuas."
@@ -20,6 +20,11 @@ export const readerModeOptions = [
       desc: "Vertical top-to-bottom viewing mode. Perfect fit for reading manhwas."
     },
   ]
+
+export const CHAPTER_NAVIGATION = {
+    NEXT: "NEXT",
+    PREV: "PREV",
+}
 
 
 // --------------------------------------- VARIABLES ONLY ---------------------------------------*/}
@@ -53,7 +58,7 @@ export const fetchData = async (mangaUrl, chapterUrl, abortSignal) => {
     }
 };
 
-export const chapterNavigator = async (mangaUrl, currentChapterUrl, next) => {
+export const chapterNavigator = async (mangaUrl, currentChapterUrl, navigationMode) => {
     if (!currentChapterUrl) return; 
     
     try {
@@ -63,7 +68,7 @@ export const chapterNavigator = async (mangaUrl, currentChapterUrl, next) => {
         }
 
         const currentIndex = cachedChapterList.data.indexOf(currentChapterUrl);
-        const targetIndex = next ? currentIndex - 1 : currentIndex + 1;
+        const targetIndex = navigationMode === CHAPTER_NAVIGATION.NEXT ? currentIndex - 1 : currentIndex + 1;
         const targetUrl = cachedChapterList.data[targetIndex];
 
         if (!targetUrl) {

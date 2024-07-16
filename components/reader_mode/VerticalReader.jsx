@@ -5,7 +5,7 @@ import { FlashList } from '@shopify/flash-list';
 import ChapterPage from '../chapters/ChapterPage';
 import { savePageLayout, readPageLayout, scrollToPageNum, fetchPageData, getImageDimensions } from './_reader';
 
-const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, currentPage }) => {
+const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScroll, currentPage, savedPageLayout, savedScrollOffsetY }) => {
   const [pageImages, setPageImages] = useState(Array(chapterPages.length).fill(undefined));
   const [errorData, setErrorData] = useState(null);
 
@@ -16,6 +16,12 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, curre
   const pageLayout = useRef(Array(chapterPages.length).fill(-1));
 
   const AsyncEffect = async () => {
+
+    pageLayout.current = savedPageLayout;
+    console.log("savedScrollOffsetY:", savedScrollOffsetY)
+
+    if(flashRef.current) flashRef.current.scrollToOffset({animated: true, offset: savedScrollOffsetY})
+
     if (!isMounted.current) return;
 
     try {
@@ -26,8 +32,7 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, curre
       );
       
       await Promise.allSettled(pageDataPromises);
-      const savedPageLayout = await readPageLayout(currentManga.manga, currentManga.chapter);
-      if (!savedPageLayout.error) pageLayout.current = savedPageLayout.data;
+      
 
     } catch (error) {
       setErrorData(error);
@@ -63,6 +68,8 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, curre
           return newPageImages;
         });
       }
+
+      handlePageLoad(pageNum, imgSize)
     } catch (error) {
       console.log("Error loading pages:", error);
     }
@@ -74,6 +81,15 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, curre
     await loadPageImages(pageNum, chapterPages[pageNum], signal);
   }, []);
 
+  const getItemLayout = (savedPageLayout, index) => {
+    if(savePageLayout.length !== chapterPages.length) return 0
+    let offset = 0;
+    for (let i = 0; i < index; i++) {
+      offset += savedPageLayout[i].height;
+    }
+    return { length: savedPageLayout[index].height, offset, index };
+  };
+
   const handleViewableItemsChanged = useCallback(({ viewableItems }) => {
     if(viewableItems.length > 0) {
       onPageChange(viewableItems.slice(-1)[0].index)
@@ -81,13 +97,25 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, curre
   }, [])
   
   const handlePageLoad = useCallback((pageNum, pageHeight) => {
+    if(pageLayout.current[pageNum] !== - 1) return
+    console.log("modifying existing page layout:" , pageNum, pageHeight)
     pageLayout.current[pageNum] = pageHeight;
     debouncedSaveDataToCache();
   }, [debouncedSaveDataToCache]);
   
   const debouncedSaveDataToCache = useCallback(debounce(async () => {
+    console.log("saving:", pageLayout.current)
     await savePageLayout(currentManga.manga, currentManga.chapter, pageLayout.current);
-  }, 1000), [currentManga]);
+  }, 500), [currentManga, savedPageLayout, pageLayout]);
+
+  const handleScroll = (e) => {
+    e.persist(); // Persist the event
+    debouncedOnScroll(e);
+  };
+  
+  const debouncedOnScroll = useCallback(debounce( (e) => {
+    onScroll(e.nativeEvent.contentOffset.y)
+  }, 500), []);
 
   const renderItem = useCallback(({ item, index }) => (
     <ChapterPage
@@ -97,6 +125,7 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, curre
       pageUrl={chapterPages[index]}
       pageNum={index}
       onPageLoad={handlePageLoad}
+      pageLayout={savedPageLayout}
       onRetry={handleRetry}
       onTap={onTap}
       vertical
@@ -109,8 +138,10 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, curre
         <FlashList
           ref={flashRef}
           data={pageImages}
-          initialScrollIndex={currentPage}
+          // initialScrollIndex={currentPage}
           renderItem={renderItem}
+          getItemLayout={getItemLayout}
+          onScroll={handleScroll}
           keyExtractor={(item, index) => index.toString()}
           estimatedItemSize={500}
           onViewableItemsChanged={handleViewableItemsChanged}
