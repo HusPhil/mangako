@@ -5,6 +5,7 @@ import Toast from 'react-native-simple-toast';
 import { Feather } from '@expo/vector-icons';
 
 import * as backend from "./_manga_reader"
+import { CONFIG_READ_WRITE_MODE, readMangaConfigData, saveMangaConfigData } from '../../services/Global';
 import VerticalReader from '../../components/reader_mode/VerticalReader';
 import HorizontalReader from '../../components/reader_mode/HorizontalReader';
 import DropDownList from '../../components/modal/DropdownList';
@@ -14,7 +15,6 @@ import { readPageLayout } from '../../components/reader_mode/_reader';
 
 import { readerReducer, INITIAL_STATE } from '../../redux/readerScreen/readerReducer';
 import { READER_ACTIONS } from '../../redux/readerScreen/readerActions';
-import colors from '../../constants/colors';
 
 const MangaReaderScreen = () => {
     const {mangaUrl, currentChapterData, currentChapterIndex } = useLocalSearchParams()
@@ -30,7 +30,7 @@ const MangaReaderScreen = () => {
     const AsyncEffect = useCallback(async () => {
         
         dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
-        const savedConfig = await backend.readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl)
+        const savedConfig = await readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl)
         const savedPageLayout = await readPageLayout(mangaUrl, chapterDataRef.current.chapterUrl);
 
         console.log(savedConfig)
@@ -80,7 +80,7 @@ const MangaReaderScreen = () => {
 
     const handlePageChange = useCallback(async (currentPage) => {
         dispatch({type: READER_ACTIONS.SET_CURRENT_PAGE, payload: currentPage})
-        await backend.saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {"currentPage": currentPage})
+        await saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {"currentPage": currentPage})
         console.log("COMPARISON ON PAGE CHANGE:", currentPage, state.chapterPages.length - 1)
         if(currentPage === state.chapterPages.length - 1) {
             Toast.show('Finished! Tap to navigate chapters!');
@@ -90,7 +90,7 @@ const MangaReaderScreen = () => {
 
     const handleVertScroll = useCallback(async (scrollOffSetY) => {
         console.log("save:", scrollOffSetY)
-        await backend.saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {scrollOffSetY})
+        await saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {scrollOffSetY})
     }, [])
 
     const handleChapterNavigation = async (navigationMode) => {
@@ -120,7 +120,7 @@ const MangaReaderScreen = () => {
 
     const handleReadFinish = async () => {
         dispatch({type:READER_ACTIONS.SET_STATUS_FINISHED, payload: state.finished})
-        await backend.saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {finished: !state.finished})
+        await saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {finished: !state.finished})
     }
 
     return (
@@ -143,7 +143,12 @@ const MangaReaderScreen = () => {
                         otherContainerStyles={'rounded-md p-2 px-4  z-50 '}
                         listItems={backend.READER_MODES}
                         onValueChange={async (data) => {
-                            await backend.saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {"readingModeIndex": backend.READER_MODES.indexOf(data)}, true)
+                            await saveMangaConfigData (
+                                mangaUrl, 
+                                chapterDataRef.current.chapterUrl, 
+                                {"readingModeIndex": backend.READER_MODES.indexOf(data)}, 
+                                CONFIG_READ_WRITE_MODE.MANGA_ONLY
+                            )
                             dispatch({type: READER_ACTIONS.SET_READER_MODE, payload: data})
                         }}
                         selectedIndex={backend.READER_MODES.indexOf(state.readingMode)}

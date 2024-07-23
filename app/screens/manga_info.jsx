@@ -8,6 +8,7 @@ import Accordion from '../../components/Accordion';
 import HorizontalRule from '../../components/HorizontalRule';
 
 import * as backend from "./_manga_info";
+import { readMangaConfigData, CONFIG_READ_WRITE_MODE } from '../../services/Global';
 
 
 const MangaInfoScreen = () => {
@@ -24,14 +25,19 @@ const MangaInfoScreen = () => {
   const AsyncEffect = async () => {
     setIsLoading(true);
 
+    
     controllerRef.current = new AbortController();
     const signal = controllerRef.current.signal;
-
+    
     try {
       const res = await backend.fetchData(mangaUrl, signal);
       if (isMounted.current) {
         setMangaInfo(res.data);
       }
+      
+      const savedMangConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
+      console.log(savedMangConfigData)
+
     } catch (error) {
       setMangaInfo([]);
       if (error.name !== 'AbortError') {

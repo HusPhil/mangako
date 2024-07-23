@@ -45,9 +45,6 @@ const [loaded] = useFonts({
         <Stack.Screen name="screens/manga_info" options={{ headerShown: false, animationEnabled: false, animation:"none" }} />
         <Stack.Screen name="screens/manga_searcher" options={{ headerShown: false, animationEnabled: false, animation:"none" }} />
         <Stack.Screen name="screens/manga_reader" options={{ headerShown: false, animationEnabled: false, animation:"none" }} />
-        <Stack.Screen name="screens/manga_reader_test" options={{ presentation:'modal', headerShown: false, animationEnabled: true, animation:'fade_from_bottom', }} />
       </Stack>
   );
 }
-
-// npm install --save-dev tailwindcss@3.3.2

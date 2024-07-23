@@ -32,7 +32,7 @@ const ChapterPage = forwardRef(({
 
 
   return (
-   //pinaltan ang key=tick for re rendering
+   //pinaltan ang key=tick for re renderingz
     <> 
         <TouchableWithoutFeedback disabled={!onTap} onPress={onTap} key={tick}>
         {imgSrc ? (
