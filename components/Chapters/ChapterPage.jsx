@@ -17,13 +17,13 @@ const ChapterPage = forwardRef(({
   useImperativeHandle(ref, () => ({
     getPageNum: () => pageNum,
     toggleRender: async ({aspectRatio}) => {
+        console.log("natawag ang rerender ng chapter page")
         setTick(prev => prev + 1)
         setAspectRatio(aspectRatio)
     }
   }));
 
   useEffect(() => {
-    console.log("PAGE:", pageNum, "SIZE:", imgSrc?.imgSize)
     return () => {
       setTick(-1)
     }
@@ -32,12 +32,12 @@ const ChapterPage = forwardRef(({
 
 
   return (
-   
-    <>
-        <TouchableWithoutFeedback disabled={!onTap} onPress={onTap}>
+   //pinaltan ang key=tick for re rendering
+    <> 
+        <TouchableWithoutFeedback disabled={!onTap} onPress={onTap} key={tick}>
         {imgSrc ? (
-
-            <View className="mt-[-1px]" key={tick}>
+          imgSrc.imgUri ? (
+            <View className="mt-[-1px]">
                 <Image
                     source={{ uri: imgSrc.imgUri }}
                     style={{
@@ -50,6 +50,7 @@ const ChapterPage = forwardRef(({
                       const { width: pageWidth, height: pageHeight } = event.source;
                       if(horizontal) setAspectRatio(pageWidth/pageHeight)
                     }}
+                    cachePolicy='none'
                     allowDownscaling={false}
                     contentFit='cover'
                     placeholder={"loading the image yet"}
@@ -64,6 +65,14 @@ const ChapterPage = forwardRef(({
                 )}
                 
             </View>
+          ) : (
+            imgSrc?.error && (
+              <View className="mt-[-1px]" key={tick}>
+                <Text className="font-pregular text-white">error</Text>
+              </View>
+            )
+          )
+
         ) : (
           <View
             className="justify-center items-center"

@@ -54,7 +54,7 @@ const ModalPopup = ({ otherStyles, children, visible, handleClose }) => {
           <Animated.View
             style={{
               transform: [{ translateY: slideUp }],
-              height: '40%',
+              height: 'auto',
               width: '100%',
               borderRadius: 10,
               backgroundColor: colors.secondary.DEFAULT,

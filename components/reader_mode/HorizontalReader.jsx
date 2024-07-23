@@ -9,12 +9,8 @@ import shorthash from 'shorthash';
 import { getMangaDirectory } from '../../services/Global';
 import { getImageDimensions, fetchPageData } from './_reader';
 
-import { readerReducer, INITIAL_STATE } from '../../redux/readerScreen/readerReducer';
-import { READER_ACTIONS } from '../../redux/readerScreen/readerActions';
-
 const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap, onPageChange, currentPage }) => {
   const [pageImages, setPageImages] = useState(Array(chapterPages.length).fill(undefined));
-  const [state, dispatch] = useReducer(readerReducer, INITIAL_STATE)
 
   const controllerRef = useRef(null)
   const isMounted = useRef(true);
@@ -29,7 +25,14 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap, onPageC
       try {
         const fetchedImgSrc = await fetchPageData(currentManga.manga, currentManga.chapter, pageUrl, signal);
         if (fetchedImgSrc.error) {
-            throw fetchedImgSrc.error
+          console.log("error on hor reader loading the pages")
+          setPageImages(prev => {
+            newPages = [...prev] 
+            newPages[index] = {imgUri: null, error: fetchedImgSrc.error}
+            return newPages
+          })
+          if(pagesRef.current[index]) pagesRef.current[index].toggleRender({aspectRatio: 1})
+          throw fetchedImgSrc.error
         };
   
         const imgSize = await getImageDimensions(fetchedImgSrc.data);
@@ -54,9 +57,7 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap, onPageC
 
       if(fileInfo.exists) imgSize = await getImageDimensions(cachedChapterPageImagesDir.cachedFilePath)
       
-      return {imgUri: cachedChapterPageImagesDir.cachedFilePath, fileExist: fileInfo.exists, imgSize, tryFunc: () => {
-        return 1
-      }};
+      return {imgUri: cachedChapterPageImagesDir.cachedFilePath, imgSize};
     }));
   
     setPageImages(hashedPagePaths);
@@ -102,7 +103,10 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap, onPageC
               initialIndex={currentPage}
               keyExtractor={keyExtractor}
               renderItem={renderItem}
-              onTap={onTap}
+              onTap={() => {
+                const testData = pageImages
+                onTap(pageImages)
+              }}
               onIndexChange={(currentPage) => {
                 onPageChange(inverted ? chapterPages.length - 1 - currentPage : currentPage)
               }}

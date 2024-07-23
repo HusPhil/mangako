@@ -18,9 +18,6 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
   const AsyncEffect = async () => {
 
     pageLayout.current = savedPageLayout;
-    console.log("savedScrollOffsetY:", savedScrollOffsetY)
-
-    if(flashRef.current) flashRef.current.scrollToOffset({animated: true, offset: savedScrollOffsetY})
 
     if (!isMounted.current) return;
 
@@ -138,7 +135,7 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
         <FlashList
           ref={flashRef}
           data={pageImages}
-          // initialScrollIndex={currentPage}
+          initialScrollIndex={currentPage}
           renderItem={renderItem}
           getItemLayout={getItemLayout}
           onScroll={handleScroll}

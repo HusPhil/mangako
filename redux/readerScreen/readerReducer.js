@@ -4,6 +4,7 @@ import { READER_ACTIONS } from "./readerActions"
 export const INITIAL_STATE = {
     chapterPages: [],
     isLoading: false,
+    finished: false,
     errorData: null,
     showModal: false,
     currentPage: 0,
@@ -45,6 +46,11 @@ export const readerReducer = (state, action) => {
                 ...state,
                 currentPage: action.payload,
             };
+        case READER_ACTIONS.SET_STATUS_FINISHED:
+            return {
+                ...state,
+                finished: !action.payload,
+            };
         case READER_ACTIONS.LOAD_CONFIG:
             return {
                 ...state,
@@ -52,6 +58,7 @@ export const readerReducer = (state, action) => {
                 readingMode: READER_MODES[action.payload.readingModeIndex.toString()],
                 pageLayout: action.payload.pageLayout,
                 scrollOffSetY: action.payload.scrollOffSetY,
+                finished: action.payload.finished,
             };
         case READER_ACTIONS.CHAPTER_NAVIGATION:
             return {

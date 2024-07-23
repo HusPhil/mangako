@@ -1,6 +1,8 @@
-import { View, Text, Button } from 'react-native'
+import { View, Text, Button, TouchableOpacity } from 'react-native'
 import React, {useRef, useEffect, useReducer, useCallback } from 'react'
 import { router, useLocalSearchParams } from 'expo-router';
+import Toast from 'react-native-simple-toast';
+import { Feather } from '@expo/vector-icons';
 
 import * as backend from "./_manga_reader"
 import VerticalReader from '../../components/reader_mode/VerticalReader';
@@ -12,6 +14,7 @@ import { readPageLayout } from '../../components/reader_mode/_reader';
 
 import { readerReducer, INITIAL_STATE } from '../../redux/readerScreen/readerReducer';
 import { READER_ACTIONS } from '../../redux/readerScreen/readerActions';
+import colors from '../../constants/colors';
 
 const MangaReaderScreen = () => {
     const {mangaUrl, currentChapterData, currentChapterIndex } = useLocalSearchParams()
@@ -29,12 +32,15 @@ const MangaReaderScreen = () => {
         dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
         const savedConfig = await backend.readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl)
         const savedPageLayout = await readPageLayout(mangaUrl, chapterDataRef.current.chapterUrl);
+
+        console.log(savedConfig)
         
         if(savedConfig) dispatch({type: READER_ACTIONS.LOAD_CONFIG, payload: {
             currentPage: savedConfig?.chapter?.currentPage || 0,
             readingModeIndex: savedConfig?.manga?.readingModeIndex || 0,
             pageLayout: !savedPageLayout.error ? savedPageLayout.data : [],
             scrollOffSetY: savedConfig?.chapter?.scrollOffSetY || 0,
+            finished: savedConfig?.chapter?.finished
         }})
         
         controllerRef.current = new AbortController();
@@ -67,14 +73,20 @@ const MangaReaderScreen = () => {
         }
     }, [])
 
-    const handleTap = useCallback(() => {
+    const handleTap = useCallback((testData) => {
+        console.log("testData sa mangareader:", testData[state.currentPage])
         dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
     }, [])
 
     const handlePageChange = useCallback(async (currentPage) => {
         dispatch({type: READER_ACTIONS.SET_CURRENT_PAGE, payload: currentPage})
         await backend.saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {"currentPage": currentPage})
-    }, [state.currentPage])
+        console.log("COMPARISON ON PAGE CHANGE:", currentPage, state.chapterPages.length - 1)
+        if(currentPage === state.chapterPages.length - 1) {
+            Toast.show('Finished! Tap to navigate chapters!');
+        }
+
+    }, [state.currentPage, state.chapterPages])
 
     const handleVertScroll = useCallback(async (scrollOffSetY) => {
         console.log("save:", scrollOffSetY)
@@ -83,12 +95,11 @@ const MangaReaderScreen = () => {
 
     const handleChapterNavigation = async (navigationMode) => {
         dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
+        dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
         controllerRef.current =  new AbortController()
         const signal = controllerRef.current.signal
 
         const currentChapterPages = state.chapterPages
-
-        console.log(currentChapterPages)
 
         const currentIndex = chapterNumRef.current
         const targetIndex = navigationMode === backend.CHAPTER_NAVIGATION.NEXT ? 
@@ -107,14 +118,25 @@ const MangaReaderScreen = () => {
         chapterNumRef.current = targetIndex
     }
 
+    const handleReadFinish = async () => {
+        dispatch({type:READER_ACTIONS.SET_STATUS_FINISHED, payload: state.finished})
+        await backend.saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {finished: !state.finished})
+    }
+
     return (
         <View className="h-full bg-primary">
             <ModalPopup visible={state.showModal} handleClose={() => {dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})}}>
                 <View className="mx-4">
-                    <View className="justify-start w-full">
-                    <Text numberOfLines={1} className="text-white font-pregular text-base text-center p-2 py-3">{parsedCurrentChapterData.chTitle}</Text>
-                    </View>
+
+                    <TouchableOpacity onPress={handleReadFinish}>
+                        <View className="justify-center items-center w-full flex-row ">
+                            <Text numberOfLines={1} className="text-white font-pregular text-base text-center pr-1 py-3 flex-1 ">{chapterDataRef.current.chTitle}</Text>
+                            {state.finished && <Feather name="check-circle" size={24} color="red" />}
+                        </View>
+                    </TouchableOpacity>
+
                     <HorizontalRule />
+                   
                     <View className="w-full">
                     <DropDownList
                         title={"Reading mode:"}
@@ -127,17 +149,49 @@ const MangaReaderScreen = () => {
                         selectedIndex={backend.READER_MODES.indexOf(state.readingMode)}
                     />
                     </View>
+
+  
+                
+                
+                <View className="flex-row justify-between m-2 my-3">
+                    <View className="flex-row justify-between">
+                        <TouchableOpacity className="py-2 px-3 bg-accent rounded-md" onPress={async () => {
+                            await handleChapterNavigation(backend.CHAPTER_NAVIGATION.NEXT)
+                        }}>
+                            
+                            <Text className="text-white font-pregular text-center">Next</Text>
+                        </TouchableOpacity> 
+                        
+                        <TouchableOpacity className="py-2 px-3 bg-accent rounded-md ml-2" onPress={async () => {
+                            await handleChapterNavigation(backend.CHAPTER_NAVIGATION.PREV)
+                        }}>
+                            
+                            <Text className="text-white font-pregular text-center">Prev</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <TouchableOpacity className="py-2 px-3 bg-accent rounded-md flex-1 ml-4 ">
+                        <Text className="text-white font-pregular text-center">Clear cache</Text>
+                    </TouchableOpacity>
                 </View>
 
-                <Button title='delete config' onPress={async () => {
+
+
+
+                </View>
+
+            
+                {/* <Button title='delete config' onPress={async () => {
                     await backend.deleteConfigData(mangaUrl, chapterDataRef.current.chapterUrl, "manga")
                 }} />
                 <Button title='NEXT' onPress={async () => {
+                    dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
                     await handleChapterNavigation(backend.CHAPTER_NAVIGATION.NEXT)
                 }} />
                 <Button title='PREV' onPress={async () => {
+                    dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
                     await handleChapterNavigation(backend.CHAPTER_NAVIGATION.PREV)
-                }} />
+                }} /> */}
           </ModalPopup>
             {!state.isLoading && (
             <View>

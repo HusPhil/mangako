@@ -1,4 +1,5 @@
 import * as FileSystem from 'expo-file-system';
+import * as mangaInfo from '../screens/_manga_info'
 import shorthash from 'shorthash';
 import { getChapterPageUrls, getChapterList } from '../../services/MangakakalotClient';
 import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
@@ -36,10 +37,13 @@ export const fetchData = async (mangaUrl, chapterUrl, abortSignal) => {
         const cachedChapterPagesDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPages", "pages.json")
         let pageUrls = [];
         
+        console.log("chapterUrl:", chapterUrl)
+        
         await ensureDirectoryExists(cachedChapterPagesDir.cachedFolderPath)
         const fileInfo = await FileSystem.getInfoAsync(cachedChapterPagesDir.cachedFilePath);
-
+        
         if (fileInfo.exists) {
+          console.log("existsrng")
           const cachedPageData = await FileSystem.readAsStringAsync(cachedChapterPagesDir.cachedFilePath);
           pageUrls = JSON.parse(cachedPageData);
           return { data: pageUrls, error: null };
@@ -82,12 +86,34 @@ export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject, ma
   try {
     const parentKey = shorthash.unique(mangaUrl);
     const chapterKey = shorthash.unique(chapterUrl);
-    const cachedConfigFilePath = mangaOnly ? 
-      `${FileSystem.cacheDirectory}${parentKey}/configs` :
-      `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`;;
+    const path_mangaOnly = `${FileSystem.cacheDirectory}${parentKey}/configs`;
+    const path_mangaWithChapter = `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`;
+    
+    const cachedConfigFilePath = mangaOnly ? path_mangaOnly : path_mangaWithChapter
     const cachedFile = "/config.json";
 
     const existingConfig = await readMangaConfigData(mangaUrl, chapterUrl);
+
+    if (!existingConfig.manga) {
+      existingConfig.manga = {};
+    }
+
+    if(!existingConfig.manga.readingStatsList) {
+      const controller = new AbortController()
+
+      const fetchedChapterList = await mangaInfo.fetchData(mangaUrl, controller.signal)
+
+      if(fetchedChapterList.error) throw fetchedChapterList.error
+
+      const readingStatsList = Array(fetchedChapterList.data.chapterList.length).fill(false)
+      
+      existingConfig.manga.readingStatsList = readingStatsList;
+
+      await ensureDirectoryExists(path_mangaOnly);
+      await FileSystem.writeAsStringAsync(`${FileSystem.cacheDirectory}${parentKey}/configs` + cachedFile, JSON.stringify(configToSave));
+
+      // console.log("reading stats", existingConfig?.manga?.readingStatsList)
+    }
 
     const configToSave = mangaOnly ? 
         { ...existingConfig?.manga, ...configObject } : 
