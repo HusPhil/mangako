@@ -1,6 +1,5 @@
 import * as FileSystem from 'expo-file-system';
 import shorthash from 'shorthash';
-import * as mangaInfo from '../screens/_manga_info'
 
 export const CONFIG_READ_WRITE_MODE = {
     MANGA_ONLY: "MANGA_ONLY",
@@ -29,27 +28,6 @@ export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject, ma
       const cachedFile = "/config.json";
   
       const existingConfig = await readMangaConfigData(mangaUrl, chapterUrl);
-  
-      if (!existingConfig.manga) {
-        existingConfig.manga = {};
-      }
-  
-      if(!existingConfig.manga.readingStatsList) {
-        const controller = new AbortController()
-  
-        const fetchedChapterList = await mangaInfo.fetchData(mangaUrl, controller.signal)
-  
-        if(fetchedChapterList.error) throw fetchedChapterList.error
-  
-        const readingStatsList = Array(fetchedChapterList.data.chapterList.length).fill(false)
-        
-        existingConfig.manga.readingStatsList = readingStatsList;
-  
-        await ensureDirectoryExists(path_mangaOnly);
-        await FileSystem.writeAsStringAsync(`${FileSystem.cacheDirectory}${parentKey}/configs` + cachedFile, JSON.stringify(configToSave));
-  
-        // console.log("reading stats", existingConfig?.manga?.readingStatsList)
-      }
   
       const configToSave = mangaOnly ? 
           { ...existingConfig?.manga, ...configObject } : 

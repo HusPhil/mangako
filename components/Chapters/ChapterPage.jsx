@@ -17,7 +17,6 @@ const ChapterPage = forwardRef(({
   useImperativeHandle(ref, () => ({
     getPageNum: () => pageNum,
     toggleRender: async ({aspectRatio}) => {
-        console.log("natawag ang rerender ng chapter page")
         setTick(prev => prev + 1)
         setAspectRatio(aspectRatio)
     }

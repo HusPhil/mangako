@@ -49,7 +49,7 @@ export const readerReducer = (state, action) => {
         case READER_ACTIONS.SET_STATUS_FINISHED:
             return {
                 ...state,
-                finished: !action.payload,
+                finished: action.payload,
             };
         case READER_ACTIONS.LOAD_CONFIG:
             return {

@@ -8,7 +8,7 @@ import Accordion from '../../components/Accordion';
 import HorizontalRule from '../../components/HorizontalRule';
 
 import * as backend from "./_manga_info";
-import { readMangaConfigData, CONFIG_READ_WRITE_MODE } from '../../services/Global';
+import { readMangaConfigData, saveMangaConfigData, CONFIG_READ_WRITE_MODE } from '../../services/Global';
 
 
 const MangaInfoScreen = () => {
@@ -16,6 +16,7 @@ const MangaInfoScreen = () => {
   const { mangaId, mangaCover, mangaTitle, mangaUrl } = params;
   const [mangaInfo, setMangaInfo] = useState();
   const [isLoading, setIsLoading] = useState(true);
+  const [readingStatusList, setReadingStatusList] =  useState(null)
   
 
   const controllerRef = useRef(null);
@@ -35,8 +36,17 @@ const MangaInfoScreen = () => {
         setMangaInfo(res.data);
       }
       
-      const savedMangConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
-      console.log(savedMangConfigData)
+      const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
+
+      if(!savedMangaConfigData?.manga?.readingStats) {
+        const initializedReadingStats = Array(res.data.chapterList.length).fill(false)
+        setReadingStatusList(initializedReadingStats)
+        await saveMangaConfigData(mangaUrl, res.data.chapterList[0], {readingStats: initializedReadingStats}, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
+
+      }
+      else {
+        setReadingStatusList(savedMangaConfigData.manga.readingStats)
+      }
 
     } catch (error) {
       setMangaInfo([]);
@@ -110,6 +120,7 @@ const MangaInfoScreen = () => {
           <ChapterList 
             mangaUrl={mangaUrl}
             chaptersData={mangaInfo.chapterList}
+            readingStats={readingStatusList}
             listStyles={{paddingBottom: 8, paddingHorizontal: 8}}
             onRefresh={handleRefresh}
             headerComponent={

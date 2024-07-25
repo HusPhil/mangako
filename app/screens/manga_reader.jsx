@@ -42,6 +42,11 @@ const MangaReaderScreen = () => {
             scrollOffSetY: savedConfig?.chapter?.scrollOffSetY || 0,
             finished: savedConfig?.chapter?.finished
         }})
+
+        if(savedConfig?.manga?.readingStats) {
+            console.log(savedConfig.manga.readingStats[chapterNumRef.current])
+            dispatch({type:READER_ACTIONS.SET_STATUS_FINISHED, payload: savedConfig.manga.readingStats[chapterNumRef.current]})
+        }
         
         controllerRef.current = new AbortController();
         const signal = controllerRef.current.signal;
@@ -74,14 +79,12 @@ const MangaReaderScreen = () => {
     }, [])
 
     const handleTap = useCallback((testData) => {
-        console.log("testData sa mangareader:", testData[state.currentPage])
         dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
     }, [])
 
     const handlePageChange = useCallback(async (currentPage) => {
         dispatch({type: READER_ACTIONS.SET_CURRENT_PAGE, payload: currentPage})
         await saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {"currentPage": currentPage})
-        console.log("COMPARISON ON PAGE CHANGE:", currentPage, state.chapterPages.length - 1)
         if(currentPage === state.chapterPages.length - 1) {
             Toast.show('Finished! Tap to navigate chapters!');
         }
@@ -94,8 +97,12 @@ const MangaReaderScreen = () => {
     }, [])
 
     const handleChapterNavigation = async (navigationMode) => {
+        const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
+
         dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
         dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
+        
+
         controllerRef.current =  new AbortController()
         const signal = controllerRef.current.signal
 
@@ -106,6 +113,10 @@ const MangaReaderScreen = () => {
             currentIndex - 1 : currentIndex + 1
     
         const chapterNavigator = await backend.chapterNavigator(mangaUrl, targetIndex, signal)
+
+        if(savedMangaConfigData?.manga?.readingStats) {
+            dispatch({type:READER_ACTIONS.SET_STATUS_FINISHED, payload: savedMangaConfigData.manga.readingStats[targetIndex]})
+        }
 
         if(chapterNavigator.error) {
             dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_ERROR, payload: {chapterPages: currentChapterPages}})
@@ -119,8 +130,23 @@ const MangaReaderScreen = () => {
     }
 
     const handleReadFinish = async () => {
-        dispatch({type:READER_ACTIONS.SET_STATUS_FINISHED, payload: state.finished})
-        await saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {finished: !state.finished})
+        dispatch({type:READER_ACTIONS.SET_STATUS_FINISHED, payload: !state.finished})
+        const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
+        let newReadingStats;
+
+        newReadingStats = Array(state.chapterPages.length).fill(false)
+        
+        if(savedMangaConfigData?.manga?.readingStats) {
+            newReadingStats = savedMangaConfigData.manga.readingStats
+        }
+        
+        newReadingStats[chapterNumRef.current] = !state.finished
+        await saveMangaConfigData(
+            mangaUrl, 
+            chapterDataRef.current.chapterUrl, 
+            {readingStats: newReadingStats}, 
+            CONFIG_READ_WRITE_MODE.MANGA_ONLY
+        )
     }
 
     return (

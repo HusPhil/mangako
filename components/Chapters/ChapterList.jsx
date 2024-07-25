@@ -8,7 +8,7 @@ import { AntDesign } from '@expo/vector-icons';
 import ChapterListItem from './ChapterListItem';
 
 
-const ChapterList = ({ mangaUrl, chaptersData, headerComponent, listStyles, onRefresh }) => {
+const ChapterList = ({ mangaUrl, chaptersData, readingStats, headerComponent, listStyles, onRefresh }) => {
   const [showBtnToBottom, setShowBtnToBottom] = useState(false)
   const [showBtnToTop, setShowBtnToTop] = useState(false)
 
@@ -52,6 +52,7 @@ const ChapterList = ({ mangaUrl, chaptersData, headerComponent, listStyles, onRe
   ), [handleChapterPress]);
 
   const handleScroll = (event) => {
+    // console.log("reading stats sa chapterlist:", readingStats)
     const {
       nativeEvent: {
         contentOffset: { y },
