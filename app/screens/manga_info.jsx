@@ -1,6 +1,6 @@
 import { View, Text, ActivityIndicator, StatusBar, BackHandler, TouchableOpacity } from 'react-native';
-import React, { useEffect, useRef, useState } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 
 import ChapterList from '../../components/chapters/ChapterList';
 import MangaHeader from '../../components/manga_info/MangaHeader';
@@ -11,17 +11,36 @@ import * as backend from "./_manga_info";
 import { readMangaConfigData, saveMangaConfigData, CONFIG_READ_WRITE_MODE } from '../../services/Global';
 
 
+
 const MangaInfoScreen = () => {
   const params = useLocalSearchParams();
   const { mangaId, mangaCover, mangaTitle, mangaUrl } = params;
-  const [mangaInfo, setMangaInfo] = useState();
+  const [mangaInfo, setMangaInfo] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [readingStatusList, setReadingStatusList] =  useState(null)
+  const [readingStatusList, setReadingStatusList] =  useState([])
   
 
   const controllerRef = useRef(null);
   const isMounted = useRef(true);
   const router = useRouter();
+
+  const readStatusSetup = async (chapterList) => {
+    setIsLoading(true)
+    const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
+    let readingStatusListToSave;
+
+    if(!savedMangaConfigData?.manga?.readingStats) {
+      const initializedReadingStats = Array(chapterList.length).fill(false)
+      readingStatusListToSave = initializedReadingStats
+      await saveMangaConfigData(mangaUrl, chapterList[0], {readingStats: initializedReadingStats}, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
+    }
+    else {
+      readingStatusListToSave = savedMangaConfigData.manga.readingStats
+    }
+
+    setReadingStatusList(readingStatusListToSave)
+    setIsLoading(false)
+  }
 
   const AsyncEffect = async () => {
     setIsLoading(true);
@@ -36,18 +55,6 @@ const MangaInfoScreen = () => {
         setMangaInfo(res.data);
       }
       
-      const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
-
-      if(!savedMangaConfigData?.manga?.readingStats) {
-        const initializedReadingStats = Array(res.data.chapterList.length).fill(false)
-        setReadingStatusList(initializedReadingStats)
-        await saveMangaConfigData(mangaUrl, res.data.chapterList[0], {readingStats: initializedReadingStats}, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
-
-      }
-      else {
-        setReadingStatusList(savedMangaConfigData.manga.readingStats)
-      }
-
     } catch (error) {
       setMangaInfo([]);
       if (error.name !== 'AbortError') {
@@ -60,6 +67,7 @@ const MangaInfoScreen = () => {
     }
   };
 
+  
   useEffect(() => {
     AsyncEffect();
 
@@ -72,6 +80,16 @@ const MangaInfoScreen = () => {
       }
     };
   }, [mangaUrl]);
+  
+  useFocusEffect(
+    useCallback( () => {
+      console.log('focused')
+      
+      if(mangaInfo) {
+        readStatusSetup(mangaInfo.chapterList)
+      }
+    }, [mangaInfo])
+  );
 
   const handleBackPress = () => {
     if (controllerRef.current) {

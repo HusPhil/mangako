@@ -47,6 +47,7 @@ const ChapterList = ({ mangaUrl, chaptersData, readingStats, headerComponent, li
         chTitle={item.chTitle}
         publishedDate={item.publishDate}
         handlePress={() => handleChapterPress(item, index)}
+        finished={readingStats[index]}
       />
     </View>
   ), [handleChapterPress]);

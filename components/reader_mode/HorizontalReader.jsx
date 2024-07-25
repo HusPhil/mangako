@@ -31,7 +31,7 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap, onPageC
             newPages[index] = {imgUri: null, error: fetchedImgSrc.error}
             return newPages
           })
-          if(pagesRef.current[index]) pagesRef.current[index].toggleRender({aspectRatio: 1})
+          if(pagesRef.current[index]) pagesRef.current[index].toggleRender()
           throw fetchedImgSrc.error
         };
   
