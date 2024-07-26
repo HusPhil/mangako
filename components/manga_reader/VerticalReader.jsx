@@ -129,6 +129,10 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
     />
   ), []);
 
+  const keyExtractor = useCallback((item, index) => {
+    return ` ${item}-${index}`;
+  }, []);
+
   return (
     <View className="h-full">
       <View className="flex-1 relative">
@@ -139,7 +143,7 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
           renderItem={renderItem}
           getItemLayout={getItemLayout}
           onScroll={handleScroll}
-          keyExtractor={(item, index) => index.toString()}
+          keyExtractor={keyExtractor}
           estimatedItemSize={500}
           onViewableItemsChanged={handleViewableItemsChanged}
         />

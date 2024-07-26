@@ -22,26 +22,6 @@ const MangaInfoScreen = () => {
   const isMounted = useRef(true);
   const router = useRouter();
 
-  const setupReadStatusList = useCallback(async (chapterList) => {
-    
-    setIsLoading(true);
-
-    const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY);
-
-    if(!savedMangaConfigData?.manga?.readingStats) {
-      const initializedReadingStats = Array(chapterList.length).fill(false);
-      await saveMangaConfigData(
-        mangaUrl, 
-        chapterList[0],
-        {readingStats: initializedReadingStats}, 
-        CONFIG_READ_WRITE_MODE.MANGA_ONLY
-      );
-    }
-
-    setIsLoading(false);
-
-  }, [])
-
   const handleBackPress = () => {
     if (controllerRef.current) {
       controllerRef.current.abort();
@@ -69,7 +49,6 @@ const MangaInfoScreen = () => {
         setMangaInfo(res.data);
       }
 
-      await setupReadStatusList(res.data.chapterList);
       
     } catch (error) {
       setMangaInfo([]);

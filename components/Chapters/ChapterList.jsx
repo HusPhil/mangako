@@ -1,5 +1,5 @@
-import { View, Text, Alert, RefreshControl, TouchableOpacity } from 'react-native';
-import React, { useState, useCallback, useRef } from 'react';
+import { View, Text, RefreshControl, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import { router, useFocusEffect } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -7,8 +7,7 @@ import { AntDesign } from '@expo/vector-icons';
 
 import ChapterListItem from './ChapterListItem';
 
-import { readMangaConfigData, saveMangaConfigData, CONFIG_READ_WRITE_MODE } from '../../services/Global';
-
+import { readMangaConfigData, CONFIG_READ_WRITE_MODE } from '../../services/Global';
 
 const ChapterList = ({ 
   mangaUrl, chaptersData, 
@@ -18,7 +17,6 @@ const ChapterList = ({
   const [showBtnToBottom, setShowBtnToBottom] = useState(false)
   const [showBtnToTop, setShowBtnToTop] = useState(false)
   const [readingStatusList, setReadingStatusList] = useState([])
-  const [chapterCurrentPageList, setChapterCurrentPageList] = useState([])
 
   const flashListref = useRef(null)
   const previousScrollY = useRef(0);
@@ -46,11 +44,9 @@ const ChapterList = ({
         mangaUrl,
       }
     });
-  }, [chaptersData]);
+  }, [chaptersData, mangaUrl]);
 
   const handleScroll = (event) => {
-    // console.log("chapterCurrentPageList sa chapterlist:", chapterCurrentPageList)
-    // console.log("latestFinishedChapterNum sa chapterlist:", latestFinishedChapterNum)
     const {
       nativeEvent: {
         contentOffset: { y },
@@ -82,41 +78,42 @@ const ChapterList = ({
   };
 
   const getChapterCurrentPageList = useCallback(async () => {
-    const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
+    try {
+      const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY);
 
-    let retrievedReadingStatusList = Array(chaptersData.length).fill(false)
+      let retrievedReadingStatusList = {};
 
-    if(savedMangaConfigData?.manga?.readingStats) {
-        retrievedReadingStatusList = savedMangaConfigData.manga.readingStats
+      if (savedMangaConfigData?.manga?.readingStats) {
+        retrievedReadingStatusList = savedMangaConfigData.manga.readingStats;
+      }
+
+      setReadingStatusList(retrievedReadingStatusList);
+      console.log("retrievedReadingStatusList in ChapterList:", retrievedReadingStatusList);
+    } catch (error) {
+      console.error("Error fetching chapter current page list:", error);
     }
-
-    // console.log("retrievedReadingStatusList sa chapterList:", retrievedReadingStatusList)
-    setReadingStatusList(retrievedReadingStatusList)
-
-    
-  }, []) 
-
+  }, []);
   
+  useEffect(() => {
+    getChapterCurrentPageList()
+  }, [])
   
-  useFocusEffect(
-    useCallback(() => {
-      getChapterCurrentPageList()
-    }, [])
-  );
-
   const renderItem = useCallback(({ item, index }) => (
     <View className="w-full px-2">
       <ChapterListItem
-        currentManga={{manga: mangaUrl, chapter: item.chapterUrl}}
-        chTitle={item.chTitle}
+        currentManga={{ manga: mangaUrl, chapter: item.chapterUrl }}
+        chapterTitle={item.chTitle}
         publishedDate={item.publishDate}
         handlePress={() => handleChapterPress(item, index)}
-        finished={readingStatusList[index]}
-        currentPage={0}
+        finished={readingStatusList[item.chapterUrl] ? readingStatusList[item.chapterUrl].finished : false}
+        currentPage={index}
       />
     </View>
-  ), [handleChapterPress, readingStatusList]);
+  ), [handleChapterPress, readingStatusList, mangaUrl]);
 
+  const keyExtractor = useCallback((item, index) => {
+    return ` ${item}-${index}`;
+  }, []);
 
   return (
     <View className="flex-1">
@@ -143,6 +140,7 @@ const ChapterList = ({
             </View>
           }
           onScroll={handleScroll}
+          keyExtractor={keyExtractor}
         />
       </View>
       {showBtnToBottom && (
