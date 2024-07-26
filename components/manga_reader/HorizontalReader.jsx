@@ -44,7 +44,7 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap, onPageC
     }
     });
     
-    await Promise.allSettled(pageDataPromises)
+    await Promise.all(pageDataPromises)
   }, [])
 
   const loadPageImages = useCallback(async () => {

@@ -6,12 +6,12 @@ import { Feather } from '@expo/vector-icons';
 
 import * as backend from "./_manga_reader"
 import { CONFIG_READ_WRITE_MODE, readMangaConfigData, saveMangaConfigData } from '../../services/Global';
-import VerticalReader from '../../components/reader_mode/VerticalReader';
-import HorizontalReader from '../../components/reader_mode/HorizontalReader';
+import VerticalReader from '../../components/manga_reader/VerticalReader';
+import HorizontalReader from '../../components/manga_reader/HorizontalReader';
 import DropDownList from '../../components/modal/DropdownList';
 import ModalPopup from '../../components/modal/ModalPopup';
 import HorizontalRule from '../../components/HorizontalRule';
-import { readPageLayout } from '../../components/reader_mode/_reader';
+import { readPageLayout } from '../../components/manga_reader/_reader';
 
 import { readerReducer, INITIAL_STATE } from '../../redux/readerScreen/readerReducer';
 import { READER_ACTIONS } from '../../redux/readerScreen/readerActions';
@@ -33,7 +33,7 @@ const MangaReaderScreen = () => {
         const savedConfig = await readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl)
         const savedPageLayout = await readPageLayout(mangaUrl, chapterDataRef.current.chapterUrl);
 
-        console.log(savedConfig)
+        // console.log(savedConfig)
         
         if(savedConfig) dispatch({type: READER_ACTIONS.LOAD_CONFIG, payload: {
             currentPage: savedConfig?.chapter?.currentPage || 0,
@@ -186,19 +186,19 @@ const MangaReaderScreen = () => {
                 
                 <View className="flex-row justify-between m-2 my-3">
                     <View className="flex-row justify-between">
-                        <TouchableOpacity className="py-2 px-3 bg-accent rounded-md" onPress={async () => {
-                            await handleChapterNavigation(backend.CHAPTER_NAVIGATION.NEXT)
-                        }}>
-                            
-                            <Text className="text-white font-pregular text-center">Next</Text>
-                        </TouchableOpacity> 
-                        
-                        <TouchableOpacity className="py-2 px-3 bg-accent rounded-md ml-2" onPress={async () => {
+                        <TouchableOpacity className="py-2 px-3 bg-accent rounded-md " onPress={async () => {
                             await handleChapterNavigation(backend.CHAPTER_NAVIGATION.PREV)
                         }}>
                             
                             <Text className="text-white font-pregular text-center">Prev</Text>
                         </TouchableOpacity>
+                        
+                        <TouchableOpacity className="py-2 px-3 bg-accent rounded-md ml-2" onPress={async () => {
+                            await handleChapterNavigation(backend.CHAPTER_NAVIGATION.NEXT)
+                        }}>
+                            
+                            <Text className="text-white font-pregular text-center">Next</Text>
+                        </TouchableOpacity> 
                     </View>
 
                     <TouchableOpacity className="py-2 px-3 bg-accent rounded-md flex-1 ml-4 ">

@@ -17,79 +17,30 @@ const MangaInfoScreen = () => {
   const { mangaId, mangaCover, mangaTitle, mangaUrl } = params;
   const [mangaInfo, setMangaInfo] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [readingStatusList, setReadingStatusList] =  useState([])
-  
 
   const controllerRef = useRef(null);
   const isMounted = useRef(true);
   const router = useRouter();
 
-  const readStatusSetup = async (chapterList) => {
-    setIsLoading(true)
-    const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
-    let readingStatusListToSave;
-
-    if(!savedMangaConfigData?.manga?.readingStats) {
-      const initializedReadingStats = Array(chapterList.length).fill(false)
-      readingStatusListToSave = initializedReadingStats
-      await saveMangaConfigData(mangaUrl, chapterList[0], {readingStats: initializedReadingStats}, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
-    }
-    else {
-      readingStatusListToSave = savedMangaConfigData.manga.readingStats
-    }
-
-    setReadingStatusList(readingStatusListToSave)
-    setIsLoading(false)
-  }
-
-  const AsyncEffect = async () => {
+  const setupReadStatusList = useCallback(async (chapterList) => {
+    
     setIsLoading(true);
 
-    
-    controllerRef.current = new AbortController();
-    const signal = controllerRef.current.signal;
-    
-    try {
-      const res = await backend.fetchData(mangaUrl, signal);
-      if (isMounted.current) {
-        setMangaInfo(res.data);
-      }
-      
-    } catch (error) {
-      setMangaInfo([]);
-      if (error.name !== 'AbortError') {
-        console.error(error);
-      }
-    } finally {
-      if (isMounted.current) {
-        setIsLoading(false);
-      }
+    const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY);
+
+    if(!savedMangaConfigData?.manga?.readingStats) {
+      const initializedReadingStats = Array(chapterList.length).fill(false);
+      await saveMangaConfigData(
+        mangaUrl, 
+        chapterList[0],
+        {readingStats: initializedReadingStats}, 
+        CONFIG_READ_WRITE_MODE.MANGA_ONLY
+      );
     }
-  };
 
-  
-  useEffect(() => {
-    AsyncEffect();
+    setIsLoading(false);
 
-    return () => {
-      setIsLoading(false);
-      setMangaInfo([]);
-      isMounted.current = false;
-      if (controllerRef.current) {
-        controllerRef.current.abort();
-      }
-    };
-  }, [mangaUrl]);
-  
-  useFocusEffect(
-    useCallback( () => {
-      console.log('focused')
-      
-      if(mangaInfo) {
-        readStatusSetup(mangaInfo.chapterList)
-      }
-    }, [mangaInfo])
-  );
+  }, [])
 
   const handleBackPress = () => {
     if (controllerRef.current) {
@@ -106,22 +57,59 @@ const MangaInfoScreen = () => {
     setIsLoading(false)
   }
 
+  const AsyncEffect = async () => {
+    setIsLoading(true);
+
+    controllerRef.current = new AbortController();
+    const signal = controllerRef.current.signal;
+    
+    try {
+      const res = await backend.fetchData(mangaUrl, signal);
+      if (isMounted.current) {
+        setMangaInfo(res.data);
+      }
+
+      await setupReadStatusList(res.data.chapterList);
+      
+    } catch (error) {
+      setMangaInfo([]);
+      if (error.name !== 'AbortError') {
+        console.error(error);
+      }
+    } finally { 
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
+    }
+  };
+
   useEffect(() => {
+    AsyncEffect();
+    
     const backHandler = BackHandler.addEventListener(
       'hardwareBackPress',
       handleBackPress
     );
 
     return () => {
-      controllerRef.current.abort();
+      setIsLoading(false);
+      setMangaInfo([]);
       backHandler.remove();
+      isMounted.current = false;
+      if (controllerRef.current) {
+        controllerRef.current.abort();
+      }
     };
-  }, []);
+  }, [mangaUrl]);
+  
+
+  
+
 
   return (
     <View className="h-full w-full bg-primary">
       <StatusBar backgroundColor={'transparent'} barStyle={'light-content'} />
-      <View className="h-full w-full">
+      <View className="h-full w-full" >
         <MangaHeader 
           mangaCover={mangaCover}
           mangaId={mangaId}
@@ -138,7 +126,6 @@ const MangaInfoScreen = () => {
           <ChapterList 
             mangaUrl={mangaUrl}
             chaptersData={mangaInfo.chapterList}
-            readingStats={readingStatusList}
             listStyles={{paddingBottom: 8, paddingHorizontal: 8}}
             onRefresh={handleRefresh}
             headerComponent={

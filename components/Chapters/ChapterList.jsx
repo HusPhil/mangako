@@ -1,16 +1,24 @@
 import { View, Text, Alert, RefreshControl, TouchableOpacity } from 'react-native';
 import React, { useState, useCallback, useRef } from 'react';
 import { FlashList } from '@shopify/flash-list';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
 
 import ChapterListItem from './ChapterListItem';
 
+import { readMangaConfigData, saveMangaConfigData, CONFIG_READ_WRITE_MODE } from '../../services/Global';
 
-const ChapterList = ({ mangaUrl, chaptersData, readingStats, headerComponent, listStyles, onRefresh }) => {
+
+const ChapterList = ({ 
+  mangaUrl, chaptersData, 
+  headerComponent, listStyles, 
+  onRefresh, 
+}) => {
   const [showBtnToBottom, setShowBtnToBottom] = useState(false)
   const [showBtnToTop, setShowBtnToTop] = useState(false)
+  const [readingStatusList, setReadingStatusList] = useState([])
+  const [chapterCurrentPageList, setChapterCurrentPageList] = useState([])
 
   const flashListref = useRef(null)
   const previousScrollY = useRef(0);
@@ -39,21 +47,10 @@ const ChapterList = ({ mangaUrl, chaptersData, readingStats, headerComponent, li
       }
     });
   }, [chaptersData]);
-  
-  const renderItem = useCallback(({ item, index }) => (
-    <View className="w-full px-2">
-      <ChapterListItem
-        currentManga={{manga: mangaUrl, chapter: item.chapterUrl}}
-        chTitle={item.chTitle}
-        publishedDate={item.publishDate}
-        handlePress={() => handleChapterPress(item, index)}
-        finished={readingStats[index]}
-      />
-    </View>
-  ), [handleChapterPress]);
 
   const handleScroll = (event) => {
-    // console.log("reading stats sa chapterlist:", readingStats)
+    // console.log("chapterCurrentPageList sa chapterlist:", chapterCurrentPageList)
+    // console.log("latestFinishedChapterNum sa chapterlist:", latestFinishedChapterNum)
     const {
       nativeEvent: {
         contentOffset: { y },
@@ -83,6 +80,43 @@ const ChapterList = ({ mangaUrl, chaptersData, readingStats, headerComponent, li
   
     previousScrollY.current = y;
   };
+
+  const getChapterCurrentPageList = useCallback(async () => {
+    const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
+
+    let retrievedReadingStatusList = Array(chaptersData.length).fill(false)
+
+    if(savedMangaConfigData?.manga?.readingStats) {
+        retrievedReadingStatusList = savedMangaConfigData.manga.readingStats
+    }
+
+    // console.log("retrievedReadingStatusList sa chapterList:", retrievedReadingStatusList)
+    setReadingStatusList(retrievedReadingStatusList)
+
+    
+  }, []) 
+
+  
+  
+  useFocusEffect(
+    useCallback(() => {
+      getChapterCurrentPageList()
+    }, [])
+  );
+
+  const renderItem = useCallback(({ item, index }) => (
+    <View className="w-full px-2">
+      <ChapterListItem
+        currentManga={{manga: mangaUrl, chapter: item.chapterUrl}}
+        chTitle={item.chTitle}
+        publishedDate={item.publishDate}
+        handlePress={() => handleChapterPress(item, index)}
+        finished={readingStatusList[index]}
+        currentPage={0}
+      />
+    </View>
+  ), [handleChapterPress, readingStatusList]);
+
 
   return (
     <View className="flex-1">
