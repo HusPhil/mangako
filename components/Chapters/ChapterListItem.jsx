@@ -8,7 +8,7 @@ const ChapterListItem = ({ chapterTitle, currentManga, publishedDate, finished, 
   const [currentPage, setCurrentPage] = useState(0);
   const [readingStatus, setReadingStatus] = useState(finished);
 
-  // Function to fetch current page and reading status
+  // Function to fetch current page and reading status •
   const getChapterCurrentPageList = useCallback(async () => {
     try {
       const savedMangaConfigData = await readMangaConfigData(currentManga.manga, currentManga.chapter);
@@ -21,7 +21,7 @@ const ChapterListItem = ({ chapterTitle, currentManga, publishedDate, finished, 
         setReadingStatus(retrievedReadingStatus);
       }
 
-      if (savedMangaConfigData?.chapter?.currentPage) {
+      if (savedMangaConfigData?.chapter?.currentPage) { 
         const retrievedCurrentPage = savedMangaConfigData.chapter.currentPage;
         setCurrentPage(retrievedCurrentPage);
       }
@@ -41,6 +41,8 @@ const ChapterListItem = ({ chapterTitle, currentManga, publishedDate, finished, 
     }, [getChapterCurrentPageList, finished])
   );
 
+  const additionalInfo = (currentPage > 0 && !readingStatus) ? publishedDate + ` • Page ${currentPage + 1}` : publishedDate
+
   return (
     <TouchableOpacity
       className={`bg-secondary p-2 rounded-md my-1 ${readingStatus ? 'opacity-50' : ''}`}
@@ -49,10 +51,7 @@ const ChapterListItem = ({ chapterTitle, currentManga, publishedDate, finished, 
       <Text numberOfLines={1} className="font-pregular text-white">
         {chapterTitle || 'Loading'}{' '}
       </Text>
-      <Text className="font-pregular text-[10px] text-white opacity-50">{publishedDate}</Text>
-      {currentPage > 0 && (
-        <Text className="font-pregular text-[10px] text-white opacity-50">{currentPage + 1}</Text>
-      )}
+      <Text className="font-pregular text-[10px] text-white opacity-50">{additionalInfo}</Text>
     </TouchableOpacity>
   );
 };

@@ -34,10 +34,12 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap, onPageC
           if(pagesRef.current[index]) pagesRef.current[index].toggleRender()
           throw fetchedImgSrc.error
         };
-  
-        const imgSize = await getImageDimensions(fetchedImgSrc.data);
 
+        
+        const imgSize = await getImageDimensions(fetchedImgSrc.data);
+        
         if(pagesRef.current[index]) pagesRef.current[index].toggleRender({aspectRatio: imgSize.width/imgSize.height})
+        console.log("loaded page:", index)
   
     } catch (error) {
         console.log("Error loading pages:", error);
@@ -108,7 +110,14 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap, onPageC
                 onTap(pageImages)
               }}
               onIndexChange={(currentPage) => {
+
+
+                if(currentPage === chapterPages.length - 1) {
+                  onPageChange(inverted ? chapterPages.length - 1 - currentPage : currentPage, {finished: true})
+                }
+
                 onPageChange(inverted ? chapterPages.length - 1 - currentPage : currentPage)
+
               }}
               maxScale={2.5}
           />

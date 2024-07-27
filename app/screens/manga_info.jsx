@@ -48,7 +48,6 @@ const MangaInfoScreen = () => {
       if (isMounted.current) {
         setMangaInfo(res.data);
       }
-
       
     } catch (error) {
       setMangaInfo([]);

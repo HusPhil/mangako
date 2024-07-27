@@ -1,4 +1,4 @@
-import { View, Text, Button, TouchableOpacity } from 'react-native'
+import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native'
 import React, {useRef, useEffect, useReducer, useCallback } from 'react'
 import { router, useLocalSearchParams } from 'expo-router';
 import Toast from 'react-native-simple-toast';
@@ -26,6 +26,7 @@ const MangaReaderScreen = () => {
 
     const chapterDataRef = useRef(parsedCurrentChapterData)
     const chapterNumRef = useRef(parseInt(currentChapterIndex))
+    const chapterFinishedref = useRef(false)
     const isMounted = useRef(true)
     const controllerRef = useRef(null)
 
@@ -35,7 +36,7 @@ const MangaReaderScreen = () => {
         const savedConfig = await readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl)
         const savedPageLayout = await readPageLayout(mangaUrl, chapterDataRef.current.chapterUrl);
 
-        // console.log(savedConfig)
+        // console.log(savedPageLayout)
         
         if(savedConfig) dispatch({type: READER_ACTIONS.LOAD_CONFIG, payload: {
             currentPage: savedConfig?.chapter?.currentPage || 0,
@@ -51,6 +52,7 @@ const MangaReaderScreen = () => {
                 type:READER_ACTIONS.SET_STATUS_FINISHED, 
                 payload: currentChapterReadingStatus ? currentChapterReadingStatus.finished : false
             })
+            chapterFinishedref.current = currentChapterReadingStatus ? currentChapterReadingStatus.finished : false;
         }
         
         controllerRef.current = new AbortController();
@@ -91,14 +93,20 @@ const MangaReaderScreen = () => {
         dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
     }, [])
 
-    const handlePageChange = useCallback(async (currentPage) => {
-        dispatch({type: READER_ACTIONS.SET_CURRENT_PAGE, payload: currentPage})
-        if(currentPage === state.chapterPages.length - 1) {
+    const handlePageChange = useCallback(async (currentPage, readingStatus) => {
+        dispatch({ type: READER_ACTIONS.SET_CURRENT_PAGE, payload: currentPage });
+    
+    
+        if (readingStatus?.finished && !chapterFinishedref.current) {
+            await handleReadFinish()
+            dispatch({type:READER_ACTIONS.SET_STATUS_FINISHED, payload: true})
             Toast.show('Finished! Tap to navigate chapters!');
+            chapterFinishedref.current = true
         }
+    
         saveLastViewedChapterPage(currentPage);
-
-    }, [state.currentPage, state.chapterPages])
+    
+    }, [state.currentPage, state.chapterPages, state.finished])
 
     const handleVertScroll = useCallback(async (scrollOffSetY) => {
         console.log("save:", scrollOffSetY)
@@ -136,6 +144,7 @@ const MangaReaderScreen = () => {
                     type:READER_ACTIONS.SET_STATUS_FINISHED, 
                     payload: currentChapterReadingStatus ? currentChapterReadingStatus.finished : false
                 })
+                chapterFinishedref.current = currentChapterReadingStatus ? currentChapterReadingStatus.finished : false
             }
     
             dispatch({type: READER_ACTIONS.SET_CURRENT_PAGE, payload: 0})
@@ -150,6 +159,7 @@ const MangaReaderScreen = () => {
 
     const handleReadFinish = async () => {
         dispatch({type:READER_ACTIONS.SET_STATUS_FINISHED, payload: !state.finished})
+        chapterFinishedref.current = !state.finished
         const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
         let newReadingStats;
 
@@ -226,25 +236,10 @@ const MangaReaderScreen = () => {
                     </TouchableOpacity>
                 </View>
 
-
-
-
                 </View>
-
             
-                {/* <Button title='delete config' onPress={async () => {
-                    await backend.deleteConfigData(mangaUrl, chapterDataRef.current.chapterUrl, "manga")
-                }} />
-                <Button title='NEXT' onPress={async () => {
-                    dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
-                    await handleChapterNavigation(backend.CHAPTER_NAVIGATION.NEXT)
-                }} />
-                <Button title='PREV' onPress={async () => {
-                    dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
-                    await handleChapterNavigation(backend.CHAPTER_NAVIGATION.PREV)
-                }} /> */}
           </ModalPopup>
-            {!state.isLoading && (
+            {!state.isLoading ? (
             <View>
                 {state.readingMode === backend.READER_MODES[0] && (
                     <HorizontalReader 
@@ -293,6 +288,10 @@ const MangaReaderScreen = () => {
                 <Text className="font-pregular text-white text-xs">{state.currentPage + 1}/{state.chapterPages.length}</Text>
             </View>
             </View>
+            ) : (
+                <View className="h-full justify-center">
+                    <ActivityIndicator color={`white`} size='large' />
+                </View>
             )}
 
         </View>

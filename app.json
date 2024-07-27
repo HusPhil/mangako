@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "mangako",
-    "slug": "mangako",
-    "scheme": "mangako",
+    "name": "MangaKo",
+    "slug": "MangaKo",
+    "scheme": "MangaKo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,7 +20,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.husph.mangako"
+      "package": "com.husph.MangaKo"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,7 +33,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "20d88a07-0f15-4259-b255-13d748a55371"
+        "projectId": "e7119cef-eb3c-4885-ae2d-8dbdbf9f5d6b"
       }
     }
   }

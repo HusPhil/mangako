@@ -109,6 +109,10 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
     e.persist(); // Persist the event
     debouncedOnScroll(e);
   };
+
+  const handleEndReached = useCallback(() => {
+    onPageChange(chapterPages.length - 1, {finished: true})
+  }, [])
   
   const debouncedOnScroll = useCallback(debounce( (e) => {
     onScroll(e.nativeEvent.contentOffset.y)
@@ -135,7 +139,6 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
 
   return (
     <View className="h-full">
-      <View className="flex-1 relative">
         <FlashList
           ref={flashRef}
           data={pageImages}
@@ -146,8 +149,11 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
           keyExtractor={keyExtractor}
           estimatedItemSize={500}
           onViewableItemsChanged={handleViewableItemsChanged}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.5}
         />
-      </View>
+      {/* <View className="flex-1 relative">
+      </View> */}
     </View>
   );
 };

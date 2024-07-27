@@ -1,6 +1,7 @@
 import { View, Dimensions, ActivityIndicator, Text, TouchableWithoutFeedback } from 'react-native';
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { Image } from 'expo-image';
+import colors from '../../constants/colors';
 
 
 const ChapterPage = forwardRef(({
@@ -31,7 +32,6 @@ const ChapterPage = forwardRef(({
 
 
   return (
-   //pinaltan ang key=tick for re renderingz
     <> 
         <TouchableWithoutFeedback disabled={!onTap} onPress={onTap} key={tick}>
         {imgSrc ? (
@@ -59,7 +59,7 @@ const ChapterPage = forwardRef(({
                   <View 
                       className="h-full w-full justify-center items-cente bg-transparent absolute -z-50"
                   >
-                      <ActivityIndicator color={'white'} size='large' />
+                      <ActivityIndicator color={`${colors.accent.DEFAULT}`} size='large' />
                   </View>
                 )}
                 
@@ -81,8 +81,7 @@ const ChapterPage = forwardRef(({
               aspectRatio: pageLayout && pageLayout[pageNum] ? pageLayout[pageNum].width/pageLayout[pageNum].height : 1,
             }}
           >
-              <ActivityIndicator color={'white'} size='large' />
-              <Text className="font-pregular text-white">Loading page: {pageNum + 1}</Text>
+              <ActivityIndicator color={`${colors.accent[100]}`} size='large' />
           </View>
         )}
         </TouchableWithoutFeedback>
