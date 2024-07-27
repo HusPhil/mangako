@@ -1,4 +1,4 @@
-import { View, Dimensions, ActivityIndicator, Text, TouchableWithoutFeedback } from 'react-native';
+import { View, Dimensions, ActivityIndicator, Text, TouchableWithoutFeedback, TouchableOpacity } from 'react-native';
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { Image } from 'expo-image';
 import colors from '../../constants/colors';
@@ -66,8 +66,15 @@ const ChapterPage = forwardRef(({
             </View>
           ) : (
             imgSrc?.error && (
-              <View className="mt-[-1px]" key={tick}>
-                <Text className="font-pregular text-white">error</Text>
+              <View className="h-full justify-center items-center">
+                <Text className="font-pregular text-white text-base">Something went wrong</Text>
+                <Text className="font-pregular text-white text-base">while loading this page</Text>
+                {horizontal && <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Swipe down to retry</Text>}
+                {vertical && 
+                  <TouchableOpacity>
+                    <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Click this to retry</Text>
+                  </TouchableOpacity>
+                }
               </View>
             )
           )

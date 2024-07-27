@@ -3,6 +3,7 @@ import React, {useRef, useEffect, useReducer, useCallback } from 'react'
 import { router, useLocalSearchParams } from 'expo-router';
 import Toast from 'react-native-simple-toast';
 import { Feather } from '@expo/vector-icons';
+import { AntDesign } from '@expo/vector-icons';
 import { debounce } from 'lodash';
 
 
@@ -60,17 +61,25 @@ const MangaReaderScreen = () => {
 
         try {
             const fetchedChapterPages = await backend.fetchData(mangaUrl, chapterDataRef.current.chapterUrl, signal);
-            if(fetchedChapterPages.error) throw fetchedChapterPages.error
+            if(fetchedChapterPages.error) {
+                console.log(fetchedChapterPages.error)
+                throw fetchedChapterPages.error
+            }
             dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_SUCCESS, payload: fetchedChapterPages.data})
         } 
         catch (error) {
-            if (signal.aborted) {
-                console.log("Fetch aborted");
-            } else {
-                console.log("Error fetching chapter pages:", error);
-            }
-            dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_ERROR, payload: {error}})
+            console.log(error)
             router.back()
+            Toast.show(
+                `An error occured: ${error}`,
+                Toast.LONG,
+            );
+            // if (signal.aborted) {
+            //     console.log("Fetch aborted");
+            // } else {
+            //     console.log("Error fetching chapter pages:", error);
+            // }
+            dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_ERROR, payload: {error, chapterPages: []}})
             
         } 
         
@@ -134,7 +143,11 @@ const MangaReaderScreen = () => {
     
             if(chapterNavigator.error) {
                 dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_ERROR, payload: {chapterPages: currentChapterPages}})
-                alert(navigationMode === backend.CHAPTER_NAVIGATION.NEXT ? "Next chapter no found." : "Previous chapter not found.")
+                const alertMessage = navigationMode === backend.CHAPTER_NAVIGATION.NEXT ? "Next chapter no found." : "Previous chapter not found." 
+                Toast.show(
+                    alertMessage,
+                    Toast.LONG,
+                  );
                 return
             }
     
@@ -209,29 +222,24 @@ const MangaReaderScreen = () => {
                         }}
                         selectedIndex={backend.READER_MODES.indexOf(state.readingMode)}
                     />
-                    </View>
-
-  
-                
+                    </View>                
                 
                 <View className="flex-row justify-between m-2 my-3">
                     <View className="flex-row justify-between">
-                        <TouchableOpacity className="py-2 px-3 bg-accent rounded-md " onPress={async () => {
+                        <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md " onPress={async () => {
                             await handleChapterNavigation(backend.CHAPTER_NAVIGATION.PREV)
                         }}>
-                            
-                            <Text className="text-white font-pregular text-center">Prev</Text>
+                            <AntDesign name="stepbackward" size={12} color="white" />
                         </TouchableOpacity>
                         
-                        <TouchableOpacity className="py-2 px-3 bg-accent rounded-md ml-2" onPress={async () => {
+                        <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md ml-2" onPress={async () => {
                             await handleChapterNavigation(backend.CHAPTER_NAVIGATION.NEXT)
                         }}>
-                            
-                            <Text className="text-white font-pregular text-center">Next</Text>
+                            <AntDesign name="stepforward" size={12} color="white" />
                         </TouchableOpacity> 
                     </View>
 
-                    <TouchableOpacity className="py-2 px-3 bg-accent rounded-md flex-1 ml-4 ">
+                    <TouchableOpacity className="py-1 px-3 bg-accent rounded-md flex-1 ml-4 ">
                         <Text className="text-white font-pregular text-center">Clear cache</Text>
                     </TouchableOpacity>
                 </View>
@@ -240,54 +248,62 @@ const MangaReaderScreen = () => {
             
           </ModalPopup>
             {!state.isLoading ? (
-            <View>
-                {state.readingMode === backend.READER_MODES[0] && (
-                    <HorizontalReader 
-                        chapterPages={state.chapterPages}
-                        currentManga={{
-                            manga: mangaUrl,
-                            chapter: chapterDataRef.current.chapterUrl
-                        }}
-                        onTap={handleTap}
-                        currentPage={state.currentPage}
-                        onPageChange={handlePageChange}
-                    />
-                )}
+                !state.errorData ? (
+                    <View>
+                        {state.readingMode === backend.READER_MODES[0] && (
+                            <HorizontalReader 
+                                chapterPages={state.chapterPages}
+                                currentManga={{
+                                    manga: mangaUrl,
+                                    chapter: chapterDataRef.current.chapterUrl
+                                }}
+                                onTap={handleTap}
+                                currentPage={state.currentPage}
+                                onPageChange={handlePageChange}
+                            />
+                        )}
 
-                {state.readingMode === backend.READER_MODES[1] && (
-                    <HorizontalReader 
-                        chapterPages={state.chapterPages}
-                        currentManga={{
-                            manga: mangaUrl,
-                            chapter: chapterDataRef.current.chapterUrl
-                        }}
-                        onPageChange={handlePageChange}
-                        onTap={handleTap}
-                        currentPage={state.chapterPages.length - 1 - state.currentPage}
-                        inverted
-                    />
-                )}
+                        {state.readingMode === backend.READER_MODES[1] && (
+                            <HorizontalReader 
+                                chapterPages={state.chapterPages}
+                                currentManga={{
+                                    manga: mangaUrl,
+                                    chapter: chapterDataRef.current.chapterUrl
+                                }}
+                                onPageChange={handlePageChange}
+                                onTap={handleTap}
+                                currentPage={state.chapterPages.length - 1 - state.currentPage}
+                                inverted
+                            />
+                        )}
 
-                {state.readingMode === backend.READER_MODES[2] && (
-                    <VerticalReader 
-                        chapterPages={state.chapterPages}
-                        currentManga={{
-                            manga: mangaUrl,
-                            chapter: chapterDataRef.current.chapterUrl
-                        }}
-                        onPageChange={handlePageChange}
-                        onTap={handleTap}
-                        currentPage={state.currentPage}
-                        savedPageLayout={state.pageLayout}
-                        savedScrollOffsetY={state.scrollOffSetY}
-                        onScroll={handleVertScroll}
-                        inverted
-                    />
-                )}
-            <View pointerEvents='none' className="bg-transparent absolute bottom-2 items-center w-full">
-                <Text className="font-pregular text-white text-xs">{state.currentPage + 1}/{state.chapterPages.length}</Text>
-            </View>
-            </View>
+                        {state.readingMode === backend.READER_MODES[2] && (
+                            <VerticalReader 
+                                chapterPages={state.chapterPages}
+                                currentManga={{
+                                    manga: mangaUrl,
+                                    chapter: chapterDataRef.current.chapterUrl
+                                }}
+                                onPageChange={handlePageChange}
+                                onTap={handleTap}
+                                currentPage={state.currentPage}
+                                savedPageLayout={state.pageLayout}
+                                savedScrollOffsetY={state.scrollOffSetY}
+                                onScroll={handleVertScroll}
+                                inverted
+                            />
+                        )}
+                        <View pointerEvents='none' className="bg-transparent absolute bottom-2 items-center w-full">
+                            <Text className="font-pregular text-white text-xs">{state.currentPage + 1}/{state.chapterPages.length}</Text>
+                        </View>
+                    </View>
+                    ) : (
+                        <View className="h-full justify-center items-center">
+                            <Text className="font-pregular text-white text-base">Something went wrong</Text>
+                            <Text className="font-pregular text-white text-base">while loading the pages</Text>
+                            <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Exit and try again</Text>
+                        </View>
+                    )
             ) : (
                 <View className="h-full justify-center">
                     <ActivityIndicator color={`white`} size='large' />

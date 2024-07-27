@@ -24,11 +24,10 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
     try {
       controllerRef.current = new AbortController();
       const signal = controllerRef.current.signal;
-      const pageDataPromises = chapterPages.map((pageUrl, index) => 
-        loadPageImages(index, pageUrl, signal)
-      );
       
-      await Promise.allSettled(pageDataPromises);
+      for (let pageNum = 0; pageNum < chapterPages.length; pageNum++) {
+        await loadPageImages(chapterPages[pageNum], pageNum, signal);
+      }
       
 
     } catch (error) {
@@ -45,7 +44,7 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
     };
   }, []);
 
-  const loadPageImages = async (pageNum, pageUrl, signal) => {
+  const loadPageImages = async (pageUrl, pageNum, signal) => {
     try {
       const fetchedImgSrc = await fetchPageData(currentManga.manga, currentManga.chapter, pageUrl, signal);
       if (fetchedImgSrc.error) {
@@ -64,9 +63,9 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
           newPageImages[pageNum] = { imgUri: fetchedImgSrc.data, imgSize };
           return newPageImages;
         });
+        // console.log("page:", pageNum, "was loaded in verMode!")
       }
 
-      handlePageLoad(pageNum, imgSize)
     } catch (error) {
       console.log("Error loading pages:", error);
     }

@@ -52,7 +52,8 @@ export const fetchData = async (mangaUrl, chapterUrl, abortSignal) => {
           return { data: pageUrls, error: null };
         }
 
-        return { data: [], error };
+        throw new Error("Failed to fetch chapter pages")
+
     } catch (error) {
         console.error("Fetch data error:", error);
         return { data: [], error };

@@ -39,7 +39,10 @@ const BrowseTab = () => {
 
     } catch (error) {
       setErrorData(error)
-      Alert.alert("Something went wrong", error.message);
+      Toast.show(
+        `An error occured: ${error}`,
+        Toast.LONG,
+      );
       setNewestManga([])
       setPopularManga([])
     } finally {

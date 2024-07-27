@@ -2,6 +2,7 @@ import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { View, Text, Button, Dimensions, ActivityIndicator } from 'react-native';
 import ChapterPage from '../chapters/ChapterPage';
 import { Gallery } from 'react-native-zoom-toolkit';
+import Toast from 'react-native-simple-toast';
 import { useReducer } from 'react';
 
 import * as FileSystem from 'expo-file-system'
@@ -16,40 +17,58 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap, onPageC
   const isMounted = useRef(true);
   const pagesRef = useRef([])
   const galleryRef = useRef(null)
+  const currentReaderIndexRef = useRef(0)
 
   const AsyncEffect = useCallback(async () => {
     controllerRef.current = new AbortController();
     const signal = controllerRef.current.signal;
   
-    const pageDataPromises = chapterPages.map(async (pageUrl, index) => {
-      try {
-        const fetchedImgSrc = await fetchPageData(currentManga.manga, currentManga.chapter, pageUrl, signal);
-        if (fetchedImgSrc.error) {
-          console.log("error on hor reader loading the pages")
-          setPageImages(prev => {
-            newPages = [...prev] 
-            newPages[index] = {imgUri: null, error: fetchedImgSrc.error}
-            return newPages
-          })
-          if(pagesRef.current[index]) pagesRef.current[index].toggleRender()
-          throw fetchedImgSrc.error
-        };
-
-        
-        const imgSize = await getImageDimensions(fetchedImgSrc.data);
-        
-        if(pagesRef.current[index]) pagesRef.current[index].toggleRender({aspectRatio: imgSize.width/imgSize.height})
-        console.log("loaded page:", index)
-  
-    } catch (error) {
-        console.log("Error loading pages:", error);
+    for (let pageNum = 0; pageNum < chapterPages.length; pageNum++) {
+      await loadPageImages(chapterPages[pageNum], pageNum, signal);
     }
-    });
     
-    await Promise.all(pageDataPromises)
   }, [])
 
-  const loadPageImages = useCallback(async () => {
+  const loadPageImages = useCallback(async (pageUrl, pageNum, abortSignal, retryMode) => {
+    try {
+      const fetchedImgSrc = await fetchPageData(currentManga.manga, currentManga.chapter, pageUrl, abortSignal);
+      if (fetchedImgSrc.error) {
+        console.log("error on hor reader loading the pages")
+        const imgSize = {width: 1, height: 1}
+        setPageImages(prev => {
+          newPages = [...prev] 
+          newPages[pageNum] = {imgUri: null, error: fetchedImgSrc.error, imgSize}
+          return newPages
+        })
+        if(pagesRef.current[pageNum]) pagesRef.current[pageNum].toggleRender()
+        throw fetchedImgSrc.error
+      };
+
+      if(retryMode) {
+        const imgSize = {width: 1, height: 1}
+        console.log("RETRY MODE WAS CALLED")
+        const pageFileName = shorthash.unique(pageUrl);
+        const cachedChapterPageImagesDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName);
+        setPageImages(prev => {
+          newPages = [...prev] 
+          newPages[pageNum] = {imgUri: cachedChapterPageImagesDir.cachedFilePath, imgSize, error: null}
+          return newPages
+        })
+      }
+
+      
+      const imgSize = await getImageDimensions(fetchedImgSrc.data);
+      
+      if(pagesRef.current[pageNum]) pagesRef.current[pageNum].toggleRender({aspectRatio: imgSize.width/imgSize.height})
+      // console.log("loaded page:", pageNum)
+
+    } catch (error) {
+        console.log("Error loading pages:", error);
+        throw error
+    }
+  } , [])
+
+  const getHashedPagePaths = useCallback(async () => {
     const hashedPagePaths = await Promise.all(chapterPages.map(async (pageUrl) => {
       const pageFileName = shorthash.unique(pageUrl);
       const cachedChapterPageImagesDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName);
@@ -66,8 +85,27 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap, onPageC
     // if(galleryRef.current) galleryRef.current.setIndex({animated: true, index: inverted ? chapterPages.length - 1 : 0})
   }, [])
 
+  const handleRetry = useCallback(async (pageNum) => {
+    console.log("retry page:", pageNum)
+    controllerRef.current =  new AbortController()
+    const signal = controllerRef.current.signal
+    
+    try {
+      await loadPageImages(chapterPages[pageNum],  pageNum, signal, "retryMode")
+
+    } catch (error) {
+      Toast.show(
+        `An error occured: ${error}`,
+        Toast.LONG,
+      );
+    }
+
+    console.log("retry page done")
+
+  }, [])
+
   useEffect(() => {
-      loadPageImages()
+      getHashedPagePaths()
       AsyncEffect();
       return () => {
         controllerRef.current.abort();
@@ -97,20 +135,30 @@ const HorizontalReader = ({ currentManga, chapterPages, inverted, onTap, onPageC
 
   return (
       <View className="h-full w-full">
-        <View className="flex-1">
+        <View className="flex-1"
+          
+        >
           {chapterPages && chapterPages.length > 0 ? (
             <Gallery
               ref={galleryRef}
+              onResponderStart={(e) => {
+                console.log(e)
+              }}
               data={inverted ? [...pageImages].reverse() : pageImages}
               initialIndex={currentPage}
               keyExtractor={keyExtractor}
               renderItem={renderItem}
               onTap={() => {
-                const testData = pageImages
                 onTap(pageImages)
               }}
-              onIndexChange={(currentPage) => {
 
+              onSwipe={async (swipeDirection) => {
+                if(swipeDirection === 1) {
+                  await handleRetry(currentReaderIndexRef.current)
+                }
+              }}
+              onIndexChange={(currentPage) => {
+                currentReaderIndexRef.current = currentPage
 
                 if(currentPage === chapterPages.length - 1) {
                   onPageChange(inverted ? chapterPages.length - 1 - currentPage : currentPage, {finished: true})

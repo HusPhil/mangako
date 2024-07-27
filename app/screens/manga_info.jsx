@@ -17,6 +17,7 @@ const MangaInfoScreen = () => {
   const { mangaId, mangaCover, mangaTitle, mangaUrl } = params;
   const [mangaInfo, setMangaInfo] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorData, setErrorData] = useState(null);
 
   const controllerRef = useRef(null);
   const isMounted = useRef(true);
@@ -51,6 +52,7 @@ const MangaInfoScreen = () => {
       
     } catch (error) {
       setMangaInfo([]);
+      setErrorData(error)
       if (error.name !== 'AbortError') {
         console.error(error);
       }
@@ -101,7 +103,8 @@ const MangaInfoScreen = () => {
             <Text className="font-pregular text-white text-md mt-3">Loading chapter list..</Text>
           </View>            
         ) : (
-          <ChapterList 
+          !errorData ? (
+            <ChapterList 
             mangaUrl={mangaUrl}
             chaptersData={mangaInfo.chapterList}
             listStyles={{paddingBottom: 8, paddingHorizontal: 8}}
@@ -128,6 +131,13 @@ const MangaInfoScreen = () => {
               </View>
             }
           />
+          ) : (
+            <View className="h-full justify-center items-center">
+                <Text className="font-pregular text-white text-base">Something went wrong</Text>
+                <Text className="font-pregular text-white text-base">while loading the chapters</Text>
+                <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Swipe down to retry</Text>
+            </View>
+          )
         )}
       </View>
 
