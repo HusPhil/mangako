@@ -5,6 +5,13 @@ import shorthash from 'shorthash';
 import { getChapterPageImage } from '../../services/MangakakalotClient';
 import { Image } from 'react-native';
 
+export const SWIPE_DIRECTION = {
+    LEFT: "LEFT",
+    RIGHT: "RIGHT",
+    DOWN: "DOWN",
+    UP: "UP",
+}
+
 export const savePageLayout = async (mangaUrl, chapterUrl, pageLayout) => {
     try {
         const cachedChapterPageLayoutDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPageLayout", "pageLayout.json")
@@ -67,6 +74,20 @@ export const fetchPageData = async (mangaUrl, chapterUrl, pageUrl, abortSignal) 
         return { data: [], error };
     }
 };
+
+export const getSwipeDirection = (
+    distanceX, distanceY, 
+    velocityX, velocityY,
+    pageWidth, pageHeight,
+) => {
+    
+    const Threshold = pageHeight
+    let swipeDirection;
+    
+    if(Math.abs(distanceX) > Math.abs(distanceY)) {
+        swipeDirection = 0
+    }
+}
 
 
 export const getImageDimensions = (imageUri) => {

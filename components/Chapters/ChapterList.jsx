@@ -88,7 +88,6 @@ const ChapterList = ({
       }
 
       setReadingStatusList(retrievedReadingStatusList);
-      console.log("retrievedReadingStatusList in ChapterList:", retrievedReadingStatusList);
     } catch (error) {
       console.error("Error fetching chapter current page list:", error);
     }

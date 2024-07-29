@@ -33,7 +33,7 @@ const ChapterPage = forwardRef(({
 
   return (
     <> 
-        <TouchableWithoutFeedback disabled={!onTap} onPress={onTap} key={tick}>
+        <View onPress={onTap} key={tick}>
         {imgSrc ? (
           imgSrc.imgUri ? (
             <View className="mt-[-1px]">
@@ -91,7 +91,7 @@ const ChapterPage = forwardRef(({
               <ActivityIndicator color={`${colors.accent[100]}`} size='large' />
           </View>
         )}
-        </TouchableWithoutFeedback>
+        </View>
         
     </>
   );
