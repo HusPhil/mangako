@@ -10,6 +10,7 @@ const ChapterPage = forwardRef(({
   onRetry,
   onTap, pageLayout,
   horizontal, vertical,
+  onStartShouldSetResponder,
 }, ref) => {
   const { height: screenHeight, width: screenWidth } = Dimensions.get('screen');
   const [tick, setTick] = useState(0)

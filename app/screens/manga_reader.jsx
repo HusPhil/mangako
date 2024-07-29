@@ -294,12 +294,16 @@ const MangaReaderScreen = () => {
                             />
                         )}
                         <View pointerEvents='none' className="bg-transparent absolute bottom-2 items-center w-full">
-                            <Text className="font-pregular text-white text-xs">{state.currentPage + 1}/{state.chapterPages.length}</Text>
+                            <Text className="font-pregular text-white text-xs"
+                                style={{textShadowColor: "#000", textShadowRadius: 5,}}
+                            >
+                                {state.currentPage + 1}/{state.chapterPages.length}
+                            </Text>
                         </View>
                     </View>
                     ) : (
                         <View className="h-full justify-center items-center">
-                            <Text className="font-pregular text-white text-base">Something went wrong</Text>
+                            <Text className="font-pregular text-white text-base textShadowColor texts">Something went wrong</Text>
                             <Text className="font-pregular text-white text-base">while loading the pages</Text>
                             <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Exit and try again</Text>
                         </View>

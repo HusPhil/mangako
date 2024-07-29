@@ -8,7 +8,8 @@ import { savePageLayout, readPageLayout, scrollToPageNum, fetchPageData, getImag
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 
 const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScroll, currentPage, savedPageLayout, inverted }) => {
-  const [pageImages, setPageImages] = useState(Array(chapterPages.length).fill(undefined));
+  const [pageImages, setPageImages] = useState(Array(chapterPages.length).fill(null));
+  const [panEnabled, setPanEnabled] = useState(false);
   const [errorData, setErrorData] = useState(null);
 
   const {height: screenHeight, width: screenWidth} = Dimensions.get('screen')
@@ -16,7 +17,7 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
   const pagesRef = useRef([]);
   const currentZoomLevel = useRef(1);
   const readerCurrentPage = useRef(currentPage)
-  const readerCurrentViewportLocation = useRef({leftBound:0, rightBound:screenWidth})
+  const navigatedToCurrentPage = useRef(false)
   const zoomRef = useRef(null);
   const isMounted = useRef(true);
   const controllerRef = useRef(new AbortController());
@@ -33,9 +34,11 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
       controllerRef.current = new AbortController();
       const signal = controllerRef.current.signal;
       
-      for (let pageNum = 0; pageNum < chapterPages.length; pageNum++) {
-        await loadPageImages(chapterPages[pageNum], pageNum, signal);
-      }
+      const pageImagePromises = chapterPages.map(async (pageUrl, pageNum) => {
+        loadPageImages(pageUrl, pageNum, signal)
+      })
+
+      Promise.all(pageImagePromises)
       
 
     } catch (error) {
@@ -52,7 +55,7 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
     };
   }, []);
 
-  const loadPageImages = async (pageUrl, pageNum, signal) => {
+  const loadPageImages = useCallback(async (pageUrl, pageNum, signal) => {
     try {
       const fetchedImgSrc = await fetchPageData(currentManga.manga, currentManga.chapter, pageUrl, signal);
       if (fetchedImgSrc.error) {
@@ -72,12 +75,18 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
           return newPageImages;
         });
         // console.log("page:", pageNum, "was loaded in verMode!")
+
+        
+        // if(pageNum === currentPage && !navigatedToCurrentPage.current) {
+        //   // handleReaderNavigation({mode: "jump", jumpIndex: pageNum});
+        // }
+
       }
 
     } catch (error) {
       console.log("Error loading pages:", error);
     }
-  };
+  }, [])
 
   const handleRetry = useCallback(async (pageNum) => {
     controllerRef.current = new AbortController();
@@ -85,20 +94,23 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
     await loadPageImages(pageNum, chapterPages[pageNum], signal);
   }, []);
 
-  const getItemLayout = useCallback(
-    (data, index) => ({
-      length: (screenWidth),
-      offset: (screenWidth / PixelRatio.get()) * index,
-      index,
-    }),
-    []
-  );
+  
 
   const handleViewableItemsChanged = useCallback(({ viewableItems }) => {
     if(viewableItems.length > 0) {
       const currentPageNum = viewableItems.slice(-1)[0].index;
       readerCurrentPage.current = currentPageNum;
       onPageChange(currentPageNum);
+      // if(currentZoomLevel.current > 1) zoomRef.current.zoomTo(1)
+      console.log(currentPageNum, currentPage)
+      console.log("navigatedToCurrentPage.current:", navigatedToCurrentPage.current)
+
+      if(currentPageNum !== currentPage && !navigatedToCurrentPage.current) {
+        handleReaderNavigation({mode: "jump", jumpIndex: currentPage});
+      }
+      else {
+        navigatedToCurrentPage.current = true
+      }
     }
   }, [])
   
@@ -128,15 +140,30 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
       switch (navigationMode.mode) {
         case "prev":
           targetIndex = inverted ? readerCurrentPage.current + 1 : readerCurrentPage.current - 1 
+          flashRef.current.scrollToIndex({index: targetIndex, animated: true})
           break;
         case "next":
           targetIndex = inverted ? readerCurrentPage.current - 1 : readerCurrentPage.current + 1 
+          flashRef.current.scrollToIndex({index: targetIndex, animated: true})
+          break;
+        case "jump":
+          if(!navigationMode.jumpIndex) throw Error("No mentioned jumpIndex.")
+          if(navigationMode.jumpIndex === readerCurrentPage.current) {
+            console.log("finished")
+            navigatedToCurrentPage.current = true;
+            return
+          }
+          flashRef.current.scrollToIndex({index: navigationMode.jumpIndex, animated: true})
+
+          break;
+        case "jumpToOffset":
+          if(!navigationMode.jumpOffset) throw Error("No mentioned jumpOffset.")
+          flashRef.current.scrollToOffset({offset: navigationMode.jumpOffset, animated: true})
           break;
         default:
           break;
       }
 
-      flashRef.current.scrollToIndex({index: targetIndex, animated: true})
     } 
   }, [])
 
@@ -149,11 +176,11 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
   }, 500), []);
 
   const renderItem = useCallback(({ item, index }) => (
-    <View className="h-full justify-center"
-      pointerEvents='auto'
+    <View className="justify-center"
       onStartShouldSetResponder={() => {
         return currentZoomLevel.current <= 1
       }}
+      style={{height: screenHeight, width:screenWidth}}
     > 
       <ChapterPage
         ref={(page) => { pagesRef.current[index] = page; }}
@@ -167,12 +194,35 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
         onTap={onTap}
         vertical
       />
+      <Button title='jumpToIndex' onPress={() => {
+        handleReaderNavigation({mode: 'jump', jumpIndex: 20})
+      }}/>
+      <Button title='jumpToOffset' onPress={() => {
+        handleReaderNavigation({mode: 'jumpToOffset', jumpOffset: screenWidth * 22})
+      }}/>
+
     </View>
   ), []);
 
   const keyExtractor = useCallback((item, index) => {
     return ` ${item}-${index}`;
   }, []);
+
+  const getItemLayout = useCallback(
+    
+    (data, index) => {
+      return {
+        length: (10),
+        offset: (10) * index,
+        index,
+      }
+    },
+    []
+  );
+  const overrideItemLayout = (layout, item, index, maxColumns) => {
+    // Custom logic for determining the span and size
+   console.log("layout from override item layout:", layout)
+  };
 
   return (
     <View className="h-full">
@@ -182,6 +232,8 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
           minZoom={1}
           maxZoom={3.5}
           onTransform={({zoomLevel}) => {
+            if(zoomLevel === 1) setPanEnabled(false) 
+            else setPanEnabled(true)
             currentZoomLevel.current = zoomLevel;
           }}
           onDoubleTapAfter={() => {
@@ -191,86 +243,39 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
               handleReaderNavigation({mode: 'prev'})
             }
           }}
+          overrideItemLayout={overrideItemLayout}
           disablePanOnInitialZoom
           bindToBorders
           contentWidth={screenWidth}
           contentHeight={screenHeight}
-          onShiftingEnd={(e1, e2, e3)=>{
-            const scaledOffsetX = e3.offsetX * e3.zoomLevel
-            const scaledOriginalWidth = e3.originalWidth / 2;
-            console.log("scaledOffsetX:", scaledOffsetX, "scaledOriginalWidth:", scaledOriginalWidth / 2)
-            
-            if(Math.abs(e2.vx) > 0.5 ) {
-              readerCurrentViewportLocation.current.leftBound += e2.dx
-              readerCurrentViewportLocation.current.rightBound += e2.dx
-            }
-            
-          }}
-          onPanResponderTerminate={(e1, e2, e3) => {
-            console.log(e2, e3)
-          }}
-          onPanResponderMove={(e1, e2, e3)=>{
-            const scaledOffsetX = e3.offsetX * e3.zoomLevel
-            const scaledOriginalWidth = e3.originalWidth * e3.zoomLevel;
+          onShiftingEnd={(e1, e2, zoomableViewEvent)=>{
+            const scaledOffsetX = zoomableViewEvent.offsetX * zoomableViewEvent.zoomLevel
 
-            console.log("OnResPandermove was called\n",
-            `dx: ${e2.dx}\n`,
-            `dy: ${e2.dy}\n`,  
-            `vx: ${e2.vx}\n`,
-            `vy: ${e2.vy}\n`,
-            `x0: ${e2.x0}\n`,
-            `offsetX: ${e3.offsetX}, ${e2.x0 + e3.offsetX}\n`,
-            `readerCurrentViewportLocation: ${readerCurrentViewportLocation.current.leftBound}, ${readerCurrentViewportLocation.current.rightBound}\n`,
-            `y0: ${e2.y0}\n`,
-            `moveX: ${e2.moveX}\n`,
-            `viewPortX + originalWidth: ${(e3.originalWidth + e3.offsetX)}\n`,
-            `**ANOTHERTEST**: ${Math.abs(e3.offsetX )+ (e3.zoomLevel * e3.originalWidth/2)}\n`,
-            `screenWidth: ${screenWidth}\n`,
-            `scaledOffsetX: ${scaledOffsetX}\n`,
-            `offsetX, offset2X : ${e3.offsetX}, ${Math.abs(e3.offsetX * 2)}\n`,
-            `moveX + dx: ${e2.moveX + Math.abs(e2.dx)}\n`,
-            `x0 + dx: ${e2.x0 + Math.abs(e2.dx)}\n`,
-          )
-
-
-
-            
-            if(Math.abs(scaledOffsetX) > Math.abs(scaledOriginalWidth / 2)) {
+            if((Math.abs(zoomableViewEvent.offsetX )+ screenWidth/4) > screenWidth/2 + 50) {
               if(scaledOffsetX < 0) {
-                console.log("lumampas na sya sa right")
-                // ToastAndroid.show(
-                //   "lumampas na sya sa right",
-                //   ToastAndroid.LONG
-                // )
+                handleReaderNavigation({mode: "next"})
               } 
               else {
-                console.log("lumampas na sya sa left")
-                // ToastAndroid.show(
-                //   "lumampas na sya sa left",
-                //   ToastAndroid.LONG
-                // )
+                handleReaderNavigation({mode: "prev"})
               }
+              zoomRef.current.zoomTo(1)
             }
 
             
           }}
-          onSingleTap={(e1, e2,)=>{
-            console.log("onSingleTap was called\n", "\n\noffsetX:", e2.offsetX, "\n\scaledOriginalWidth:", e2.originalWidth * e2.zoomLevel)
-          }}
-          onZoomEnd={()=>{ 
-            // if(currentZoomLevel.current <= 1) {
-            //   zoomRef.current.moveTo(0, 0);
-            // }
-            console.log("onZoomEnd was called")
-          }}
+          onShouldBlockNativeResponder={(e1,e2,zoomableViewEvent)=>{
+            console.log("zoomlevel sa block native respinder", zoomableViewEvent.zoomLevel)
+            return zoomableViewEvent.zoomLevel > 1
+          }}    
         >
         <FlashList
+          pointerEvents={panEnabled ? 'none' : 'box-only'}
           ref={flashRef}
           data={pageImages}
-          initialScrollIndex={0}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
-          estimatedItemSize={500}
+          // getItemLayout={getItemLayout}
+          estimatedItemSize={screenWidth}
           onViewableItemsChanged={handleViewableItemsChanged}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.5}
