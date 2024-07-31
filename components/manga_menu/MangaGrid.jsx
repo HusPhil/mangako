@@ -45,7 +45,7 @@ const MangaGrid = ({ mangaData, numColumns, listStyles, isLoading, listEmptyComp
           data={mangaData ? mangaData : placeholderData}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-          estimatedItemSize={300}
+          estimatedItemSize={150}
           numColumns={numColumns}
           contentContainerStyle={listStyles}
           showsVerticalScrollIndicator={false}

@@ -75,6 +75,45 @@ export const fetchPageData = async (mangaUrl, chapterUrl, pageUrl, abortSignal) 
     }
 };
 
+export const fetchPageDataAsPromise = (mangaUrl, chapterUrl, pageUrl, abortSignal) => {
+    const pageFileName = shorthash.unique(pageUrl);
+    const cachedChapterPageImagesDir = getMangaDirectory(mangaUrl, chapterUrl, "chapterPageImages", pageFileName);
+
+    return new Promise((resolve, reject) => {
+        ensureDirectoryExists(cachedChapterPageImagesDir.cachedFolderPath)
+            .then(() => FileSystem.getInfoAsync(cachedChapterPageImagesDir.cachedFilePath))
+            .then(fileInfo => {
+                if (fileInfo.exists) {
+                    resolve({ data: cachedChapterPageImagesDir.cachedFilePath, error: null });
+                } else {
+                    getChapterPageImage(pageUrl, abortSignal)
+                        .then(requestedPageData => {
+                            if (requestedPageData) {
+                                const pageImg = requestedPageData;
+                                FileSystem.writeAsStringAsync(cachedChapterPageImagesDir.cachedFilePath, JSON.stringify(pageImg), { encoding: FileSystem.EncodingType.Base64 })
+                                    .then(() => resolve({ data: cachedChapterPageImagesDir.cachedFilePath, error: null }))
+                                    .catch(error => {
+                                        console.log("Failed to save:", error);
+                                        resolve({ data: [], error: new Error("failed to save") });
+                                    });
+                            } else {
+                                resolve({ data: [], error: new Error("failed to retrieve page data") });
+                            }
+                        })
+                        .catch(error => {
+                            console.log("Failed to get chapter page image:", error);
+                            resolve({ data: [], error });
+                        });
+                }
+            })
+            .catch(error => {
+                console.log("Fetch data error:", error);
+                resolve({ data: [], error });
+            });
+    });
+};
+
+
 export const getSwipeDirection = (
     distanceX, distanceY, 
     velocityX, velocityY,

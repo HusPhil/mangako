@@ -28,6 +28,7 @@ const MangaReaderScreen = () => {
     const chapterDataRef = useRef(parsedCurrentChapterData)
     const chapterNumRef = useRef(parseInt(currentChapterIndex))
     const chapterFinishedref = useRef(false)
+    const longHeightWarned = useRef(false)
     const isMounted = useRef(true)
     const controllerRef = useRef(null)
 
@@ -273,7 +274,7 @@ const MangaReaderScreen = () => {
                                 onPageChange={handlePageChange}
                                 onTap={handleTap}
                                 currentPage={state.chapterPages.length - 1 - state.currentPage}
-                                inverted
+                                
                             />
                         )}
 
@@ -290,7 +291,7 @@ const MangaReaderScreen = () => {
                                 savedPageLayout={state.pageLayout}
                                 savedScrollOffsetY={state.scrollOffSetY}
                                 onScroll={handleVertScroll}
-                                inverted
+                                
                             />
                         )}
                         <View pointerEvents='none' className="bg-transparent absolute bottom-2 items-center w-full">

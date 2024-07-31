@@ -1,6 +1,10 @@
 import axios from 'axios';
 import cheerio from 'cheerio';
 import uuid from 'react-native-uuid'
+import * as FileSystem from 'expo-file-system';
+import { ensureDirectoryExists, getMangaDirectory } from './Global';
+import shorthash from 'shorthash';
+
 import { Buffer } from 'buffer';
 
 
@@ -294,8 +298,18 @@ export const getMangaInfo = async (mangaUrl, abortSignal) => {
   }
 };
 
-export const getChapterPageImage = async (imageUrl, abortSignal) => {
+export const getChapterPageImage = async (mangaUrl, chapterUrl, imageUrl, abortSignal) => {
   try {
+    const pageFileName = shorthash.unique(imageUrl);
+    const cachedChapterPageImagesDir = getMangaDirectory(mangaUrl, chapterUrl, "chapterPageImages", pageFileName);
+    await ensureDirectoryExists(cachedChapterPageImagesDir.cachedFolderPath)
+
+    const fileInfo = await FileSystem.getInfoAsync(cachedChapterPageImagesDir.cachedFilePath);
+
+    if (fileInfo.exists) {
+        return { data: cachedChapterPageImagesDir.cachedFilePath, error: null };
+    }
+
     // Make the request and get the image data as an arraybuffer
     const response = await axios({
       method: 'get',
@@ -306,8 +320,21 @@ export const getChapterPageImage = async (imageUrl, abortSignal) => {
     });
 
     if (response.status === 200) {
-      const base64Image = Buffer.from(response.data).toString('base64');
-      return base64Image;
+
+      
+
+      const base64Image = btoa(
+        new Uint8Array(response.data).reduce((data, byte) => data + String.fromCharCode(byte), '')
+      );
+      await FileSystem.writeAsStringAsync(
+        cachedChapterPageImagesDir.cachedFilePath, 
+        base64Image, 
+        { encoding: FileSystem.EncodingType.Base64 }
+      );
+
+      // return base64Image;
+      //save to cahce
+      return cachedChapterPageImagesDir.cachedFilePath
     } else {
       console.error(`Failed to retrieve the image. Status code: ${response.status}`);
       return null; // Handle failure case as needed
@@ -315,5 +342,56 @@ export const getChapterPageImage = async (imageUrl, abortSignal) => {
   } catch (error) {
     console.log(`Error: ${error.message}`);
     throw error
+  }
+};
+
+export const fetchChapterPageImage = async (mangaUrl, chapterUrl, imageUrl, abortSignal) => {
+  try {
+    const pageFileName = shorthash.unique(imageUrl);
+    const cachedChapterPageImagesDir = getMangaDirectory(mangaUrl, chapterUrl, "chapterPageImages", pageFileName);
+    
+    await ensureDirectoryExists(cachedChapterPageImagesDir.cachedFolderPath);
+
+    const fileInfo = await FileSystem.getInfoAsync(cachedChapterPageImagesDir.cachedFilePath);
+
+    if (fileInfo.exists) {
+      return { data: cachedChapterPageImagesDir.cachedFilePath, error: null };
+    }
+
+    // Make the request and get the image data as an arraybuffer using Fetch
+    const response = await fetch(imageUrl, {
+      method: 'GET',
+      headers: {
+        // Include any headers you need here
+        'Content-Type': 'application/octet-stream',
+      },
+      signal: abortSignal,
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to retrieve the image. Status code: ${response.status}`);
+      return null; // Handle failure case as needed
+    }
+
+    // Convert the response data to an array buffer
+    // const arrayBuffer = await response.arrayBuffer();
+
+    // // Convert array buffer to base64
+    // const base64Image = btoa(
+    //   new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+    // );
+
+    // await FileSystem.writeAsStringAsync(
+    //   cachedChapterPageImagesDir.cachedFilePath,
+    //   base64Image,
+    //   { encoding: FileSystem.EncodingType.Base64 }
+    // );
+
+    // // Return the cached file path
+    // return { data: cachedChapterPageImagesDir.cachedFilePath, error: null };
+    console.log('Hello world:', pageFileName)
+  } catch (error) {
+    console.log(`Error: ${error.message}`);
+    return { data: null, error: error.message };
   }
 };
