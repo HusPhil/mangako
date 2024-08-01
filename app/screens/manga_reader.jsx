@@ -88,7 +88,7 @@ const MangaReaderScreen = () => {
 
     const saveLastViewedChapterPage = useCallback(debounce(async (pageToSave) => {
         await saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {"currentPage": pageToSave})
-      }, 500), []);
+      }, 1000), []);
 
     useEffect(() => {
         AsyncEffect()
@@ -105,8 +105,6 @@ const MangaReaderScreen = () => {
 
     const handlePageChange = useCallback(async (currentPage, readingStatus) => {
         dispatch({ type: READER_ACTIONS.SET_CURRENT_PAGE, payload: currentPage });
-    
-    
         if (readingStatus?.finished && !chapterFinishedref.current) {
             await handleReadFinish()
             dispatch({type:READER_ACTIONS.SET_STATUS_FINISHED, payload: true})
@@ -116,7 +114,7 @@ const MangaReaderScreen = () => {
     
         saveLastViewedChapterPage(currentPage);
     
-    }, [state.currentPage, state.chapterPages, state.finished])
+    }, [])
 
     const handleVertScroll = useCallback(async (scrollOffSetY) => {
         console.log("save:", scrollOffSetY)
@@ -274,7 +272,7 @@ const MangaReaderScreen = () => {
                                 onPageChange={handlePageChange}
                                 onTap={handleTap}
                                 currentPage={state.chapterPages.length - 1 - state.currentPage}
-                                
+                                inverted
                             />
                         )}
 

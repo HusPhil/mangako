@@ -2,6 +2,7 @@ import { View, Dimensions, ActivityIndicator, Text, TouchableOpacity } from 'rea
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Image } from 'expo-image';
 import colors from '../../constants/colors';
+import { getChapterPageImage } from '../../services/MangakakalotClient';
 
 const ChapterPage = forwardRef(({
   currentManga, imgSrc, 
@@ -20,6 +21,7 @@ const ChapterPage = forwardRef(({
 
   useImperativeHandle(ref, () => ({
     getPageNum: () => pageNum,
+    getPageSrc: () => imgSrc,
     toggleRender: async ({ aspectRatio }) => {
       setTick(prev => prev + 1);
       setAspectRatio(aspectRatio);
@@ -27,7 +29,15 @@ const ChapterPage = forwardRef(({
   }));
 
   useEffect(() => {
-    console.log("re-rendered page:", pageNum);
+    // const abortController =  new AbortController()
+    // const abortSignal = abortController.signal
+
+    // console.log("re-rendered page:", pageNum);
+    // const tryRes = async () => {
+    //   console.log( "chapter page",pageNum,  await getChapterPageImage(currentManga.manga, currentManga.chapter, imgSrc, abortSignal))
+    // }
+
+    // tryRes()
     return () => {
       setTick(-1);
     };
@@ -44,7 +54,7 @@ const ChapterPage = forwardRef(({
 
   return (
     <View onPress={onTap} key={tick}>
-      {imgSrc ? (
+      {imgSrc && imgSrc.imgUri ? (
         imgSrc.imgUri ? (
           <View className="mt-[-1px]">
             <Image

@@ -42,7 +42,7 @@ const mangaSearcher = () => {
     } finally {
       setIsLoading(false);
       }
-      };
+  };
       
   const handleSearch = () => {
     setFetchedMangaData([])
