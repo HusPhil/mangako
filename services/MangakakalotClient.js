@@ -2,10 +2,7 @@ import axios from 'axios';
 import cheerio from 'cheerio';
 import uuid from 'react-native-uuid'
 import * as FileSystem from 'expo-file-system';
-import { ensureDirectoryExists, getMangaDirectory } from './Global';
-import shorthash from 'shorthash';
-
-import { Buffer } from 'buffer';
+import { ToastAndroid } from 'react-native';
 
 
 const headers = {
@@ -299,6 +296,7 @@ export const getMangaInfo = async (mangaUrl, abortSignal) => {
 };
 
 export const getChapterPageImage = async (imageUrl, abortSignal) => {
+  console.log("calling the getChapterPageImage")
   try {
     // Make the request and get the image data as an arraybuffer
     const response = await axios({
@@ -311,12 +309,9 @@ export const getChapterPageImage = async (imageUrl, abortSignal) => {
 
     if (response.status === 200) {
 
-      
-
       const base64Image = btoa(
         new Uint8Array(response.data).reduce((data, byte) => data + String.fromCharCode(byte), '')
       );
-
       return base64Image;
 
     } else {
@@ -326,5 +321,34 @@ export const getChapterPageImage = async (imageUrl, abortSignal) => {
   } catch (error) {
     console.log(`Error: ${error.message}`);
     throw error
+  }
+};
+
+
+export const getDownloadResumableImage = (
+  imgUrl, imgFileUri, 
+  imgResumableData,  
+  callback, otherOptions,
+  ) => {
+  try {
+    const downloadResumable = FileSystem.createDownloadResumable(
+      imgUrl,
+      imgFileUri,
+      { 
+        headers,
+
+        ...otherOptions },
+      callback,
+      imgResumableData
+    );
+
+    return downloadResumable;
+    
+  } catch (error) {
+    console.error('Error getting a downloadable image:', error);
+    ToastAndroid.show(
+      "Error: " + error,
+      ToastAndroid.SHORT 
+    )
   }
 };

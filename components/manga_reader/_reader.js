@@ -2,7 +2,7 @@ import * as FileSystem from 'expo-file-system';
 import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
 import { PixelRatio } from 'react-native';
 import shorthash from 'shorthash';
-import { getChapterPageImage } from '../../services/MangakakalotClient';
+import { downloadPageImage, getChapterPageImage, getDownloadResumableImage } from '../../services/MangakakalotClient';
 import { Image } from 'react-native';
 
 export const SWIPE_DIRECTION = {
@@ -46,7 +46,7 @@ export const scrollToPageNum = (pageNum, pageLayout) => {
     return offSet / PixelRatio.get()
 }
 
-export const fetchPageData = async (mangaUrl, chapterUrl, pageUrl, abortSignal) => {
+export const fetchPageData = async (mangaUrl, chapterUrl, pageUrl, abortSignal, callback, options) => {
     try {
         const pageFileName = shorthash.unique(pageUrl)
         const cachedChapterPageImagesDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPageImages", pageFileName)
@@ -56,28 +56,73 @@ export const fetchPageData = async (mangaUrl, chapterUrl, pageUrl, abortSignal) 
         const fileInfo = await FileSystem.getInfoAsync(cachedChapterPageImagesDir.cachedFilePath);
 
         if (fileInfo.exists) {
-            return { data: cachedChapterPageImagesDir.cachedFilePath, error: null };
+            const imgSize = await getImageDimensions(cachedChapterPageImagesDir.cachedFilePath)
+            return { 
+                data: {imgUri: cachedChapterPageImagesDir.cachedFilePath, imgSize}, 
+                error: null 
+            };
         }
         
-        const requestedPageData = await getChapterPageImage(pageUrl, abortSignal);
+        // const requestedPageData = await getChapterPageImage(pageUrl, abortSignal);
+        const resumableData = null;
+        const requestedPageData = await downloadPageImage(pageUrl, cachedChapterPageImagesDir.cachedFilePath, resumableData, callback, options)
         
         if(requestedPageData) {
-          pageImg = requestedPageData; 
-          await FileSystem.writeAsStringAsync(cachedChapterPageImagesDir.cachedFilePath, JSON.stringify(pageImg), { encoding: FileSystem.EncodingType.Base64 });
-          return { data: cachedChapterPageImagesDir.cachedFilePath, error: null };
+        //   pageImg = requestedPageData; 
+        //   await FileSystem.writeAsStringAsync(cachedChapterPageImagesDir.cachedFilePath, JSON.stringify(pageImg), { encoding: FileSystem.EncodingType.Base64 });
+          
+          const imgSize = await getImageDimensions(cachedChapterPageImagesDir.cachedFilePath)
+
+          return { 
+            data: {imgUri: cachedChapterPageImagesDir.cachedFilePath, imgSize}, 
+            error: null 
+          };
         }
 
-        return { data: [], error: new Error("failed to save") };
+        return { 
+            data: {imgUri: null, imgSize}, 
+            error: new Error("failed to save") 
+        };
 
     } catch (error) {
         console.log("Fetch data error:", error);
-        return { data: [], error };
+        return { data: {}, error };
     }
 };
+
+export const downloadPageData = async (mangaUrl, chapterUrl, pageUrl, pageSaveableDataFileUri, callback, options) => {
+    try {
+        const pageFileName = shorthash.unique(pageUrl)
+        const cachedChapterPageImagesDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPageImages", pageFileName)
+        
+        await ensureDirectoryExists(cachedChapterPageImagesDir.cachedFolderPath)
+        const saveableDataFileInfo = await FileSystem.getInfoAsync(pageSaveableDataFileUri);
+        
+        let resumableData;
+
+        if(saveableDataFileInfo.exists) {
+            resumableData = JSON.parse(await FileSystem.readAsStringAsync(pageSaveableDataFileUri))
+        }
+
+        const downloadResumableImage =  getDownloadResumableImage(
+            pageUrl, cachedChapterPageImagesDir.cachedFilePath, 
+            resumableData, callback, options
+        )
+        
+        return downloadResumableImage
+        
+    } catch (error) {
+        console.log("Fetch data error:", error);
+        return { data: {}, error };
+    }
+};
+
 
 export const fetchPageDataAsPromise = (mangaUrl, chapterUrl, pageUrl, abortSignal) => {
     const pageFileName = shorthash.unique(pageUrl);
     const cachedChapterPageImagesDir = getMangaDirectory(mangaUrl, chapterUrl, "chapterPageImages", pageFileName);
+
+    FileSystem
 
     return new Promise((resolve, reject) => {
         ensureDirectoryExists(cachedChapterPageImagesDir.cachedFolderPath)
