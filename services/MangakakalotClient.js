@@ -338,7 +338,9 @@ export const getDownloadResumableImage = (
         headers,
 
         ...otherOptions },
-      callback,
+      (progress) => {
+        callback(imgUrl, progress)
+      },
       imgResumableData
     );
 

@@ -70,6 +70,9 @@ const ChapterPage = forwardRef(({
               allowDownscaling={false}
               contentFit='cover'
               placeholder={"loading the image yet"}
+              onError={(error) => {
+                throw error
+              }}
             />
             {horizontal && tick >= 0 && (
               <View className="h-full w-full justify-center items-center bg-transparent absolute -z-50">
@@ -102,7 +105,7 @@ const ChapterPage = forwardRef(({
             aspectRatio: pageLayout && pageLayout[pageNum] ? pageLayout[pageNum].width / pageLayout[pageNum].height : 1,
           }}
         >
-          <ActivityIndicator color={colors.accent[100]} size='large' />
+          <ActivityIndicator color={colors.accent.DEFAULT} size='large' />
         </View>
       )}
     </View>

@@ -98,21 +98,24 @@ export const downloadPageData = async (mangaUrl, chapterUrl, pageUrl, pageSaveab
         await ensureDirectoryExists(cachedChapterPageImagesDir.cachedFolderPath)
         const saveableDataFileInfo = await FileSystem.getInfoAsync(pageSaveableDataFileUri);
         
-        let resumableData;
+        let resumeData;
 
         if(saveableDataFileInfo.exists) {
-            resumableData = JSON.parse(await FileSystem.readAsStringAsync(pageSaveableDataFileUri))
+            const parsedSavableData = JSON.parse(await FileSystem.readAsStringAsync(pageSaveableDataFileUri))
+            resumeData = parsedSavableData.resumeData
+            console.log("resumeData", resumeData)
         }
 
         const downloadResumableImage =  getDownloadResumableImage(
             pageUrl, cachedChapterPageImagesDir.cachedFilePath, 
-            resumableData, callback, options
+            resumeData, callback, options
         )
         
         return downloadResumableImage
         
     } catch (error) {
         console.log("Fetch data error:", error);
+        throw error
         return { data: {}, error };
     }
 };

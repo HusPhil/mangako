@@ -53,8 +53,14 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
     };
   }, []);
 
-  const handleCallBackTest = (progress) => {
-    // console.log("DOWNLOADPROGRESS:", progress)
+  const handleCallBackTest = (pageurl, progress) => {
+    // if(progress.totalBytesWritten/progress.totalBytesExpectedToWrite === 1)
+    // console.)log("DOWNLOAD COMPLETE:",progre
+  console.log("DOWNLOADING:",progress)
+  if(progress.totalBytesWritten/progress.totalBytesExpectedToWrite === 1) {
+    console.log("DOWNLOAD COMPLETE")
+  }
+
   }
 
   const getPageUrlChunk = useCallback((pageNum) => {
@@ -77,45 +83,90 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
     const savedataJsonFileName = "-saveData.json"
     let pageFileName = shorthash.unique(pageUrl)
     const pageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
+    const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
     
     ensureDirectoryExists(pageMangaDir.cachedFolderPath)
     
     const pageFileInfo = await FileSystem.getInfoAsync(pageMangaDir.cachedFilePath)
-    loadedPageImagesMap.current[pageNum] = {uri: pageFileInfo.uri}
+    loadedPageImagesMap.current[pageNum] = {uri: pageMangaDir.cachedFilePath}
     
-    // if(loadedPageImagesMap.current[pageFileInfo.uri]) console.log("NASA LOADED EME NA")
-    if(pageFileInfo.exists) return {uri: pageFileInfo.uri, pageNum, fileExist: pageFileInfo.exists}
+    // if(loadedPageImagesMap.current[pageMangaDir.cachedFilePath]) console.log("NASA LOADED EME NA")
+    const saveDataFileInfo = await FileSystem.getInfoAsync(savableDataUri)
 
+    if(pageFileInfo.exists) {
+      console.log(pageNum, "fileSize:", pageFileInfo.size)
+      if(!saveDataFileInfo.exists) {
+        console.log(pageNum, "fileSize:", pageFileInfo.size)
+        return {uri: pageMangaDir.cachedFilePath, pageNum, fileExist: true, savableDataUri}
+      }
+    }
     const pageDownloadResumable = await downloadPageData(
       currentManga.manga, 
       currentManga.chapter, 
       pageUrl, 
-      pageMangaDir.cachedFilePath + "-saveData.json",
+      savableDataUri,
       handleCallBackTest
     )
 
-    return {downloadResumable: pageDownloadResumable, pageNum, uri: pageFileInfo.uri}
+    return {downloadResumable: pageDownloadResumable, pageNum, uri: pageMangaDir.cachedFilePath, savableDataUri}
 
   }, [])
 
   const loadPageImages = useCallback(async (pageUrl, pageNum, signal) => {
+    const currentPageNum = pageNum;
+    const prevPageNum = currentPageNum - 1 >= 0 ? currentPageNum - 1 : 0;
+    const nextPageNum = currentPageNum + 1 < chapterPages.length ? currentPageNum + 1 : chapterPages.length - 1;
+    
     try {
 
+
       await Promise.all(
-        pendingPageDownloadMap.current.map((pendingPageDownload) =>{
-          if(pendingPageDownload) {
-            console.log("Cancelling:", pendingPageDownload.fileUri)
-            return pendingPageDownload.cancelAsync()
+        pendingPageDownloadMap.current.map(async (pendingPageDownload) => {
+          try {
+            // console.log("Cancelling:", pendingPageDownload.downloadResumable)
+            
+            const { downloadResumable, savableDataUri, pageNum, resolved } = pendingPageDownload
+            console.log("RESOLVED:", resolved)
+
+            if(resolved) return
+            
+            await downloadResumable.pauseAsync();
+            console.log("Cancelled:", pageNum)
+
+            const savableData = downloadResumable.savable()
+            loadedPageImagesMap.current[pageNum]["loaded"] = false;
+
+            // console.log("SavableData:", savableData.resumeData)
+            // // // Save the data to the file
+            // await FileSystem.deleteAsync(pendingPageDownload.downloadResumable.fileUri, {idempotent: true})
+            await FileSystem.writeAsStringAsync(
+              savableDataUri,
+              JSON.stringify(savableData),
+              {encoding: FileSystem.EncodingType.UTF8}
+            );
+      
+            // // // Pause the download
+            // // if(!pendingPageDownload.downloadResumable) return
+          } catch (error) {
+            console.log('Error handling pending download:', error);
           }
         })
-      )
+      );
+      
 
       pendingPageDownloadMap.current = []
 
-      // console.log("loadedPageImagesMap.current:", loadedPageImagesMap.current)
 
-      const downloadedPagesFileUri = []
-      const downloadResumablePages = [];
+      if (
+        loadedPageImagesMap.current[prevPageNum]?.loaded &&
+        loadedPageImagesMap.current[currentPageNum]?.loaded &&
+        loadedPageImagesMap.current[nextPageNum]?.loaded
+      ) {
+        return;
+      }
+
+      const downloadedPagesFileUris = []
+      const downloadResumablesToCreate = [];
       const downloadPageNumMap = {}
 
       for (let index = pageNum - 1; index <= pageNum + 1; index++) {
@@ -125,155 +176,226 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
         downloadPageNumMap[pageDownloadResumable.uri] = pageDownloadResumable.pageNum 
 
         if(pageDownloadResumable.fileExist) {
-          downloadedPagesFileUri.push(pageDownloadResumable.uri)
-          loadedPageImagesMap.current[pageDownloadResumable.pageNum]["loaded"] = true
+          downloadedPagesFileUris.push(pageDownloadResumable.uri)
           continue
         }
-        downloadResumablePages.push(pageDownloadResumable.downloadResumable)
+        downloadResumablesToCreate.push(pageDownloadResumable)
       }
+      
+      const savableDataUriMap = {}
+      const pageDownloadResumables = await Promise.all(downloadResumablesToCreate.map((downloadResumableToCreate) => {
+        savableDataUriMap[downloadResumableToCreate.uri] = {
+          savableDataUri: downloadResumableToCreate.savableDataUri,
+          pageNum: downloadResumableToCreate.pageNum,
+        };
+        return downloadResumableToCreate.downloadResumable
+      }))
+      // console.log(loadedPageImagesMap.current)
+      
+      const downloadResults = await Promise.all(pageDownloadResumables.map( async pageDownloadResumable => {
+        const savableDataUri = savableDataUriMap[pageDownloadResumable.fileUri]?.savableDataUri
+        const pageNum = savableDataUriMap[pageDownloadResumable.fileUri]?.pageNum
+        pendingPageDownloadMap.current.push({
+          downloadResumable: pageDownloadResumable, 
+          savableDataUri, pageNum,
+        })
 
-      const pageDownloadResumables = await Promise.all(downloadResumablePages)
-      pendingPageDownloadMap.current.push(...pageDownloadResumables)
+        // console.log("pageDownloadResumable.data:", pageDownloadResumable.callback())
 
-      const downloadResults = await Promise.all(pageDownloadResumables.map(pageDownloadResumable => {
+        const saveDataFileInfo = await FileSystem.getInfoAsync(savableDataUri)
+
+        if(saveDataFileInfo.exists) {
+          console.log("SAVEDATA CURRENT SIZE:", saveDataFileInfo.size)
+          return pageDownloadResumable.resumeAsync()
+        }
+
         return pageDownloadResumable.downloadAsync()
       }))
 
-      downloadResults.forEach((downloadResultInfo) => {
-        const mappedPageNum = downloadPageNumMap[downloadResultInfo.uri]
-        downloadedPagesFileUri.push(downloadResultInfo.uri) 
-        if(loadedPageImagesMap.current[mappedPageNum]) {
-          loadedPageImagesMap.current[mappedPageNum]['loaded'] = true
+      const pageImgSrcMap = {}
+
+      const pageNumToPendingDownloadMap = {};
+
+      pendingPageDownloadMap.current.forEach((item, index) => {
+        pageNumToPendingDownloadMap[item.pageNum] = { index, item };
+      });
+
+
+      for (let index = 0; index < downloadResults.length; index++) {
+        const downloadResult = downloadResults[index];
+
+        const allowedStatusCode = {
+           200 : "SUCCESS",
+           206: "PARTIAL",
         }
-      })
+        
+        if(!downloadResult) continue
 
-      Object.keys(downloadPageNumMap).forEach(async (downloadedPageUri) => {
-        const imgUri = downloadedPageUri
-        const imgSize = await getImageDimensions(imgUri)
+        const downloadedFileInfo = await FileSystem.getInfoAsync(downloadResult.uri)
+        const downloadContentLength = parseInt(downloadResult.headers['content-length'])
 
-        console.log(imgSize)
-        setPageImages((prev) => {
-          return prev.map((item, index) => {
-            if (index === pageNum) {
+        let downloadedFileSize = 0;
+        if(downloadedFileInfo.exists) downloadedFileSize = downloadedFileInfo.size
+        
+        const { pageNum, savableDataUri } = savableDataUriMap[downloadResult.uri]
+        console.log("STATUS: ", downloadResult.status)
+        console.log("BYTES:", downloadContentLength, downloadedFileSize )
+        console.log("BYTES:", typeof(downloadContentLength), typeof(downloadedFileSize) )
+
+        if(
+          !allowedStatusCode[downloadResult.status] ||
+          downloadContentLength !== downloadedFileSize 
+        ) {
+          console.log("downloadResultUri: ", downloadResult.uri)
+          console.log("savableDataUri: ", savableDataUri)
+          await FileSystem.deleteAsync(downloadResult.uri)
+          await FileSystem.deleteAsync(savableDataUri)
+          console.log(pageNum)
+          setPageImages(prev => (
+            prev.map((item, index) => {
+              if(index !== pageNum) return item;
               return {
                 ...item,
-                imgUri,
-                imgSize
-              };
-            }
-            return item;
-          });
+                imgUri: null,
+                imgError: new Error(`Status Code: ${downloadResult.status}`)
+              }
+            })
+          ))
+          continue
+        }
+
+        downloadedPagesFileUris.push(downloadResult.uri)
+
+        let targetPendingPageDownloadMap = pageNumToPendingDownloadMap[pageNum];
+
+        if(!targetPendingPageDownloadMap) continue
+        
+        console.log(pageNumToPendingDownloadMap, targetPendingPageDownloadMap)
+        pendingPageDownloadMap.current[targetPendingPageDownloadMap.index]["resolved"] = true;
+
+        await FileSystem.deleteAsync(savableDataUri, {idempotent: true})
+      }
+
+      await Promise.all(downloadedPagesFileUris.map(async (downloadedPageFileUri) => {
+
+        const imgUri = downloadedPageFileUri
+        const imgSize = await getImageDimensions(imgUri)
+
+        const mappedPageNum = downloadPageNumMap[imgUri]
+        downloadedPagesFileUris.push(imgUri) 
+        pageImgSrcMap[mappedPageNum] = {imgUri, imgSize}
+
+      }))
+
+      
+
+
+      setPageImages((prev) => {
+        console.log("setting the new pages")
+        console.log("prevPageData:", prevPageNum, pageImgSrcMap[prevPageNum])
+        console.log("currentPageData:", currentPageNum, pageImgSrcMap[currentPageNum])
+        console.log("nextPageData:", nextPageNum, pageImgSrcMap[nextPageNum])
+
+        return prev.map((item, index) => {
+          // If image is already loaded, return the current item
+          if (item.imgUri) return item;
+      
+          let imgSrc = null;
+      
+          switch (index) {
+            case nextPageNum:
+              imgSrc = pageImgSrcMap[nextPageNum] || null;
+              if (!imgSrc) return item;  // Return early if no image source
+              loadedPageImagesMap.current[nextPageNum]["loaded"] = true;
+              break;
+      
+            case prevPageNum:
+              imgSrc = pageImgSrcMap[prevPageNum] || null;
+              if (!imgSrc) return item;  // Return early if no image source
+              loadedPageImagesMap.current[prevPageNum]["loaded"] = true;
+              break;
+      
+            case currentPageNum:
+              imgSrc = pageImgSrcMap[currentPageNum] || null;
+              if (!imgSrc) return item;  // Return early if no image source
+              loadedPageImagesMap.current[currentPageNum]["loaded"] = true;
+              break;
+      
+            default:
+              return item;  // Return the current item for pages not of interest
+          }
+      
+          // Check if imgSrc is properly defined and contains necessary data
+          if (imgSrc && imgSrc.imgUri && imgSrc.imgSize) {
+            return {
+              ...item,
+              imgSize: imgSrc.imgSize,
+              imgError: imgSrc.error,
+              imgUri: imgSrc.imgUri,
+            };
+          }
+      
+          return item;  // Return current item if imgSrc isn't valid
         });
-      })
-
-      console.log("pageNum:", pageNum, downloadedPagesFileUri.length)
-
+      });
+    
       
-// {
-//       let pageFileName = shorthash.unique(nextPageUrl)
-//       const nextPageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
-//       pageFileName = shorthash.unique(prevPageUrl)
-//       const prevPageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
-//       pageFileName = shorthash.unique(currentPageUrl)
-//       const currentPageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
-
-//       Promise.all([
-//         ensureDirectoryExists(nextPageMangaDir.cachedFolderPath),
-//         ensureDirectoryExists(prevPageMangaDir.cachedFolderPath),
-//         ensureDirectoryExists(currentPageMangaDir.cachedFolderPath),
-//       ])
-
-//       loadingPageImagesMap.current = {prevPageUrl, currentPageUrl, nextPageUrl}
-
-
-//       if(
-//         loadedPageImagesMap.current[nextPageUrl] &&
-//         loadedPageImagesMap.current[prevPageUrl] &&
-//         loadedPageImagesMap.current[currentPageUrl] 
-//       ) return
-
-
-//       const [nextPageDownloadResumable, prevPageDownloadResumable, currentPageDownloadResumable] = await Promise.all([
-//         nextPageUrl ? downloadPageData(
-//           currentManga.manga, 
-//           currentManga.chapter, 
-//           nextPageUrl, 
-//           nextPageMangaDir.cachedFilePath + "-saveData.json",
-//           handleCallBackTest) : null,
-
-//         prevPageUrl ? downloadPageData(
-//           currentManga.manga, 
-//           currentManga.chapter, 
-//           prevPageUrl, 
-//           prevPageMangaDir.cachedFilePath + "-saveData.json",
-//           handleCallBackTest) : null,
-
-//         currentPageUrl ? downloadPageData(
-//           currentManga.manga, 
-//           currentManga.chapter, 
-//           currentPageUrl, 
-//           currentPageMangaDir.cachedFilePath + "-saveData.json",
-//           handleCallBackTest) : null,
-//       ])
-
-//       const [nextPageImgSrc, currentPageImgSrc, prevPageImgSrc] = await Promise.all([
-//         nextPageDownloadResumable ? nextPageDownloadResumable.downloadAsync() : null,
-//         prevPageDownloadResumable ? prevPageDownloadResumable.downloadAsync(): null,
-//         currentPageDownloadResumable ? currentPageDownloadResumable.downloadAsync() : null,
-//       ])
-
-
-//       if(nextPageImgSrc?.uri) console.log("nextPageImgSrc.uri:", nextPageImgSrc.uri)
-//       if(currentPageImgSrc?.uri) console.log("currentPageImgSrc.uri:", currentPageImgSrc.uri)
-//       if(prevPageImgSrc?.uri) console.log("prevPageImgSrc.uri:", prevPageImgSrc.uri)
-
-      
-// }
-      // console.log(await nextPageDownloadResumable.resumeAsync)
-
-      // console.log(nextPageDownloadResumable, prevPageDownloadResumable, currentPageDownloadResumable)
-
-      
-      // if (isMounted.current) {
-      //   setPageImages((prev) => {
-      //     let imgSrc;
-          
-      //     return prev.map((item, index) => {
-      //       switch(index) {
-      //         case pageNum + 1:
-      //           imgSrc = nextPageImgSrc;
-      //           loadedPageImagesMap.current[nextPageUrl] = imgSrc.data.imgUri;
-      //           break;
-      //         case pageNum - 1:
-      //           imgSrc = prevPageImgSrc;
-      //           loadedPageImagesMap.current[prevPageUrl] = imgSrc.data.imgUri;
-      //           break;
-      //         case pageNum:
-      //           imgSrc = currentPageImgSrc;
-      //           loadedPageImagesMap.current[currentPageUrl] = imgSrc.data.imgUri;
-      //           break;
-      //         default: 
-      //           return item;
-      //       }
-
-      //       return {
-      //         ...item,
-      //         imgSize: imgSrc.data.imgSize,
-      //         imgError: imgSrc.error,
-      //         imgUri: imgSrc.data.imgUri,
-      //       }
-      //     });                  
-      //   });
-
-        
-      // console.log('DONE LOADING:', pageNum)
-        
-      // }
-
     } catch (error) {
       console.log("Error loading pages:", error);
+      setPageImages((prev) => {
+        console.log("setting the new pages")
+        console.log("prevPageData:", prevPageNum, pageImgSrcMap[prevPageNum])
+        console.log("currentPageData:", currentPageNum, pageImgSrcMap[currentPageNum])
+        console.log("nextPageData:", nextPageNum, pageImgSrcMap[nextPageNum])
+
+        return prev.map((item, index) => {
+          // If image is already loaded, return the current item
+          if (item.imgUri) return item;
+      
+          let imgSrc = null;
+      
+          switch (index) {
+            case nextPageNum:
+              imgSrc = pageImgSrcMap[nextPageNum] || null;
+              if (!imgSrc) return item;  // Return early if no image source
+              loadedPageImagesMap.current[nextPageNum]["loaded"] = true;
+              break;
+      
+            case prevPageNum:
+              imgSrc = pageImgSrcMap[prevPageNum] || null;
+              if (!imgSrc) return item;  // Return early if no image source
+              loadedPageImagesMap.current[prevPageNum]["loaded"] = true;
+              break;
+      
+            case currentPageNum:
+              imgSrc = pageImgSrcMap[currentPageNum] || null;
+              if (!imgSrc) return item;  // Return early if no image source
+              loadedPageImagesMap.current[currentPageNum]["loaded"] = true;
+              break;
+      
+            default:
+              return item;  // Return the current item for pages not of interest
+          }
+      
+          // Check if imgSrc is properly defined and contains necessary data
+          if (imgSrc && imgSrc.imgUri && imgSrc.imgSize) {
+            return {
+              ...item,
+              imgSize: imgSrc.imgSize,
+              imgError: imgSrc.error,
+              imgUri: imgSrc.imgUri,
+            };
+          }
+      
+          return item;  // Return current item if imgSrc isn't valid
+        });
+      });
     }
   }, [])
+
+  const debouncedLoadPageImages = useCallback(debounce(async(pageUrl, currentPageNum, signal) => {
+    await loadPageImages(pageUrl, currentPageNum, signal)
+  }, [300]), [])
 
   const handleRetry = useCallback(async (pageNum) => {
     controllerRef.current = new AbortController();
@@ -293,7 +415,7 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
 
       onPageChange(currentPageNum)
 
-      await loadPageImages(pageUrl, currentPageNum, signal)
+      await debouncedLoadPageImages(pageUrl, currentPageNum, signal)
 
       if(currentPageNum !== currentPage && !navigatedToCurrentPage.current) {
         handleReaderNavigation({mode: "jump", jumpIndex: currentPage});
