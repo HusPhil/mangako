@@ -328,18 +328,18 @@ export const getChapterPageImage = async (imageUrl, abortSignal) => {
 export const getDownloadResumableImage = (
   imgUrl, imgFileUri, 
   imgResumableData,  
-  callback, otherOptions,
+  callback, otherData,
   ) => {
   try {
+    const { pageNum } = otherData;
     const downloadResumable = FileSystem.createDownloadResumable(
       imgUrl,
       imgFileUri,
       { 
         headers,
-
-        ...otherOptions },
+      },
       (progress) => {
-        callback(imgUrl, progress)
+        callback(pageNum, imgUrl, progress)
       },
       imgResumableData
     );

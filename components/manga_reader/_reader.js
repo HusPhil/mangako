@@ -90,7 +90,7 @@ export const fetchPageData = async (mangaUrl, chapterUrl, pageUrl, abortSignal, 
     }
 };
 
-export const downloadPageData = async (mangaUrl, chapterUrl, pageUrl, pageSaveableDataFileUri, callback, options) => {
+export const downloadPageData = async (mangaUrl, chapterUrl, pageUrl, pageSaveableDataFileUri, callback, otherData) => {
     try {
         const pageFileName = shorthash.unique(pageUrl)
         const cachedChapterPageImagesDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPageImages", pageFileName)
@@ -108,7 +108,7 @@ export const downloadPageData = async (mangaUrl, chapterUrl, pageUrl, pageSaveab
 
         const downloadResumableImage =  getDownloadResumableImage(
             pageUrl, cachedChapterPageImagesDir.cachedFilePath, 
-            resumeData, callback, options
+            resumeData, callback, otherData
         )
         
         return downloadResumableImage
@@ -178,17 +178,18 @@ export const getSwipeDirection = (
 
 
 export const getImageDimensions = (imageUri) => {
-    return new Promise((resolve, reject) => {
-      Image.getSize(
-        imageUri,
-        (width, height) => {
-          resolve({ width, height });
-        },
-        (error) => {
-          reject(error);
-        }
-      );
-    });
+    return new Promise((resolve) => {
+        Image.getSize(
+          imageUri,
+          (width, height) => {
+            resolve({ width, height });
+          },
+          (error) => {
+            console.error("An error occured when getting the image dimensions")
+            resolve({width: 0, height: 0})
+          }
+        );
+      });
   };
 
 const useLoadPageImages = (currentManga) => {

@@ -1,5 +1,5 @@
-import { View, Dimensions, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { View, Dimensions, ActivityIndicator, Text, TouchableOpacity, ToastAndroid } from 'react-native';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Image } from 'expo-image';
 import colors from '../../constants/colors';
 import { getChapterPageImage } from '../../services/MangakakalotClient';
@@ -7,7 +7,7 @@ import { getChapterPageImage } from '../../services/MangakakalotClient';
 const ChapterPage = forwardRef(({
   currentManga, imgSrc, 
   pageUrl, pageNum, 
-  onRetry,
+  onRetry, onError,
   onTap, pageLayout,
   horizontal, vertical,
   isLoadingRef,
@@ -16,6 +16,7 @@ const ChapterPage = forwardRef(({
   const { height: screenHeight, width: screenWidth } = Dimensions.get('screen');
   const [tick, setTick] = useState(0);
   const [aspectRatio, setAspectRatio] = useState(null);
+  const [downloadProgress, setDownloadProgress] = useState({totalBytesExpectedToWrite: 1, totalBytesWritten: 0, finished: false})
 
   const thisPageLoadingRef = useRef(isLoadingRef)
 
@@ -25,19 +26,37 @@ const ChapterPage = forwardRef(({
     toggleRender: async ({ aspectRatio }) => {
       setTick(prev => prev + 1);
       setAspectRatio(aspectRatio);
+    },
+    toggleDownloadProgress: (downloadProgress) => {
+      console.log(downloadProgress)
+      const convertedExpectedBytes = bytesToMegaBytes(downloadProgress.totalBytesExpectedToWrite)
+      const convertedWrittenBytes = bytesToMegaBytes(downloadProgress.totalBytesWritten)
+      const finished = convertedWrittenBytes/convertedExpectedBytes === 1
+
+      console.log(finished)
+
+      setDownloadProgress(prev => {
+        return {
+          totalBytesExpectedToWrite: convertedExpectedBytes,
+          totalBytesWritten: convertedWrittenBytes,
+          finished,
+        }
+      })
     }
   }));
 
+  const bytesToMegaBytes = useCallback((bytes) => {
+    const convertedResult = bytes / (1024*1024)
+    return convertedResult.toFixed(2);
+  }, [])
+
   useEffect(() => {
-    // const abortController =  new AbortController()
-    // const abortSignal = abortController.signal
-
-    // console.log("re-rendered page:", pageNum);
-    // const tryRes = async () => {
-    //   console.log( "chapter page",pageNum,  await getChapterPageImage(currentManga.manga, currentManga.chapter, imgSrc, abortSignal))
-    // }
-
-    // tryRes()
+    if(imgSrc.imgError) {
+      ToastAndroid.show(
+        "an error occured " + pageNum,
+        ToastAndroid.SHORT
+      )
+    }
     return () => {
       setTick(-1);
     };
@@ -53,8 +72,8 @@ const ChapterPage = forwardRef(({
   };
 
   return (
-    <View onPress={onTap} key={tick}>
-      {imgSrc && imgSrc.imgUri ? (
+    <View onPress={onTap}>
+      {!imgSrc.imgError ? (
         imgSrc.imgUri ? (
           <View className="mt-[-1px]">
             <Image
@@ -71,41 +90,39 @@ const ChapterPage = forwardRef(({
               contentFit='cover'
               placeholder={"loading the image yet"}
               onError={(error) => {
-                throw error
+                onError(pageNum, error.error, imgSrc.imgUri)
+                console.error("CHAPTER PAGE ERROR: "+ error.error)
               }}
             />
-            {horizontal && tick >= 0 && (
-              <View className="h-full w-full justify-center items-center bg-transparent absolute -z-50">
-                <ActivityIndicator color={colors.accent.DEFAULT} size='large' />
-              </View>
-            )}
           </View>
         ) : (
-          imgSrc?.error && (
-            <View className="h-full justify-center items-center">
-              <Text className="font-pregular text-white text-base">Something went wrong</Text>
-              <Text className="font-pregular text-white text-base">while loading this page</Text>
-              {horizontal && (
-                <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Swipe down to retry</Text>
-              )}
-              {vertical && (
-                <TouchableOpacity onPress={onRetry}>
-                  <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Click this to retry</Text>
-                </TouchableOpacity>
-              )}
+          (
+            <View className="justify-center items-center" 
+              style={{height: screenHeight, width: screenWidth}}
+            >
+              <ActivityIndicator size={30} color={colors.accent.DEFAULT}/>
+              <Text className="font-pregular text-white text-xs mt-3">
+              {
+                (downloadProgress.totalBytesWritten > 0) &&
+                (!downloadProgress.finished) && 
+                `${downloadProgress.totalBytesWritten}/${downloadProgress.totalBytesExpectedToWrite} MB`
+              }
+              </Text>
             </View>
           )
         )
       ) : (
-        <View
-          className="justify-center items-center"
-          style={{
-            height: undefined,
-            width: screenWidth,
-            aspectRatio: pageLayout && pageLayout[pageNum] ? pageLayout[pageNum].width / pageLayout[pageNum].height : 1,
-          }}
-        >
-          <ActivityIndicator color={colors.accent.DEFAULT} size='large' />
+        <View className="h-full justify-center items-center">
+          <Text className="font-pregular text-white text-base">Something went wrong</Text>
+          <Text className="font-pregular text-white text-base">while loading this page</Text>
+          {horizontal && (
+            <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Swipe down to retry</Text>
+          )}
+          {vertical && (
+            <TouchableOpacity onPress={onRetry}>
+              <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Click this to retry</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </View>
@@ -113,10 +130,4 @@ const ChapterPage = forwardRef(({
 });
 
 // Memoizing ChapterPage with React.memo to prevent unnecessary re-renders
-export default React.memo(ChapterPage, (prevProps, nextProps) => {
-  return prevProps.pageNum === nextProps.pageNum && 
-         prevProps.imgSrc?.imgUri === nextProps.imgSrc?.imgUri && 
-         prevProps.imgSrc?.error === nextProps.imgSrc?.error &&
-         prevProps.horizontal === nextProps.horizontal &&
-         prevProps.vertical === nextProps.vertical;
-});
+export default ChapterPage 

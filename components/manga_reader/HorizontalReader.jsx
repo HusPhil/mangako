@@ -11,13 +11,13 @@ import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-vi
 import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
 import { Image } from 'expo-image';
 
-const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScroll, currentPage, savedPageLayout, inverted }) => {
+const HorizontalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScroll, currentPage, savedPageLayout, inverted }) => {
   const [pageImages, setPageImages] = useState(() => 
     chapterPages.map((pageUrl) => ({
       id: pageUrl,
       imgUri: null,  
       imgSize: null, 
-      error: null,  
+      imgError: null,  
     }))
   );
   const [panEnabled, setPanEnabled] = useState(false);
@@ -53,13 +53,16 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
     };
   }, []);
 
-  const handleCallBackTest = (pageurl, progress) => {
-    // if(progress.totalBytesWritten/progress.totalBytesExpectedToWrite === 1)
-    // console.)log("DOWNLOAD COMPLETE:",progre
-  console.log("DOWNLOADING:",progress)
-  if(progress.totalBytesWritten/progress.totalBytesExpectedToWrite === 1) {
-    console.log("DOWNLOAD COMPLETE")
-  }
+  const handleCallBackTest = (pageNum, pageurl, progress,) => {
+
+    if(pagesRef.current[pageNum]) {
+      pagesRef.current[pageNum].toggleDownloadProgress(progress)
+    }
+
+    console.log("DOWNLOADING:", progress)
+    if(progress.totalBytesWritten/progress.totalBytesExpectedToWrite === 1) {
+      console.log("DOWNLOAD COMPLETE")
+    }
 
   }
 
@@ -74,6 +77,20 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
 
     return pageUrlChunk
 
+  }, [])
+
+  const handleImgOnLoadError = useCallback(async (pageNum, error, imgUri) => {
+    await FileSystem.deleteAsync(imgUri, {idempotent: true})
+    setPageImages(prev => (
+      prev.map((item, index) => {
+        if(index !== pageNum) return item;
+        return {
+          ...item,
+          imgUri: null,
+          imgError: new Error(`Error on loading the image in expo-image: ${error}`)
+        }
+      })
+    ))
   }, [])
 
   const createPageDownloadResumable = useCallback(async (pageNum) => {
@@ -103,9 +120,10 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
     const pageDownloadResumable = await downloadPageData(
       currentManga.manga, 
       currentManga.chapter, 
-      pageUrl, 
+      pageUrl,
       savableDataUri,
-      handleCallBackTest
+      handleCallBackTest,
+      {pageNum}
     )
 
     return {downloadResumable: pageDownloadResumable, pageNum, uri: pageMangaDir.cachedFilePath, savableDataUri}
@@ -119,11 +137,9 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
     
     try {
 
-
       await Promise.all(
         pendingPageDownloadMap.current.map(async (pendingPageDownload) => {
           try {
-            // console.log("Cancelling:", pendingPageDownload.downloadResumable)
             
             const { downloadResumable, savableDataUri, pageNum, resolved } = pendingPageDownload
             console.log("RESOLVED:", resolved)
@@ -136,17 +152,12 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
             const savableData = downloadResumable.savable()
             loadedPageImagesMap.current[pageNum]["loaded"] = false;
 
-            // console.log("SavableData:", savableData.resumeData)
-            // // // Save the data to the file
-            // await FileSystem.deleteAsync(pendingPageDownload.downloadResumable.fileUri, {idempotent: true})
             await FileSystem.writeAsStringAsync(
               savableDataUri,
               JSON.stringify(savableData),
               {encoding: FileSystem.EncodingType.UTF8}
             );
       
-            // // // Pause the download
-            // // if(!pendingPageDownload.downloadResumable) return
           } catch (error) {
             console.log('Error handling pending download:', error);
           }
@@ -246,21 +257,65 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
           !allowedStatusCode[downloadResult.status] ||
           downloadContentLength !== downloadedFileSize 
         ) {
-          console.log("downloadResultUri: ", downloadResult.uri)
-          console.log("savableDataUri: ", savableDataUri)
-          await FileSystem.deleteAsync(downloadResult.uri)
-          await FileSystem.deleteAsync(savableDataUri)
-          console.log(pageNum)
-          setPageImages(prev => (
-            prev.map((item, index) => {
-              if(index !== pageNum) return item;
-              return {
-                ...item,
-                imgUri: null,
-                imgError: new Error(`Status Code: ${downloadResult.status}`)
-              }
-            })
-          ))
+          console.warn(`Retrying to fetch: ${pageNum}`)
+
+          ToastAndroid.show(
+            `Retrying page: ${pageNum}`,
+            ToastAndroid.SHORT
+          )
+          
+          const retryDownloadResumable = await createPageDownloadResumable(pageNum)
+          await FileSystem.deleteAsync(savableDataUri, {idempotent: true})
+          await FileSystem.deleteAsync(retryDownloadResumable.uri, {idempotent: true})
+          const retryDownloadResult = await retryDownloadResumable.downloadResumable.downloadAsync()
+
+          if(!retryDownloadResult) {
+            ToastAndroid.show(
+              `Failed to retry page: ${pageNum}`,
+              ToastAndroid.SHORT
+            )
+            continue
+          }
+
+          pendingPageDownloadMap.current.push({
+            downloadResumable: retryDownloadResumable.downloadResumable, 
+            savableDataUri, pageNum,
+          })
+
+          // console.log("retryDownloadCReatable:", retryDownloadResumable) 
+          // console.log("retryDownloadResumable:", retryDownloadResumable.downloadResumable) 
+          // console.log("retryDownloadResult:", retryDownloadResult) 
+
+
+          if(!allowedStatusCode[retryDownloadResult.status]
+            ) {
+              console.error(`Failed to retry page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`)
+              setPageImages(prev => (
+                prev.map((item, index) => {
+                  if(index !== pageNum) return item;
+                  return {
+                    ...item,
+                    imgUri: null,
+                    imgError: new Error(`Status Code: ${downloadResult.status}`)
+                  }
+                })
+              ))
+              ToastAndroid.show(
+                `Failed to retry page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`,
+                ToastAndroid.SHORT
+              )
+            continue
+          }
+          ToastAndroid.show(
+            `Success retrying page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`,
+            ToastAndroid.SHORT
+          )
+          
+          const newPageFileInfo = await FileSystem.getInfoAsync(retryDownloadResult.uri)
+
+          console.log(newPageFileInfo)
+
+          downloadedPagesFileUris.push(retryDownloadResult.uri)
           continue
         }
 
@@ -270,7 +325,7 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
 
         if(!targetPendingPageDownloadMap) continue
         
-        console.log(pageNumToPendingDownloadMap, targetPendingPageDownloadMap)
+        // console.log(pageNumToPendingDownloadMap, targetPendingPageDownloadMap)
         pendingPageDownloadMap.current[targetPendingPageDownloadMap.index]["resolved"] = true;
 
         await FileSystem.deleteAsync(savableDataUri, {idempotent: true})
@@ -278,12 +333,22 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
 
       await Promise.all(downloadedPagesFileUris.map(async (downloadedPageFileUri) => {
 
-        const imgUri = downloadedPageFileUri
-        const imgSize = await getImageDimensions(imgUri)
+        try {
+          const imgUri = downloadedPageFileUri
+          const imgSize = await getImageDimensions(imgUri)
 
-        const mappedPageNum = downloadPageNumMap[imgUri]
-        downloadedPagesFileUris.push(imgUri) 
-        pageImgSrcMap[mappedPageNum] = {imgUri, imgSize}
+          if(imgSize.width > 0 && imgSize.height > 0) {
+            const mappedPageNum = downloadPageNumMap[imgUri]
+            downloadedPagesFileUris.push(imgUri) 
+            pageImgSrcMap[mappedPageNum] = {imgUri, imgSize}
+          } else {
+            await FileSystem.deleteAsync(imgUri, {idempotent: true})
+          }
+
+
+        } catch (error) {
+          throw error
+        }
 
       }))
 
@@ -343,51 +408,23 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
     } catch (error) {
       console.log("Error loading pages:", error);
       setPageImages((prev) => {
-        console.log("setting the new pages")
-        console.log("prevPageData:", prevPageNum, pageImgSrcMap[prevPageNum])
-        console.log("currentPageData:", currentPageNum, pageImgSrcMap[currentPageNum])
-        console.log("nextPageData:", nextPageNum, pageImgSrcMap[nextPageNum])
-
         return prev.map((item, index) => {
-          // If image is already loaded, return the current item
-          if (item.imgUri) return item;
-      
-          let imgSrc = null;
-      
           switch (index) {
             case nextPageNum:
-              imgSrc = pageImgSrcMap[nextPageNum] || null;
-              if (!imgSrc) return item;  // Return early if no image source
-              loadedPageImagesMap.current[nextPageNum]["loaded"] = true;
-              break;
-      
             case prevPageNum:
-              imgSrc = pageImgSrcMap[prevPageNum] || null;
-              if (!imgSrc) return item;  // Return early if no image source
-              loadedPageImagesMap.current[prevPageNum]["loaded"] = true;
-              break;
-      
             case currentPageNum:
-              imgSrc = pageImgSrcMap[currentPageNum] || null;
-              if (!imgSrc) return item;  // Return early if no image source
-              loadedPageImagesMap.current[currentPageNum]["loaded"] = true;
+              return {
+                ...item,
+                imgUri: null,
+                imgError: new Error("Loading Image Failed"),
+              };
+              // loadedPageImagesMap.current[currentPageNum]["loaded"] = true;
               break;
       
             default:
               return item;  // Return the current item for pages not of interest
           }
-      
-          // Check if imgSrc is properly defined and contains necessary data
-          if (imgSrc && imgSrc.imgUri && imgSrc.imgSize) {
-            return {
-              ...item,
-              imgSize: imgSrc.imgSize,
-              imgError: imgSrc.error,
-              imgUri: imgSrc.imgUri,
-            };
-          }
-      
-          return item;  // Return current item if imgSrc isn't valid
+
         });
       });
     }
@@ -398,9 +435,13 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
   }, [300]), [])
 
   const handleRetry = useCallback(async (pageNum) => {
-    controllerRef.current = new AbortController();
-    const signal = controllerRef.current.signal;
-    await loadPageImages(pageNum, chapterPages[pageNum], signal);
+    // controllerRef.current = new AbortController();
+    // const signal = controllerRef.current.signal;
+    // await loadPageImages(pageNum, chapterPages[pageNum], signal);
+    ToastAndroid.show(
+      `Retrying page: ${pageNum}`,
+      ToastAndroid.SHORT
+    )
   }, []);
 
   const handleViewableItemsChanged = useCallback(async({ viewableItems }) => {
@@ -483,11 +524,10 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
   }, 500), []);
 
   const renderItem = useCallback(({ item, index }) => (
-    <View className="justify-center"
+    <View
       onStartShouldSetResponder={() => {
         return currentZoomLevel.current <= 1
       }}
-      style={{height: screenHeight, width:screenWidth}}
     > 
       <ChapterPage
         ref={(page) => { pagesRef.current[index] = page; }}
@@ -497,12 +537,12 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
         pageNum={index}
         onPageLoad={handlePageLoad}
         onRetry={handleRetry}
+        onError={handleImgOnLoadError}
         vertical
       />
-      <Button title='jumpToIndex' onPress={async () => {
+      {/* <Button title='jumpToIndex' onPress={async () => {
         await downloadImage(chapterPages[0])
-      }}/>
-
+      }}/> */}
     </View>
   ), []);
 
@@ -520,7 +560,7 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
       </View>
     )
   }
-
+ 
   return (
     <View className="h-full w-full">
       <ReactNativeZoomableView
@@ -540,8 +580,8 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
           }}
           disablePanOnInitialZoom
           bindToBorders
-          contentWidth={screenWidth}
-          contentHeight={screenHeight}
+          // contentWidth={screenWidth}
+          // contentHeight={screenHeight}
           onShiftingEnd={(e1, e2, zoomableViewEvent)=>{
             const absOffsetX = (Math.abs(zoomableViewEvent.offsetX))
             const scaledWidth = zoomableViewEvent.zoomLevel * zoomableViewEvent.originalWidth
@@ -570,12 +610,12 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
           renderItem={renderItem}
           keyExtractor={keyExtractor}
           // getItemLayout={getItemLayout}
-          estimatedItemSize={screenWidth}
+          estimatedItemSize={screenHeight}
           onViewableItemsChanged={handleViewableItemsChanged}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.5}
-          pagingEnabled  
-          horizontal
+          // pagingEnabled  
+          // horizontal
           ListFooterComponent={ListFooterComponent}
         />
         </ReactNativeZoomableView>
@@ -585,4 +625,4 @@ const VerticalReader = ({ currentManga, chapterPages, onTap, onPageChange, onScr
   );
 };
 
-export default VerticalReader;
+export default HorizontalReader;
