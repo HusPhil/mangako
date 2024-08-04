@@ -19,7 +19,8 @@ const allowedStatusCode = Object.freeze({
 const HorizontalReader = ({ 
     currentManga, chapterPages, 
     onTap, onPageChange, onScroll, 
-    currentPage, savedPageLayout, inverted 
+    currentPage, savedPageLayout, inverted,
+    horizontal, vertical,
   }) => {
   const [pageImages, setPageImages] = useState(() => 
     chapterPages.map((pageUrl) => ({
@@ -265,10 +266,11 @@ const HorizontalReader = ({
   
 
   const loadPageImages = useCallback(async (pageUrl, pageNum, signal) => {
-    const LOADING_RANGE = 1
-    const currentPageNum = pageNum;
-    const prevPageNum = currentPageNum - 1 >= 0 ? currentPageNum - 1 : 0;
-    const nextPageNum = currentPageNum + 1 < chapterPages.length ? currentPageNum + 1 : chapterPages.length - 1;
+    const LOADING_RANGE = 4
+
+    // const currentPageNum = pageNum;
+    // const prevPageNum = currentPageNum - 1 >= 0 ? currentPageNum - 1 : 0;
+    // const nextPageNum = currentPageNum + 1 < chapterPages.length ? currentPageNum + 1 : chapterPages.length - 1;
     
     const pageNumbersLoadingRange = generatePageNumbers(pageNum, LOADING_RANGE, chapterPages.length)
 
@@ -296,10 +298,6 @@ const HorizontalReader = ({
         downloadResumablesToCreate,
         downloadPageFileUriMap,
       } = await initializePageDownloads(pageNumbersLoadingRange)
-
-      console.log(downloadedPagesFileUris,
-        downloadResumablesToCreate,
-        downloadPageFileUriMap,)
 
       const pageDownloadResumables = await Promise.all(downloadResumablesToCreate.map((downloadResumableToCreate) => {
         return downloadResumableToCreate.downloadResumable
@@ -355,7 +353,7 @@ const HorizontalReader = ({
           const retryImgSrc = await retryPageDownload(pageNum, downloadResult.uri)
           if(!retryImgSrc.imgError) {
             downloadedValidImgUri = retryImgSrc.imgUri
-            console.info("SUCCESS RETRY")
+            console.warn("Success retrying to fetch the image.")
           } else {
             downloadedValidImgUri = null
           }
@@ -371,7 +369,7 @@ const HorizontalReader = ({
           resolved: true,
         };
 
-        console.log("pendingPageDownloadMap.current[targetPendingPageDownloadMap.index]:", pendingPageDownloadMap.current[targetPendingPageDownloadMap.index])
+        // console.log("pendingPageDownloadMap.current[targetPendingPageDownloadMap.index]:", pendingPageDownloadMap.current[targetPendingPageDownloadMap.index])
 
         await FileSystem.deleteAsync(savableDataUri, {idempotent: true})
       }
@@ -398,40 +396,18 @@ const HorizontalReader = ({
 
       setPageImages((prev) => {
         console.log("setting the new pages")
-        console.log("prevPageData:", prevPageNum, pageImgSrcMap[prevPageNum])
-        console.log("currentPageData:", currentPageNum, pageImgSrcMap[currentPageNum])
-        console.log("nextPageData:", nextPageNum, pageImgSrcMap[nextPageNum])
 
         return prev.map((item, index) => {
-          // If image is already loaded, return the current item
           if (item.imgUri) return item;
-      
           let imgSrc = null;
-      
-          switch (index) {
-            case nextPageNum:
-              imgSrc = pageImgSrcMap[nextPageNum] || null;
-              if (!imgSrc) return item;  // Return early if no image source
-              loadedPageImagesMap.current[nextPageNum]["loaded"] = true;
-              break;
-      
-            case prevPageNum:
-              imgSrc = pageImgSrcMap[prevPageNum] || null;
-              if (!imgSrc) return item;  // Return early if no image source
-              loadedPageImagesMap.current[prevPageNum]["loaded"] = true;
-              break;
-      
-            case currentPageNum:
-              imgSrc = pageImgSrcMap[currentPageNum] || null;
-              if (!imgSrc) return item;  // Return early if no image source
-              loadedPageImagesMap.current[currentPageNum]["loaded"] = true;
-              break;
-      
-            default:
-              return item;  // Return the current item for pages not of interest
+
+          if(pageNumbersLoadingRange.has(index)) {
+            console.log(`Page${index+1}:`, pageImgSrcMap[index])
+            imgSrc = pageImgSrcMap[index] || null;
+            if (!imgSrc) return item;  // Return early if no image source
+            loadedPageImagesMap.current[index]["loaded"] = true;
           }
-      
-          // Check if imgSrc is properly defined and contains necessary data
+          
           if (imgSrc && imgSrc.imgUri && imgSrc.imgSize) {
             return {
               ...item,
@@ -450,22 +426,17 @@ const HorizontalReader = ({
       console.log("Error loading pages:", error);
       setPageImages((prev) => {
         return prev.map((item, index) => {
-          switch (index) {
-            case nextPageNum:
-            case prevPageNum:
-            case currentPageNum:
-              return {
-                ...item,
-                imgUri: null,
-                imgError: new Error("Loading Image Failed"),
-              };
-              // loadedPageImagesMap.current[currentPageNum]["loaded"] = true;
-              break;
-      
-            default:
-              return item;  // Return the current item for pages not of interest
-          }
+          if (item.imgUri) return item;
+          let imgSrc = null;
 
+          if(pageNumbersLoadingRange.has(index)) {
+            console.log(`Page${index+1}:`, pageImgSrcMap[index])
+            return {
+              ...item,
+              imgUri: null,
+              imgError: new Error("Loading Image Failed"),
+            };
+          }
         });
       });
     }
@@ -652,7 +623,7 @@ const HorizontalReader = ({
           renderItem={renderItem}
           keyExtractor={keyExtractor}
           // getItemLayout={getItemLayout}
-          estimatedItemSize={screenHeight}
+          estimatedItemSize={horizontal ? screenWidth : screenHeight}
           onViewableItemsChanged={handleViewableItemsChanged}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.5}

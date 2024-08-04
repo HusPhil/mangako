@@ -601,8 +601,8 @@ const HorizontalReader = ({ currentManga, chapterPages, onTap, onPageChange, onS
           onViewableItemsChanged={handleViewableItemsChanged}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.5}
-          // pagingEnabled  
-          // horizontal
+          pagingEnabled  
+          horizontal
           ListFooterComponent={ListFooterComponent}
         />
         </ReactNativeZoomableView>

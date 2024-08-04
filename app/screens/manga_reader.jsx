@@ -259,6 +259,7 @@ const MangaReaderScreen = () => {
                                 onTap={handleTap}
                                 currentPage={state.currentPage}
                                 onPageChange={handlePageChange}
+                                horizontal
                             />
                         )}
 
@@ -273,6 +274,7 @@ const MangaReaderScreen = () => {
                                 onTap={handleTap}
                                 currentPage={state.chapterPages.length - 1 - state.currentPage}
                                 inverted
+                                horizontal
                             />
                         )}
 
