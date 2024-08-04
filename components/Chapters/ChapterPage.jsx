@@ -115,14 +115,11 @@ const ChapterPage = forwardRef(({
         <View className="h-full justify-center items-center">
           <Text className="font-pregular text-white text-base">Something went wrong</Text>
           <Text className="font-pregular text-white text-base">while loading this page</Text>
-          {horizontal && (
-            <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Swipe down to retry</Text>
-          )}
-          {vertical && (
-            <TouchableOpacity onPress={onRetry}>
-              <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Click this to retry</Text>
-            </TouchableOpacity>
-          )}
+          <Text className="font-pregular text-accent text-xs">{imgSrc.imgError}</Text>
+          
+          <TouchableOpacity onPress={onRetry}>
+            <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Click this to retry</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -130,4 +127,4 @@ const ChapterPage = forwardRef(({
 });
 
 // Memoizing ChapterPage with React.memo to prevent unnecessary re-renders
-export default ChapterPage 
+export default React.memo(ChapterPage) 

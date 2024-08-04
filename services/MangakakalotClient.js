@@ -324,7 +324,6 @@ export const getChapterPageImage = async (imageUrl, abortSignal) => {
   }
 };
 
-
 export const getDownloadResumableImage = (
   imgUrl, imgFileUri, 
   imgResumableData,  

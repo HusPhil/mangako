@@ -90,6 +90,42 @@ export const fetchPageData = async (mangaUrl, chapterUrl, pageUrl, abortSignal, 
     }
 };
 
+// const createPageDownloadResumable = useCallback(async (currentManga, pageNum, chapterPages) => {
+//     if(pageNum < 0 && pageNum >= chapterPages.length) return null
+    
+//     const pageUrl = chapterPages[pageNum]
+//     const savedataJsonFileName = "-saveData.json"
+//     const pageFileName = shorthash.unique(pageUrl)
+//     const pageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
+//     const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
+    
+//     ensureDirectoryExists(pageMangaDir.cachedFolderPath)
+    
+//     const pageFileInfo = await FileSystem.getInfoAsync(pageMangaDir.cachedFilePath)
+//     loadedPageImagesMap.current[pageNum] = {uri: pageMangaDir.cachedFilePath}
+    
+//     const saveDataFileInfo = await FileSystem.getInfoAsync(savableDataUri)
+
+//     if(pageFileInfo.exists && !saveDataFileInfo.exists) {
+//       return {
+//         uri: pageMangaDir.cachedFilePath, pageNum, 
+//         fileExist: true, savableDataUri
+//       }
+//     }
+
+//     const pageDownloadResumable = await downloadPageData(
+//       currentManga.manga, 
+//       currentManga.chapter, 
+//       pageUrl,
+//       savableDataUri,
+//       handleCallBackTest,
+//       { pageNum }
+//     )
+
+//     return {downloadResumable: pageDownloadResumable, pageNum, uri: pageMangaDir.cachedFilePath, savableDataUri}
+
+//   }, [])
+
 export const downloadPageData = async (mangaUrl, chapterUrl, pageUrl, pageSaveableDataFileUri, callback, otherData) => {
     try {
         const pageFileName = shorthash.unique(pageUrl)
