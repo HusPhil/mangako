@@ -28,12 +28,9 @@ const ChapterPage = forwardRef(({
       setAspectRatio(aspectRatio);
     },
     toggleDownloadProgress: (downloadProgress) => {
-      console.log(downloadProgress)
       const convertedExpectedBytes = bytesToMegaBytes(downloadProgress.totalBytesExpectedToWrite)
       const convertedWrittenBytes = bytesToMegaBytes(downloadProgress.totalBytesWritten)
       const finished = convertedWrittenBytes/convertedExpectedBytes === 1
-
-      console.log(finished)
 
       setDownloadProgress(prev => {
         return {

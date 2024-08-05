@@ -60,6 +60,7 @@ const HorizontalReader = ({
     return () => {
       isMounted.current = false;
       controllerRef.current.abort();
+      cancelPendingDownloads()
     };
   }, []);
 
@@ -69,10 +70,10 @@ const HorizontalReader = ({
       pagesRef.current[pageNum].toggleDownloadProgress(progress)
     }
 
-    console.log("DOWNLOADING:", progress)
-    if(progress.totalBytesWritten/progress.totalBytesExpectedToWrite === 1) {
-      console.log("DOWNLOAD COMPLETE")
-    }
+    // console.log("DOWNLOADING:", progress)
+    // if(progress.totalBytesWritten/progress.totalBytesExpectedToWrite === 1) {
+    //   console.log("DOWNLOAD COMPLETE")
+    // }
 
   }
 
@@ -126,7 +127,7 @@ const HorizontalReader = ({
 
   }, [])
 
-  const cancelPendingDownloads = useCallback(async () => {
+  const cancelPendingDownloads = useCallback(async (pageNumbersLoadingRange) => {
     await Promise.all(
       pendingPageDownloadMap.current.map(async (pendingPageDownload) => {
         try {
@@ -134,9 +135,10 @@ const HorizontalReader = ({
           const { downloadResumable, savableDataUri, pageNum, resolved } = pendingPageDownload
 
           if(resolved) return
+          if(pageNumbersLoadingRange && pageNumbersLoadingRange.has(pageNum)) return
           
           await downloadResumable.pauseAsync();
-          console.log("Cancelled:", pageNum)
+          console.warn("Cancelled:", pageNum)
 
           const savableData = downloadResumable.savable()
           loadedPageImagesMap.current[pageNum]["loaded"] = false;
@@ -276,7 +278,7 @@ const HorizontalReader = ({
 
     try {
       //cancell all pendjing download (so only new pages are downloaded when changing into new page)
-      await cancelPendingDownloads()
+      await cancelPendingDownloads(pageNumbersLoadingRange)
 
       // make sure already loaded images are not loaded again
      
@@ -398,11 +400,9 @@ const HorizontalReader = ({
         console.log("setting the new pages")
 
         return prev.map((item, index) => {
-          if (item.imgUri) return item;
           let imgSrc = null;
 
           if(pageNumbersLoadingRange.has(index)) {
-            console.log(`Page${index+1}:`, pageImgSrcMap[index])
             imgSrc = pageImgSrcMap[index] || null;
             if (!imgSrc) return item;  // Return early if no image source
             loadedPageImagesMap.current[index]["loaded"] = true;
@@ -430,7 +430,6 @@ const HorizontalReader = ({
           let imgSrc = null;
 
           if(pageNumbersLoadingRange.has(index)) {
-            console.log(`Page${index+1}:`, pageImgSrcMap[index])
             return {
               ...item,
               imgUri: null,
@@ -457,7 +456,6 @@ const HorizontalReader = ({
   }, []);
 
   const handleViewableItemsChanged = useCallback(async({ viewableItems }) => {
-    controllerRef.current.abort()
     controllerRef.current = new AbortController();
     const signal = controllerRef.current.signal;
 
