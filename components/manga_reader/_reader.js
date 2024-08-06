@@ -221,7 +221,7 @@ export const getImageDimensions = (imageUri) => {
             resolve({ width, height });
           },
           (error) => {
-            console.error("An error occured when getting the image dimensions")
+            console.error("An error occured when getting the image dimensions:", error)
             resolve({width: 0, height: 0})
           }
         );

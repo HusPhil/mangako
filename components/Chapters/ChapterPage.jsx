@@ -109,10 +109,9 @@ const ChapterPage = forwardRef(({
           )
         )
       ) : (
-        <View className="h-full justify-center items-center">
+        <View className="h-full justify-center items-center" style={{width: screenWidth}}>
           <Text className="font-pregular text-white text-base">Something went wrong</Text>
           <Text className="font-pregular text-white text-base">while loading this page</Text>
-          <Text className="font-pregular text-accent text-xs">{imgSrc.imgError}</Text>
           
           <TouchableOpacity onPress={onRetry}>
             <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Click this to retry</Text>

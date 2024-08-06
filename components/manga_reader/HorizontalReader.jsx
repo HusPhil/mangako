@@ -127,7 +127,7 @@ const HorizontalReader = ({
 
   }, [])
 
-  const cancelPendingDownloads = useCallback(async (pageNumbersLoadingRange) => {
+  const cancelPendingDownloads = useCallback(async () => {
     await Promise.all(
       pendingPageDownloadMap.current.map(async (pendingPageDownload) => {
         try {
@@ -135,7 +135,6 @@ const HorizontalReader = ({
           const { downloadResumable, savableDataUri, pageNum, resolved } = pendingPageDownload
 
           if(resolved) return
-          if(pageNumbersLoadingRange && pageNumbersLoadingRange.has(pageNum)) return
           
           await downloadResumable.pauseAsync();
           console.warn("Cancelled:", pageNum)
@@ -247,6 +246,20 @@ const HorizontalReader = ({
 
           }
 
+          const pageNumToPendingDownloadMap = {};
+          pendingPageDownloadMap.current.forEach((item, index) => {
+            pageNumToPendingDownloadMap[item.pageNum] = { index, item };
+          });
+
+          let targetPendingPageDownloadMap = pageNumToPendingDownloadMap[pageNum];
+
+          if(targetPendingPageDownloadMap) {
+            pendingPageDownloadMap.current[targetPendingPageDownloadMap.index] = {
+              ...pendingPageDownloadMap.current[targetPendingPageDownloadMap.index],
+              resolved: true,
+            };
+          }
+
           
           const retryImgSize = await getImageDimensions(retryDownloadResult.uri)
           if(retryImgSize.width > 0 && retryImgSize.height > 0) {
@@ -265,20 +278,15 @@ const HorizontalReader = ({
             imgError: new Error("Failed to retry")
           }
   }
-  
 
   const loadPageImages = useCallback(async (pageUrl, pageNum, signal) => {
-    const LOADING_RANGE = 4
-
-    // const currentPageNum = pageNum;
-    // const prevPageNum = currentPageNum - 1 >= 0 ? currentPageNum - 1 : 0;
-    // const nextPageNum = currentPageNum + 1 < chapterPages.length ? currentPageNum + 1 : chapterPages.length - 1;
+    const LOADING_RANGE = 1
     
     const pageNumbersLoadingRange = generatePageNumbers(pageNum, LOADING_RANGE, chapterPages.length)
 
     try {
       //cancell all pendjing download (so only new pages are downloaded when changing into new page)
-      await cancelPendingDownloads(pageNumbersLoadingRange)
+      await cancelPendingDownloads()
 
       // make sure already loaded images are not loaded again
      
@@ -301,10 +309,12 @@ const HorizontalReader = ({
         downloadPageFileUriMap,
       } = await initializePageDownloads(pageNumbersLoadingRange)
 
+      //CREATE THE DOWNLOAD RESUMABLES 
       const pageDownloadResumables = await Promise.all(downloadResumablesToCreate.map((downloadResumableToCreate) => {
         return downloadResumableToCreate.downloadResumable
       }))      
       
+     // CALL THE DOWNLOAD OR THE RESUME OPERATION DEPENDING ON THE STATUS OF THE PAGE 
       const downloadResults = await Promise.all(pageDownloadResumables.map( async pageDownloadResumable => {
         const { savableDataUri, pageNum } = downloadPageFileUriMap[pageDownloadResumable.fileUri];
 
@@ -322,15 +332,15 @@ const HorizontalReader = ({
         return pageDownloadResumable.downloadAsync()
       }))
 
-      const pageImgSrcMap = {}
+      // ADD ALL THE CREATED DOWNLOAD RESUMABLES TO THE PENDING DOWNLOAD LIST SO WE CAN TRACK THEIR SATATUS
       const pageNumToPendingDownloadMap = {};
-      
-
       pendingPageDownloadMap.current.forEach((item, index) => {
         pageNumToPendingDownloadMap[item.pageNum] = { index, item };
       });
 
-
+      // CREATE A MAP TO COMPILE ALL THE PAGES AND SHOW THEM ALL AT ONCE
+      let pageNumToImgSrcMap = {}
+      
       for (let index = 0; index < downloadResults.length; index++) {
         const downloadResult = downloadResults[index];
         if(!downloadResult) continue
@@ -339,14 +349,11 @@ const HorizontalReader = ({
         const downloadContentLength = parseInt(downloadResult.headers['content-length'])
 
         let downloadedFileSize = 0;
-        let downloadedValidImgUri = downloadResult.uri
+        let imgUri = downloadResult.uri
         if(downloadedFileInfo.exists) downloadedFileSize = downloadedFileInfo.size
-        
         const { pageNum, savableDataUri } = downloadPageFileUriMap[downloadResult.uri]
-        // console.log("STATUS: ", downloadResult.status)
-        // console.log("BYTES:", downloadContentLength, downloadedFileSize )
-        // console.log("BYTES:", typeof(downloadContentLength), typeof(downloadedFileSize) )
-
+        
+        
         if(
           !allowedStatusCode[downloadResult.status] ||
           downloadContentLength !== downloadedFileSize 
@@ -354,15 +361,31 @@ const HorizontalReader = ({
           console.warn("An error occurred, trying to retry.")
           const retryImgSrc = await retryPageDownload(pageNum, downloadResult.uri)
           if(!retryImgSrc.imgError) {
-            downloadedValidImgUri = retryImgSrc.imgUri
+            imgUri = retryImgSrc.imgUri
             console.warn("Success retrying to fetch the image.")
           } else {
-            downloadedValidImgUri = null
+            imgUri = null
           }
         }
 
-        downloadedPagesFileUris.push(downloadedValidImgUri)
+        const imgSize = await getImageDimensions(imgUri)
 
+        if(imgSize.width > 0 && imgSize.height > 0) {
+          pageNumToImgSrcMap[pageNum] = {
+            imgSize,
+            imgUri,
+          }
+        } 
+        else {
+          console.error("An error occured during setting of NEWLY downloaded images.")
+          pageNumToImgSrcMap[pageNum] = {
+            imgSize,
+            imgUri: null,
+            imgError: new Error("failed to load even if already downloaded")
+          }
+        }
+
+        
         let targetPendingPageDownloadMap = pageNumToPendingDownloadMap[pageNum];
 
         if(!targetPendingPageDownloadMap) continue
@@ -371,64 +394,66 @@ const HorizontalReader = ({
           resolved: true,
         };
 
-        // console.log("pendingPageDownloadMap.current[targetPendingPageDownloadMap.index]:", pendingPageDownloadMap.current[targetPendingPageDownloadMap.index])
-
         await FileSystem.deleteAsync(savableDataUri, {idempotent: true})
       }
 
-      await Promise.all(downloadedPagesFileUris.map(async (downloadedPageFileUri) => {
-        try {
-          const imgUri = downloadedPageFileUri
-          const imgSize = await getImageDimensions(imgUri)
-          
-          if(imgSize.width > 0 && imgSize.height > 0) {
-            const { pageNum: mappedPageNum  } = downloadPageFileUriMap[imgUri]
-            downloadedPagesFileUris.push(imgUri) 
-            pageImgSrcMap[mappedPageNum] = {imgUri, imgSize}
-          } else {
-            await FileSystem.deleteAsync(imgUri, {idempotent: true})
-          }
+      //LOAD THE ALREADY DOWNLOADED PAGE IMAGES TO THE PAGENUM TO IMGSRC MAP
+      await Promise.all(downloadedPagesFileUris.map(async (item, index) => {
+        const imgUri = item
+        const imgSize = await getImageDimensions(imgUri)
+        const imgFileInfo = await FileSystem.getInfoAsync(imgUri)
+        const { pageNum, savableDataUri} = downloadPageFileUriMap[imgUri]
 
-        } catch (error) {
-          throw error
+        if(!imgFileInfo.exists) {
+          console.error("The supplied imgUri does not exist")
+          return
+        }
+
+        if(imgSize.width > 0 && imgSize.height > 0) {
+          pageNumToImgSrcMap[pageNum] = {
+            imgSize,
+            imgUri,
+          }
+        } 
+        else {
+          console.error("An error occured during setting of already downloaded images.")
+          pageNumToImgSrcMap[pageNum] = {
+            imgSize,
+            imgUri: null,
+            imgError: new Error("failed to load even if already downloaded")
+          }
         }
 
       }))
 
+      // USE THE PAGENUM TO IMGSRC MAP TO SHOW THE PAGE IMAGES
+      setPageImages(prev => {
+        let imgSrc;
+        return prev.map((prevPageImage, prevPageImageIdx) => {
+          const loadedPageImagesMapItem = loadedPageImagesMap.current[prevPageImageIdx]
 
-      setPageImages((prev) => {
-        console.log("setting the new pages")
-
-        return prev.map((item, index) => {
-          let imgSrc = null;
-
-          if(pageNumbersLoadingRange.has(index)) {
-            imgSrc = pageImgSrcMap[index] || null;
-            if (!imgSrc) return item;  // Return early if no image source
-            loadedPageImagesMap.current[index]["loaded"] = true;
-          }
-          
-          if (imgSrc && imgSrc.imgUri && imgSrc.imgSize) {
+          if(pageNumToImgSrcMap[prevPageImageIdx]) {
+            imgSrc = pageNumToImgSrcMap[prevPageImageIdx];
+            loadedPageImagesMap.current[prevPageImageIdx] = {
+              ...loadedPageImagesMapItem,
+              loaded: true,
+            }
+            
             return {
-              ...item,
+              ...prevPageImage, 
+              imgUri: imgSrc.imgUri,
               imgSize: imgSrc.imgSize,
               imgError: imgSrc.imgError,
-              imgUri: imgSrc.imgUri,
-            };
+            }
           }
-      
-          return item;  // Return current item if imgSrc isn't valid
-        });
-      });
-    
+          return prevPageImage;
+        })
+      })
       
     } catch (error) {
       console.log("Error loading pages:", error);
       setPageImages((prev) => {
         return prev.map((item, index) => {
-          if (item.imgUri) return item;
-          let imgSrc = null;
-
           if(pageNumbersLoadingRange.has(index)) {
             return {
               ...item,
@@ -436,6 +461,7 @@ const HorizontalReader = ({
               imgError: new Error("Loading Image Failed"),
             };
           }
+          return item;
         });
       });
     }
