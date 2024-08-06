@@ -42,10 +42,10 @@ const HorizontalReader = ({
   const lastTouchTimeStamp = useRef(0);
   const readerCurrentPage = useRef(currentPage)
   const navigatedToCurrentPage = useRef(false)
-  const zoomRef = useRef(null);
+  const zoomableViewRef = useRef(null);
   const isMounted = useRef(true);
   const controllerRef = useRef(new AbortController());
-  const flashRef = useRef(null);
+  const flashListRef = useRef(null);
   const pageLayout = useRef(Array(chapterPages.length).fill(-1));
 
   useEffect(() => {
@@ -518,18 +518,18 @@ const HorizontalReader = ({
 
   const handleReaderNavigation = useCallback((navigationMode) => {
 
-    if(flashRef.current) {
-      console.log("natawag ang navigation ng flashRef:", navigationMode)
+    if(flashListRef.current) {
+      console.log("natawag ang navigation ng flashListRef:", navigationMode)
       if(!navigationMode.mode) throw Error("No mentioned navigation mode.")
       let targetIndex;
       switch (navigationMode.mode) {
         case "prev":
           targetIndex = readerCurrentPage.current - 1 
-          flashRef.current.scrollToIndex({index: targetIndex, animated: true})
+          flashListRef.current.scrollToIndex({index: targetIndex, animated: true})
           break;
         case "next":
           targetIndex = readerCurrentPage.current + 1 
-          flashRef.current.scrollToIndex({index: targetIndex, animated: true})
+          flashListRef.current.scrollToIndex({index: targetIndex, animated: true})
           break;
         case "jump":
           if(!navigationMode.jumpIndex) throw Error("No mentioned jumpIndex.")
@@ -538,12 +538,12 @@ const HorizontalReader = ({
             navigatedToCurrentPage.current = true;
             return
           }
-          flashRef.current.scrollToIndex({index: navigationMode.jumpIndex, animated: true})
+          flashListRef.current.scrollToIndex({index: navigationMode.jumpIndex, animated: true})
 
           break;
         case "jumpToOffset":
           if(!navigationMode.jumpOffset) throw Error("No mentioned jumpOffset.")
-          flashRef.current.scrollToOffset({offset: navigationMode.jumpOffset, animated: true})
+          flashListRef.current.scrollToOffset({offset: navigationMode.jumpOffset, animated: true})
           break;
         default:
           break;
@@ -556,10 +556,6 @@ const HorizontalReader = ({
     onPageChange(chapterPages.length - 1, {finished: true})
   }, [])
   
-  const debouncedOnScroll = useCallback(debounce( (e) => {
-    onScroll(e.nativeEvent.contentOffset.y)
-  }, 500), []);
-
   const renderItem = useCallback(({ item, index }) => {
     const LOADING_RANGE = 3;
     const pageNumbersLoadingRange = generatePageNumbers(readerCurrentPage.current, LOADING_RANGE, chapterPages.length)
@@ -607,89 +603,95 @@ const HorizontalReader = ({
       </View>
     )
   }
+
+  const handleOnTouchStart = useCallback(async (gestureEvent) => {
+    const DOUBLE_TAP_TIME_THRESHOLD = 200
+    const currentTouchTimeStamp = gestureEvent.nativeEvent.timestamp
+
+    const calculatedTimeStamp = currentTouchTimeStamp - lastTouchTimeStamp.current 
+    const pageX = gestureEvent.nativeEvent.pageX
+    const pageY = gestureEvent.nativeEvent.pageY
+    const numOfTouch = gestureEvent.nativeEvent.touches.length
+
+    if(numOfTouch > 1 && currentZoomLevel.current <= 1) {
+      await zoomableViewRef.current.zoomBy(0.5)
+      return
+    }
+    
+    if(
+      calculatedTimeStamp <= DOUBLE_TAP_TIME_THRESHOLD &&
+      currentZoomLevel.current <= 1 && numOfTouch === 1
+    ) {
+      await zoomableViewRef.current.zoomTo(2)
+      setTimeout(async () => {
+        await zoomableViewRef.current.moveTo(pageX, pageY)
+      }, 500);
+    }
+
+    lastTouchTimeStamp.current = currentTouchTimeStamp;
+  }, [])
+
+  const handleOnTransform = useCallback(({zoomLevel}) => {
+    if(zoomLevel === 1) setPanEnabled(false) 
+    else setPanEnabled(true)
+    currentZoomLevel.current = zoomLevel;
+  }, [])
+
+  const handleOnDoubleTapAfter = useCallback(() => {
+    if(currentZoomLevel.current > 1) {
+      zoomableViewRef.current.zoomTo(1);
+    }
+  }, [])
+
+  const handleOnShiftingEnd = useCallback((gestureEvent, panGesture, zoomableViewEvent)=>{
+
+    const halfScaledWidth = (zoomableViewEvent.zoomLevel * zoomableViewEvent.originalWidth) / 2
+    const quarterScreenWidth = screenWidth/4
+    const screenOffsetXConstant = screenWidth / (2 * halfScaledWidth) 
+    const scrollToNextThreshold =  (screenWidth/2) - (quarterScreenWidth * screenOffsetXConstant)
+
+    if((Math.abs(zoomableViewEvent.offsetX)) < scrollToNextThreshold) return
+    
+    zoomableViewRef.current.zoomTo(1) 
+    if(zoomableViewEvent.offsetX < 0) {
+      handleReaderNavigation({mode: "next"})
+      return
+    } 
+    handleReaderNavigation({mode: "prev"})
+
+  }, [])
  
   return (
     <View className="h-full w-full"
-      onTouchStart={async (gestureEvent) => {
-        const DOUBLE_TAP_TIME_THRESHOLD = 200
-        const currentTouchTimeStamp = gestureEvent.nativeEvent.timestamp
-
-        const calculatedTimeStamp = currentTouchTimeStamp -lastTouchTimeStamp.current 
-        const pageX = gestureEvent.nativeEvent.pageX
-        const pageY = gestureEvent.nativeEvent.pageY
-        const numOfTouch = gestureEvent.nativeEvent.touches.length
-        
-        if(
-          calculatedTimeStamp <= DOUBLE_TAP_TIME_THRESHOLD &&
-          currentZoomLevel.current <= 1 && numOfTouch === 1
-        ) {
-          await zoomRef.current.zoomTo(2)
-          setTimeout(async () => {
-            await zoomRef.current.moveTo(pageX, pageY)
-          }, 500);
-        }
-
-        lastTouchTimeStamp.current = currentTouchTimeStamp;
-      }}
+      onTouchStart={handleOnTouchStart}
     >
       <ReactNativeZoomableView
-          ref={zoomRef}
+          ref={zoomableViewRef}
           zoomStep={3}
           minZoom={1}
           maxZoom={3.5}
           pinchToZoomInSensitivity={1.5}
-          onTransform={({zoomLevel}) => {
-            if(zoomLevel === 1) setPanEnabled(false) 
-            else setPanEnabled(true)
-            currentZoomLevel.current = zoomLevel;
-          }}
-          onDoubleTapAfter={() => {
-            if(currentZoomLevel.current > 1) {
-              zoomRef.current.zoomTo(1);
-            }
-            console.log("DoubleTap")
-          }}
           bindToBorders
           contentWidth={screenWidth}
           contentHeight={screenHeight}
-          onShiftingEnd={(e1, e2, zoomableViewEvent)=>{
-            const absOffsetX = (Math.abs(zoomableViewEvent.offsetX))
-            const scaledWidth = zoomableViewEvent.zoomLevel * zoomableViewEvent.originalWidth
-            const halfScaledWidth = scaledWidth / 2
-            const quarterScreenWidth = screenWidth/4
-            const screenOffsetXConstant = screenWidth / (2 * halfScaledWidth) 
-            const screenOffsetX =  (screenWidth/2) - (quarterScreenWidth * screenOffsetXConstant)
-
-            if((Math.abs(zoomableViewEvent.offsetX)) < screenOffsetX) return
-            
-            zoomRef.current.zoomTo(1) 
-            
-            if(zoomableViewEvent.offsetX < 0) {
-              handleReaderNavigation({mode: "next"})
-              return
-            } 
-
-            handleReaderNavigation({mode: "prev"})
-
-          }}
-          onShouldBlockNativeResponder={(gestureEvent) => {
-            console.log("gestureEvent:", gestureEvent.nativeEvent.pageX)
-          }}
+          onTransform={handleOnTransform}
+          onDoubleTapAfter={handleOnDoubleTapAfter} 
+          onShiftingEnd={handleOnShiftingEnd}
         >
         <FlashList
           pointerEvents={panEnabled ? 'none' : 'auto'}
-          ref={flashRef}
+          ref={flashListRef}
           data={pageImages}
+          initialScrollIndex={currentPage}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
-          // getItemLayout={getItemLayout}
           estimatedItemSize={horizontal ? screenWidth : screenHeight}
           onViewableItemsChanged={handleViewableItemsChanged}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.5}
+          ListFooterComponent={ListFooterComponent}
           pagingEnabled  
           horizontal
-          ListFooterComponent={ListFooterComponent}
         />
         </ReactNativeZoomableView>
       {/* <View className="flex-1 relative">
