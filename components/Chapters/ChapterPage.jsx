@@ -62,12 +62,6 @@ const ChapterPage = forwardRef(({
   // Determine aspect ratio either from state or fallback to imgSrc dimensions
   const calculatedAspectRatio = aspectRatio || imgSrc?.imgSize?.width / imgSrc?.imgSize?.height;
 
-  // Define an event handler for image load event
-  const handleImageLoad = async (event) => {
-    const { width: pageWidth, height: pageHeight } = event.source;
-    if (horizontal) setAspectRatio(pageWidth / pageHeight);
-  };
-
   return (
     <View onPress={onTap}>
       {!imgSrc.imgError ? (
@@ -81,7 +75,6 @@ const ChapterPage = forwardRef(({
                 aspectRatio: calculatedAspectRatio,
                 position: 'relative'
               }}
-              onLoad={handleImageLoad}
               cachePolicy='none'
               allowDownscaling={false}
               contentFit='cover'

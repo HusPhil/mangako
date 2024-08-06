@@ -14,7 +14,6 @@ import HorizontalReader from '../../components/manga_reader/HorizontalReader';
 import DropDownList from '../../components/modal/DropdownList';
 import ModalPopup from '../../components/modal/ModalPopup';
 import HorizontalRule from '../../components/HorizontalRule';
-import { readPageLayout } from '../../components/manga_reader/_reader';
 
 import { readerReducer, INITIAL_STATE } from '../../redux/readerScreen/readerReducer';
 import { READER_ACTIONS } from '../../redux/readerScreen/readerActions';
@@ -36,14 +35,11 @@ const MangaReaderScreen = () => {
         
         dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
         const savedConfig = await readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl)
-        const savedPageLayout = await readPageLayout(mangaUrl, chapterDataRef.current.chapterUrl);
 
-        // console.log(savedPageLayout)
         
         if(savedConfig) dispatch({type: READER_ACTIONS.LOAD_CONFIG, payload: {
             currentPage: savedConfig?.chapter?.currentPage || 0,
             readingModeIndex: savedConfig?.manga?.readingModeIndex || 0,
-            pageLayout: !savedPageLayout.error ? savedPageLayout.data : [],
             scrollOffSetY: savedConfig?.chapter?.scrollOffSetY || 0,
             finished: savedConfig?.chapter?.finished
         }})
@@ -288,7 +284,6 @@ const MangaReaderScreen = () => {
                                 onPageChange={handlePageChange}
                                 onTap={handleTap}
                                 currentPage={state.currentPage}
-                                savedPageLayout={state.pageLayout}
                                 savedScrollOffsetY={state.scrollOffSetY}
                                 onScroll={handleVertScroll}
                                 

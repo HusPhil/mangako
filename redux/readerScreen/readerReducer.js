@@ -9,7 +9,6 @@ export const INITIAL_STATE = {
     showModal: false,
     currentPage: 0,
     readingMode: READER_MODES['0'],
-    pageLayout: [],
     scrollOffSetY: 0,
 }
 
@@ -55,7 +54,6 @@ export const readerReducer = (state, action) => {
                 ...state,
                 currentPage: action.payload.currentPage,
                 readingMode: READER_MODES[action.payload.readingModeIndex.toString()],
-                pageLayout: action.payload.pageLayout,
                 scrollOffSetY: action.payload.scrollOffSetY,
                 finished: action.payload.finished,
             };

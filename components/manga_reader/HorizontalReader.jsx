@@ -6,7 +6,7 @@ import { FlashList } from '@shopify/flash-list';
 import { ToastAndroid } from 'react-native';
 import ChapterPage from '../chapters/ChapterPage';
 import * as FileSystem from 'expo-file-system';
-import { savePageLayout, readPageLayout, scrollToPageNum, fetchPageData, getImageDimensions, fetchPageDataAsPromise, downloadPageData } from './_reader';
+import { getImageDimensions, downloadPageData } from './_reader';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
 import { Image } from 'expo-image';
@@ -19,7 +19,7 @@ const allowedStatusCode = Object.freeze({
 const HorizontalReader = ({ 
     currentManga, chapterPages, 
     onTap, onPageChange, onScroll, 
-    currentPage, savedPageLayout, inverted,
+    currentPage, inverted,
     horizontal, vertical,
   }) => {
   const [pageImages, setPageImages] = useState(() => 
@@ -34,23 +34,22 @@ const HorizontalReader = ({
   const [errorData, setErrorData] = useState(null);
 
   const {height: screenHeight, width: screenWidth} = Dimensions.get('screen')
-
+  
   const pagesRef = useRef([]);
+  const isMounted = useRef(true);
+  const zoomableViewRef = useRef(null);
+  const flashListRef = useRef(null);
+  const controllerRef = useRef(new AbortController());
+  
   const loadedPageImagesMap = useRef({});
   const pendingPageDownloadMap = useRef([])
+  
+  const readerCurrentPage = useRef(currentPage)
   const currentZoomLevel = useRef(1);
   const lastTouchTimeStamp = useRef(0);
-  const readerCurrentPage = useRef(currentPage)
-  const navigatedToCurrentPage = useRef(false)
-  const zoomableViewRef = useRef(null);
-  const isMounted = useRef(true);
-  const controllerRef = useRef(new AbortController());
-  const flashListRef = useRef(null);
-  const pageLayout = useRef(Array(chapterPages.length).fill(-1));
 
   useEffect(() => {
-    pageLayout.current = savedPageLayout;
-
+    
     if(currentPage) {
       ToastAndroid.show(
         `Previuos page: ${currentPage + 1}`,
@@ -63,6 +62,7 @@ const HorizontalReader = ({
       controllerRef.current.abort();
       cancelPendingDownloads()
     };
+
   }, []);
 
   const handleCallBackTest = (pageNum, pageurl, progress,) => {
@@ -470,7 +470,7 @@ const HorizontalReader = ({
 
   const debouncedLoadPageImages = useCallback(debounce(async(pageUrl, currentPageNum, signal) => {
     await loadPageImages(pageUrl, currentPageNum, signal)
-  }, [300]), [])
+  }, [500]), [])
 
   const handleRetry = useCallback(async (pageNum) => {
     // controllerRef.current = new AbortController();
@@ -492,29 +492,10 @@ const HorizontalReader = ({
       const pageUrl = chapterPages[currentPageNum]
 
       onPageChange(currentPageNum)
-
       await debouncedLoadPageImages(pageUrl, currentPageNum, signal)
 
-      if(currentPageNum !== currentPage && !navigatedToCurrentPage.current) {
-        handleReaderNavigation({mode: "jump", jumpIndex: currentPage});
-      }
-      else {
-        navigatedToCurrentPage.current = true
-      }
     }
   }, [pageImages])
-  
-  const handlePageLoad = useCallback((pageNum, pageHeight) => {
-    if(pageLayout.current[pageNum] !== - 1) return
-    console.log("modifying existing page layout:" , pageNum, pageHeight)
-    pageLayout.current[pageNum] = pageHeight;
-    debouncedSaveDataToCache();
-  }, [debouncedSaveDataToCache]);
-  
-  const debouncedSaveDataToCache = useCallback(debounce(async () => {
-    console.log("saving:", pageLayout.current)
-    await savePageLayout(currentManga.manga, currentManga.chapter, pageLayout.current);
-  }, 500), [currentManga, savedPageLayout, pageLayout]);
 
   const handleReaderNavigation = useCallback((navigationMode) => {
 
@@ -535,7 +516,6 @@ const HorizontalReader = ({
           if(!navigationMode.jumpIndex) throw Error("No mentioned jumpIndex.")
           if(navigationMode.jumpIndex === readerCurrentPage.current) {
             console.log("finished")
-            navigatedToCurrentPage.current = true;
             return
           }
           flashListRef.current.scrollToIndex({index: navigationMode.jumpIndex, animated: true})
@@ -574,7 +554,6 @@ const HorizontalReader = ({
           imgSrc={item}
           pageUrl={chapterPages[index]}
           pageNum={index}
-          onPageLoad={handlePageLoad}
           onRetry={handleRetry}
           onError={handleImgOnLoadError}
           vertical
@@ -685,13 +664,14 @@ const HorizontalReader = ({
           initialScrollIndex={currentPage}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
-          estimatedItemSize={horizontal ? screenWidth : screenHeight}
+          estimatedItemSize={screenHeight}
+          // estimatedItemSize={horizontal ? screenWidth : screenHeight}
           onViewableItemsChanged={handleViewableItemsChanged}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.5}
           ListFooterComponent={ListFooterComponent}
-          pagingEnabled  
-          horizontal
+          // pagingEnabled  
+          // horizontal
         />
         </ReactNativeZoomableView>
       {/* <View className="flex-1 relative">
