@@ -100,8 +100,7 @@ const ChapterPage = forwardRef(({
               <ActivityIndicator size={30} color={colors.accent.DEFAULT}/>
               <Text className="font-pregular text-white text-xs mt-3">
               {
-                (downloadProgress.totalBytesWritten > 0) &&
-                (!downloadProgress.finished) && 
+                (downloadProgress.totalBytesWritten > 0) && (!downloadProgress.finished) &&
                 `${downloadProgress.totalBytesWritten}/${downloadProgress.totalBytesExpectedToWrite} MB`
               }
               </Text>

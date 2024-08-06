@@ -39,6 +39,7 @@ const HorizontalReader = ({
   const loadedPageImagesMap = useRef({});
   const pendingPageDownloadMap = useRef([])
   const currentZoomLevel = useRef(1);
+  const lastTouchTimeStamp = useRef(0);
   const readerCurrentPage = useRef(currentPage)
   const navigatedToCurrentPage = useRef(false)
   const zoomRef = useRef(null);
@@ -438,7 +439,7 @@ const HorizontalReader = ({
               ...loadedPageImagesMapItem,
               loaded: true,
             }
-            
+
             return {
               ...prevPageImage, 
               imgUri: imgSrc.imgUri,
@@ -559,29 +560,38 @@ const HorizontalReader = ({
     onScroll(e.nativeEvent.contentOffset.y)
   }, 500), []);
 
-  const renderItem = useCallback(({ item, index }) => (
-    <View
-      className=" h-full justify-center items-center"
-      onStartShouldSetResponder={() => {
-        return currentZoomLevel.current <= 1
-      }}
-    > 
-      <ChapterPage
-        ref={(page) => { pagesRef.current[index] = page; }}
-        currentManga={currentManga}
-        imgSrc={item}
-        pageUrl={chapterPages[index]}
-        pageNum={index}
-        onPageLoad={handlePageLoad}
-        onRetry={handleRetry}
-        onError={handleImgOnLoadError}
-        vertical
-      />
-      {/* <Button title='jumpToIndex' onPress={async () => {
-        await downloadImage(chapterPages[0])
-      }}/> */}
-    </View>
-  ), []);
+  const renderItem = useCallback(({ item, index }) => {
+    const LOADING_RANGE = 3;
+    const pageNumbersLoadingRange = generatePageNumbers(readerCurrentPage.current, LOADING_RANGE, chapterPages.length)
+
+    if(pageNumbersLoadingRange.has(index)) {
+    return (
+      <View
+        className=" h-full justify-center items-center"
+        onStartShouldSetResponder={() => {
+          return currentZoomLevel.current <= 1
+        }}
+      > 
+        <ChapterPage
+          ref={(page) => { pagesRef.current[index] = page; }}
+          currentManga={currentManga}
+          imgSrc={item}
+          pageUrl={chapterPages[index]}
+          pageNum={index}
+          onPageLoad={handlePageLoad}
+          onRetry={handleRetry}
+          onError={handleImgOnLoadError}
+          vertical
+        />
+        {/* <Button title='jumpToIndex' onPress={async () => {
+          await downloadImage(chapterPages[0])
+        }}/> */}
+      </View>
+    )}
+    
+    return null
+    
+  }, [readerCurrentPage.current]);
 
   const keyExtractor = useCallback((item, index) => {
     return ` ${item?.id}-${index}`;
@@ -599,12 +609,35 @@ const HorizontalReader = ({
   }
  
   return (
-    <View className="h-full w-full">
+    <View className="h-full w-full"
+      onTouchStart={async (gestureEvent) => {
+        const DOUBLE_TAP_TIME_THRESHOLD = 200
+        const currentTouchTimeStamp = gestureEvent.nativeEvent.timestamp
+
+        const calculatedTimeStamp = currentTouchTimeStamp -lastTouchTimeStamp.current 
+        const pageX = gestureEvent.nativeEvent.pageX
+        const pageY = gestureEvent.nativeEvent.pageY
+        const numOfTouch = gestureEvent.nativeEvent.touches.length
+        
+        if(
+          calculatedTimeStamp <= DOUBLE_TAP_TIME_THRESHOLD &&
+          currentZoomLevel.current <= 1 && numOfTouch === 1
+        ) {
+          await zoomRef.current.zoomTo(2)
+          setTimeout(async () => {
+            await zoomRef.current.moveTo(pageX, pageY)
+          }, 500);
+        }
+
+        lastTouchTimeStamp.current = currentTouchTimeStamp;
+      }}
+    >
       <ReactNativeZoomableView
           ref={zoomRef}
           zoomStep={3}
           minZoom={1}
           maxZoom={3.5}
+          pinchToZoomInSensitivity={1.5}
           onTransform={({zoomLevel}) => {
             if(zoomLevel === 1) setPanEnabled(false) 
             else setPanEnabled(true)
@@ -614,8 +647,8 @@ const HorizontalReader = ({
             if(currentZoomLevel.current > 1) {
               zoomRef.current.zoomTo(1);
             }
+            console.log("DoubleTap")
           }}
-          disablePanOnInitialZoom
           bindToBorders
           contentWidth={screenWidth}
           contentHeight={screenHeight}
@@ -638,6 +671,9 @@ const HorizontalReader = ({
 
             handleReaderNavigation({mode: "prev"})
 
+          }}
+          onShouldBlockNativeResponder={(gestureEvent) => {
+            console.log("gestureEvent:", gestureEvent.nativeEvent.pageX)
           }}
         >
         <FlashList
