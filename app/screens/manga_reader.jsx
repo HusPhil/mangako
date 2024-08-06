@@ -1,4 +1,4 @@
-import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native'
+import { View, Text, ActivityIndicator, TouchableOpacity, ToastAndroid } from 'react-native'
 import React, {useRef, useEffect, useReducer, useCallback } from 'react'
 import { router, useLocalSearchParams } from 'expo-router';
 import Toast from 'react-native-simple-toast';
@@ -14,7 +14,9 @@ import HorizontalReader from '../../components/manga_reader/HorizontalReader';
 import DropDownList from '../../components/modal/DropdownList';
 import ModalPopup from '../../components/modal/ModalPopup';
 import HorizontalRule from '../../components/HorizontalRule';
+import * as FileSystem from 'expo-file-system';
 
+import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
 import { readerReducer, INITIAL_STATE } from '../../redux/readerScreen/readerReducer';
 import { READER_ACTIONS } from '../../redux/readerScreen/readerActions';
 
@@ -98,6 +100,25 @@ const MangaReaderScreen = () => {
     const handleTap = useCallback((testData) => {
         dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
     }, [])
+
+    const handleClearCache = useCallback(async () => {
+        const pageFileName = "NO-PAGE-FILE"
+        const pageMangaDir = getMangaDirectory(mangaUrl, chapterDataRef.current.chapterUrl, "chapterPageImages", pageFileName)
+        
+        ensureDirectoryExists(pageMangaDir.cachedFolderPath)
+    
+        console.log("pageMangaDir.cachedFolderPath:", pageMangaDir.cachedFolderPath)
+    
+        await FileSystem.deleteAsync(pageMangaDir.cachedFolderPath)
+
+        router.back()
+
+        ToastAndroid.show(
+            "Cache cleared!",
+            ToastAndroid.SHORT
+        )
+    
+      })
 
     const handlePageChange = useCallback(async (currentPage, readingStatus) => {
         dispatch({ type: READER_ACTIONS.SET_CURRENT_PAGE, payload: currentPage });
@@ -234,7 +255,7 @@ const MangaReaderScreen = () => {
                         </TouchableOpacity> 
                     </View>
 
-                    <TouchableOpacity className="py-1 px-3 bg-accent rounded-md flex-1 ml-4 ">
+                    <TouchableOpacity className="py-1 px-3 bg-accent rounded-md flex-1 ml-4 " onPress={handleClearCache}>
                         <Text className="text-white font-pregular text-center">Clear cache</Text>
                     </TouchableOpacity>
                 </View>

@@ -65,21 +65,13 @@ const HorizontalReader = ({
 
   }, []);
 
-  const handleCallBackTest = (pageNum, pageurl, progress,) => {
-
+  const handleDownloadResumableCallback = useCallback((pageNum, pageurl, progress) => {
     if(pagesRef.current[pageNum]) {
       pagesRef.current[pageNum].toggleDownloadProgress(progress)
     }
-
-    // console.log("DOWNLOADING:", progress)
-    // if(progress.totalBytesWritten/progress.totalBytesExpectedToWrite === 1) {
-    //   console.log("DOWNLOAD COMPLETE")
-    // }
-
-  }
-
+  }, [])
+  
   const handleImgOnLoadError = useCallback(async (pageNum, error, imgUri) => {
-    await FileSystem.deleteAsync(imgUri, {idempotent: true})
     setPageImages(prev => (
       prev.map((item, index) => {
         if(index !== pageNum) return item;
@@ -96,9 +88,9 @@ const HorizontalReader = ({
     if(pageNum < 0 && pageNum >= chapterPages.length) return null
     
     const pageUrl = chapterPages[pageNum]
-    const savedataJsonFileName = "-saveData.json"
     const pageFileName = shorthash.unique(pageUrl)
     const pageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
+    const savedataJsonFileName = "-saveData.json"
     const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
     
     ensureDirectoryExists(pageMangaDir.cachedFolderPath)
@@ -120,7 +112,7 @@ const HorizontalReader = ({
       currentManga.chapter, 
       pageUrl,
       savableDataUri,
-      handleCallBackTest,
+      handleDownloadResumableCallback,
       { pageNum }
     )
 
@@ -201,83 +193,73 @@ const HorizontalReader = ({
   }
 
   const retryPageDownload = async (pageNum, imgFileUri, imgSavableDataUri) => {
-          const imgSrc = {imgSize: null, imgUri: null}
-    
-          const retryDownloadResumable = await createPageDownloadResumable(pageNum)
-          const imgSize = await getImageDimensions(imgFileUri)
+      const imgSrc = {imgSize: null, imgUri: null}
+      const imgFileInfo = await FileSystem.getInfoAsync(imgFileUri)
 
-          if(imgSize.width > 0 && imgSize.height > 0) {
-            return {
-              imgSize,
-              imgUri: imgFileUri
-            }
-          }
+      if(imgFileInfo.exists && imgFileUri) {
+        await FileSystem.deleteAsync(imgFileUri)
+      }
 
-          await FileSystem.deleteAsync(imgFileUri)
-          await FileSystem.deleteAsync(imgSavableDataUri)
+      const retryDownloadResumable = await createPageDownloadResumable(pageNum)
+      const retryDownloadResult = await retryDownloadResumable.downloadResumable.downloadAsync()
 
-          const retryDownloadResult = await retryDownloadResumable.downloadResumable.downloadAsync()
+      if(!retryDownloadResult) {
+        console.log(`Failed to retry page: ${pageNum}`)
+        return {
+          ...imgSrc,
+          imgError: new Error("Failed to retry")
+        }
+      }
 
-          if(!retryDownloadResult) {
-            console.log(`Failed to retry page: ${pageNum}`)
-            return {
-              ...imgSrc,
-              imgError: new Error("Failed to retry")
-            }
-          }
+      pendingPageDownloadMap.current.push({
+        downloadResumable: retryDownloadResumable.downloadResumable, 
+        savableDataUri: imgSavableDataUri, 
+        pageNum,
+      })
 
-          pendingPageDownloadMap.current.push({
-            downloadResumable: retryDownloadResumable.downloadResumable, 
-            savableDataUri: imgSavableDataUri, 
-            pageNum,
-          })
-
-          if(!allowedStatusCode[retryDownloadResult.status]) {
-              console.error(`Failed to retry page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`)
-              await FileSystem.deleteAsync(imgFileUri)
-              await FileSystem.deleteAsync(imgSavableDataUri)
-              ToastAndroid.show(
-                `Failed to retry page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`,
-                ToastAndroid.SHORT
-              )
-              return {
-                ...imgSrc,
-                imgError: new Error("Failed to retry")
-              }
-
-          }
-
-          const pageNumToPendingDownloadMap = {};
-          pendingPageDownloadMap.current.forEach((item, index) => {
-            pageNumToPendingDownloadMap[item.pageNum] = { index, item };
-          });
-
-          let targetPendingPageDownloadMap = pageNumToPendingDownloadMap[pageNum];
-
-          if(targetPendingPageDownloadMap) {
-            pendingPageDownloadMap.current[targetPendingPageDownloadMap.index] = {
-              ...pendingPageDownloadMap.current[targetPendingPageDownloadMap.index],
-              resolved: true,
-            };
-          }
-
-          
-          const retryImgSize = await getImageDimensions(retryDownloadResult.uri)
-          if(retryImgSize.width > 0 && retryImgSize.height > 0) {
-            ToastAndroid.show(
-              `Success retrying page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`,
-              ToastAndroid.SHORT
-            )
-            return {
-              imgSize: retryImgSize, 
-              imgUri: retryDownloadResult.uri
-            }
-          }
-
+      if(!allowedStatusCode[retryDownloadResult.status]) {
+          console.error(`Failed to retry page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`)
+          ToastAndroid.show(
+            `Failed to retry page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`,
+            ToastAndroid.SHORT
+          )
           return {
             ...imgSrc,
             imgError: new Error("Failed to retry")
           }
+
+      }
+
+      const pageNumToPendingDownloadMap = {};
+      pendingPageDownloadMap.current.forEach((item, index) => {
+        pageNumToPendingDownloadMap[item.pageNum] = { index, item };
+      });
+
+      let targetPendingPageDownloadMap = pageNumToPendingDownloadMap[pageNum];
+
+      if(targetPendingPageDownloadMap) {
+        pendingPageDownloadMap.current[targetPendingPageDownloadMap.index] = {
+          ...pendingPageDownloadMap.current[targetPendingPageDownloadMap.index],
+          resolved: true,
+        };
+      }
+      
+      const retryImgSize = await getImageDimensions(retryDownloadResult.uri)
+      if(retryImgSize.width > 0 && retryImgSize.height > 0) {
+        ToastAndroid.show(
+          `Success retrying page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`,
+          ToastAndroid.SHORT
+        )
+        return {
+          imgSize: retryImgSize, 
+          imgUri: retryDownloadResult.uri
+        }
+      }
+
+      return {
+        ...imgSrc,
+        imgError: new Error("Failed to retry")
+      }
   }
 
   const loadPageImages = useCallback(async (pageUrl, pageNum, signal) => {
@@ -360,13 +342,24 @@ const HorizontalReader = ({
           downloadContentLength !== downloadedFileSize 
         ) {
           console.warn("An error occurred, trying to retry.")
+          let targetPendingPageDownloadMap = pageNumToPendingDownloadMap[pageNum];
+
+          if(!targetPendingPageDownloadMap) continue
+          pendingPageDownloadMap.current[targetPendingPageDownloadMap.index] = {
+            ...pendingPageDownloadMap.current[targetPendingPageDownloadMap.index],
+            resolved: true,
+          };
+
+          await FileSystem.deleteAsync(savableDataUri, {idempotent: true})
+            
+
           const retryImgSrc = await retryPageDownload(pageNum, downloadResult.uri)
           if(!retryImgSrc.imgError) {
             imgUri = retryImgSrc.imgUri
             console.warn("Success retrying to fetch the image.")
           } else {
             imgUri = null
-          }
+      }
         }
 
         const imgSize = await getImageDimensions(imgUri)
@@ -387,15 +380,8 @@ const HorizontalReader = ({
         }
 
         
-        let targetPendingPageDownloadMap = pageNumToPendingDownloadMap[pageNum];
 
-        if(!targetPendingPageDownloadMap) continue
-        pendingPageDownloadMap.current[targetPendingPageDownloadMap.index] = {
-          ...pendingPageDownloadMap.current[targetPendingPageDownloadMap.index],
-          resolved: true,
-        };
 
-        await FileSystem.deleteAsync(savableDataUri, {idempotent: true})
       }
 
       //LOAD THE ALREADY DOWNLOADED PAGE IMAGES TO THE PAGENUM TO IMGSRC MAP
@@ -417,7 +403,7 @@ const HorizontalReader = ({
           }
         } 
         else {
-          console.error("An error occured during setting of already downloaded images.")
+          console.error("An error occured. Page:", pageNum)
           pageNumToImgSrcMap[pageNum] = {
             imgSize,
             imgUri: null,
@@ -452,19 +438,8 @@ const HorizontalReader = ({
       })
       
     } catch (error) {
-      console.log("Error loading pages:", error);
-      setPageImages((prev) => {
-        return prev.map((item, index) => {
-          if(pageNumbersLoadingRange.has(index)) {
-            return {
-              ...item,
-              imgUri: null,
-              imgError: new Error("Loading Image Failed"),
-            };
-          }
-          return item;
-        });
-      });
+      console.error("Error loading pages:", error);
+     
     }
   }, [])
 
@@ -472,14 +447,76 @@ const HorizontalReader = ({
     await loadPageImages(pageUrl, currentPageNum, signal)
   }, [500]), [])
 
-  const handleRetry = useCallback(async (pageNum) => {
-    // controllerRef.current = new AbortController();
-    // const signal = controllerRef.current.signal;
-    // await loadPageImages(pageNum, chapterPages[pageNum], signal);
+  const handleRetry = useCallback(async (pageNum, pageUrl) => {
+
+    setPageImages(prev => {
+      return prev.map((prevPageImage, prevPageImageIdx) => {
+        if(prevPageImageIdx === pageNum) {
+          return {
+            ...prevPageImage, 
+            imgRetry: `Retrying to get page: ${pageNum}`,
+            imgError: null, 
+          }
+        }
+        return prevPageImage;
+      })
+    })
+
     ToastAndroid.show(
       `Retrying page: ${pageNum}`,
       ToastAndroid.SHORT
     )
+    
+    const pageFileName = shorthash.unique(pageUrl)
+    const pageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
+    const savedataJsonFileName = "-saveData.json"
+    const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
+    
+    ensureDirectoryExists(pageMangaDir.cachedFolderPath)
+    
+    const imgUri = pageMangaDir.cachedFilePath
+    console.log("BAGO:", pageNum, imgUri)
+    const retryDownloadResult = await retryPageDownload(pageNum, imgUri, savableDataUri)
+
+    if(retryDownloadResult.imgError){
+      setPageImages(prev => {
+        return prev.map((prevPageImage, prevPageImageIdx) => {
+          if(prevPageImageIdx === pageNum) {
+            return {
+              ...prevPageImage, 
+              imgError: retryDownloadResult.imgError, 
+              imgRetry: null,
+            }
+          }
+          return prevPageImage;
+        })
+      })
+      return
+    }
+
+    console.log("retryDownloadResult:", retryDownloadResult)
+
+    setPageImages(prev => {
+      return prev.map((prevPageImage, prevPageImageIdx) => {
+        const loadedPageImagesMapItem = loadedPageImagesMap.current[prevPageImageIdx]
+
+        if(prevPageImageIdx === pageNum) {
+          const imgSrc = retryDownloadResult
+          loadedPageImagesMap.current[prevPageImageIdx] = {
+            ...loadedPageImagesMapItem,
+            loaded: true,
+          }
+
+          return {
+            ...prevPageImage, 
+            imgUri: imgSrc.imgUri,
+            imgSize: imgSrc.imgSize,
+            imgError: imgSrc.imgError,
+          }
+        }
+        return prevPageImage;
+      })
+    })
   }, []);
 
   const handleViewableItemsChanged = useCallback(async({ viewableItems }) => {
@@ -487,7 +524,7 @@ const HorizontalReader = ({
     const signal = controllerRef.current.signal;
 
     if(viewableItems.length > 0) {
-      const currentPageNum = viewableItems[0].index;
+      const currentPageNum = viewableItems.splice(-1)[0].index;
       readerCurrentPage.current = currentPageNum;
       const pageUrl = chapterPages[currentPageNum]
 
@@ -541,6 +578,7 @@ const HorizontalReader = ({
     const pageNumbersLoadingRange = generatePageNumbers(readerCurrentPage.current, LOADING_RANGE, chapterPages.length)
 
     if(pageNumbersLoadingRange.has(index)) {
+    }
     return (
       <View
         className=" h-full justify-center items-center"
@@ -556,15 +594,13 @@ const HorizontalReader = ({
           pageNum={index}
           onRetry={handleRetry}
           onError={handleImgOnLoadError}
-          vertical
         />
         {/* <Button title='jumpToIndex' onPress={async () => {
           await downloadImage(chapterPages[0])
         }}/> */}
       </View>
-    )}
+    )
     
-    return null
     
   }, [readerCurrentPage.current]);
 
@@ -584,6 +620,9 @@ const HorizontalReader = ({
   }
 
   const handleOnTouchStart = useCallback(async (gestureEvent) => {
+    console.log("Touch start:", gestureEvent.nativeEvent.touches[0])
+
+
     const DOUBLE_TAP_TIME_THRESHOLD = 200
     const currentTouchTimeStamp = gestureEvent.nativeEvent.timestamp
 
@@ -591,6 +630,8 @@ const HorizontalReader = ({
     const pageX = gestureEvent.nativeEvent.pageX
     const pageY = gestureEvent.nativeEvent.pageY
     const numOfTouch = gestureEvent.nativeEvent.touches.length
+
+    
 
     if(numOfTouch > 1 && currentZoomLevel.current <= 1) {
       await zoomableViewRef.current.zoomBy(0.5)
@@ -643,6 +684,9 @@ const HorizontalReader = ({
   return (
     <View className="h-full w-full"
       onTouchStart={handleOnTouchStart}
+      onTouchEnd={(e) => {
+        onTap()
+      }}
     >
       <ReactNativeZoomableView
           ref={zoomableViewRef}

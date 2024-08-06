@@ -7,18 +7,13 @@ import { getChapterPageImage } from '../../services/MangakakalotClient';
 const ChapterPage = forwardRef(({
   currentManga, imgSrc, 
   pageUrl, pageNum, 
-  onRetry, onError,
-  onTap, pageLayout,
+  onError, onRetry,
   horizontal, vertical,
-  isLoadingRef,
-  onStartShouldSetResponder,
 }, ref) => {
   const { height: screenHeight, width: screenWidth } = Dimensions.get('screen');
   const [tick, setTick] = useState(0);
   const [aspectRatio, setAspectRatio] = useState(null);
   const [downloadProgress, setDownloadProgress] = useState({totalBytesExpectedToWrite: 1, totalBytesWritten: 0, finished: false})
-
-  const thisPageLoadingRef = useRef(isLoadingRef)
 
   useImperativeHandle(ref, () => ({
     getPageNum: () => pageNum,
@@ -47,6 +42,11 @@ const ChapterPage = forwardRef(({
     return convertedResult.toFixed(2);
   }, [])
 
+  const handleRetry = useCallback(() => {
+    console.log("HELLORETRY")
+    onRetry(pageNum, pageUrl)
+  }, [])
+
   useEffect(() => {
     if(imgSrc.imgError) {
       ToastAndroid.show(
@@ -63,7 +63,7 @@ const ChapterPage = forwardRef(({
   const calculatedAspectRatio = aspectRatio || imgSrc?.imgSize?.width / imgSrc?.imgSize?.height;
 
   return (
-    <View onPress={onTap}>
+    <View>
       {!imgSrc.imgError ? (
         imgSrc.imgUri ? (
           <View className="mt-[-1px]">
@@ -91,6 +91,11 @@ const ChapterPage = forwardRef(({
               style={{height: screenHeight, width: screenWidth}}
             >
               <ActivityIndicator size={30} color={colors.accent.DEFAULT}/>
+              {imgSrc.imgRetry && (
+                <Text className="font-pregular text-white text-xs mt-3">
+                  {`Trying to retry page ${pageNum}..`}
+                </Text>
+              )}
               <Text className="font-pregular text-white text-xs mt-3">
               {
                 (downloadProgress.totalBytesWritten > 0) && (!downloadProgress.finished) &&
@@ -101,11 +106,11 @@ const ChapterPage = forwardRef(({
           )
         )
       ) : (
-        <View className="h-full justify-center items-center" style={{width: screenWidth}}>
+        <View className="justify-center items-center" style={{width: screenWidth, height: screenHeight}}>
           <Text className="font-pregular text-white text-base">Something went wrong</Text>
           <Text className="font-pregular text-white text-base">while loading this page</Text>
           
-          <TouchableOpacity onPress={onRetry}>
+          <TouchableOpacity onPress={handleRetry}>
             <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Click this to retry</Text>
           </TouchableOpacity>
         </View>
