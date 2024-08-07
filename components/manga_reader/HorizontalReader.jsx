@@ -236,9 +236,16 @@ const HorizontalReader = ({
   const retryPageDownload = async (pageNum, imgFileUri, imgSavableDataUri) => {
       const imgSrc = {imgSize: null, imgUri: null}
       const imgFileInfo = await FileSystem.getInfoAsync(imgFileUri)
+      const imgSavableFileInfo = await FileSystem.getInfoAsync(imgSavableDataUri)
 
       if(imgFileInfo.exists && imgFileUri) {
+        console.warn("prev file data deleted")
         await FileSystem.deleteAsync(imgFileUri)
+      }
+
+      if(imgSavableFileInfo.exists && imgSavableDataUri) {
+        console.warn("prev savable data deleted")
+        await FileSystem.deleteAsync(imgSavableDataUri)
       }
 
       const retryDownloadResumable = await createPageDownloadResumable(pageNum)
@@ -449,7 +456,18 @@ const HorizontalReader = ({
       
     } catch (error) {
       console.error("Error loading pages:", error);
-     
+      setPageImages(prev => {
+        return prev.map((prevPageImage, prevPageImageIdx) => {
+          if(prevPageImageIdx === pageNum) {
+            return {
+              ...prevPageImage, 
+              imgError: error, 
+              imgRetry: null,
+            }
+          }
+          return prevPageImage;
+        })
+      })
     }
   }, [])
 
@@ -458,10 +476,10 @@ const HorizontalReader = ({
   }, [500]), [])
 
   const handleRetry = useCallback(async (pageNum, pageUrl) => {
-
     setPageImages(prev => {
       return prev.map((prevPageImage, prevPageImageIdx) => {
         if(prevPageImageIdx === pageNum) {
+          console.log("naset ang page:", pageNum)
           return {
             ...prevPageImage, 
             imgRetry: `Retrying to get page: ${pageNum}`,
@@ -487,8 +505,10 @@ const HorizontalReader = ({
     const imgUri = pageMangaDir.cachedFilePath
     console.log("BAGO:", pageNum, imgUri)
     const retryDownloadResult = await retryPageDownload(pageNum, imgUri, savableDataUri)
+    const downloadCompleted = await handleDownloadVerification(pageNum)
+    console.log("downloadCompleted sa HANDLEretry", downloadCompleted)
 
-    if(retryDownloadResult.imgError){
+    if(retryDownloadResult.imgError || !downloadCompleted){
       setPageImages(prev => {
         return prev.map((prevPageImage, prevPageImageIdx) => {
           if(prevPageImageIdx === pageNum) {
@@ -510,7 +530,7 @@ const HorizontalReader = ({
       return prev.map((prevPageImage, prevPageImageIdx) => {
 
         if(prevPageImageIdx === pageNum) {
-          const imgSrc = retryDownloadResult
+          console.warn("Success retyring:", pageNum)
           loadedPageImagesMap.current[prevPageImageIdx] = {
             ...loadedPageImagesMap.current[prevPageImageIdx],
             loaded: true,
@@ -518,9 +538,10 @@ const HorizontalReader = ({
 
           return {
             ...prevPageImage, 
-            imgUri: imgSrc.imgUri,
-            imgSize: imgSrc.imgSize,
-            imgError: imgSrc.imgError,
+            imgUri: retryDownloadResult.imgUri,
+            imgSize: retryDownloadResult.imgSize,
+            imgError: null,
+            imgRetry: null,
           }
         }
         return prevPageImage;
@@ -583,11 +604,6 @@ const HorizontalReader = ({
   }, [])
   
   const renderItem = useCallback(({ item, index }) => {
-    const LOADING_RANGE = 3;
-    const pageNumbersLoadingRange = generatePageNumbers(readerCurrentPage.current, LOADING_RANGE, chapterPages.length)
-
-    if(pageNumbersLoadingRange.has(index)) {
-    }
     return (
       <View
         className=" h-full justify-center items-center"
@@ -597,6 +613,7 @@ const HorizontalReader = ({
       > 
         <ChapterPage
           ref={(page) => { pagesRef.current[index] = page; }}
+          id={item.id}
           currentManga={currentManga}
           imgSrc={item}
           pageUrl={chapterPages[index]}
@@ -692,8 +709,9 @@ const HorizontalReader = ({
     <View className="h-full w-full"
       onTouchStart={handleOnTouchStart}
       onTouchEnd={(e) => {
-        if(currentZoomLevel.current > 1 && e.nativeEvent.touches.length === 0) {
-          onTap()
+        console.log("e.nativeEvent.touches.length:", e.nativeEvent.touches.length)
+        if(currentZoomLevel.current === 1 && e.nativeEvent.touches.length === 0) {
+          // onTap()
         }
       }}
     >

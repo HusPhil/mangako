@@ -5,7 +5,7 @@ import colors from '../../constants/colors';
 import { getChapterPageImage } from '../../services/MangakakalotClient';
 
 const ChapterPage = forwardRef(({
-  currentManga, imgSrc, 
+  currentManga, imgSrc, id,
   pageUrl, pageNum, 
   onError, onRetry,
   horizontal, vertical,
@@ -43,9 +43,9 @@ const ChapterPage = forwardRef(({
   }, [])
 
   const handleRetry = useCallback(() => {
-    console.log("HELLORETRY")
+    console.log("HELLORETRY:", id)
     onRetry(pageNum, pageUrl)
-  }, [])
+  }, [pageNum, pageUrl])
 
   useEffect(() => {
     if(imgSrc.imgError) {
@@ -63,7 +63,7 @@ const ChapterPage = forwardRef(({
   const calculatedAspectRatio = aspectRatio || imgSrc?.imgSize?.width / imgSrc?.imgSize?.height;
 
   return (
-    <View>
+    <View key={id}>
       {!imgSrc.imgError ? (
         imgSrc.imgUri ? (
           <View className="mt-[-1px]">
