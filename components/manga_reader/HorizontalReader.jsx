@@ -65,9 +65,24 @@ const HorizontalReader = ({
 
   }, []);
 
-  const handleDownloadResumableCallback = useCallback((pageNum, pageurl, progress) => {
+  const handleDownloadResumableCallback = useCallback(async (pageNum, pageUrl, progress) => {
     if(pagesRef.current[pageNum]) {
       pagesRef.current[pageNum].toggleDownloadProgress(progress)
+    }
+    if(progress.totalBytesWritten/progress.totalBytesExpectedToWrite === 1) {
+      console.log("DOWNLOAD COMPLETE FOR:", pageUrl)
+      const pageFileName = shorthash.unique(pageUrl)
+      const pageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
+      const certificateJsonFileName = "-certificate.json"
+      const certificateFileUri = pageMangaDir.cachedFilePath + certificateJsonFileName
+      
+      await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
+
+      await FileSystem.writeAsStringAsync(
+        certificateFileUri,
+        JSON.stringify(progress),
+        {encoding: FileSystem.EncodingType.UTF8}
+      );
     }
   }, [])
   
@@ -91,21 +106,33 @@ const HorizontalReader = ({
     const pageFileName = shorthash.unique(pageUrl)
     const pageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
     const savedataJsonFileName = "-saveData.json"
+    const certificateJsonFileName = "-certificate.json"
     const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
+    const certificateFileUri = pageMangaDir.cachedFilePath + certificateJsonFileName
     
-    ensureDirectoryExists(pageMangaDir.cachedFolderPath)
+    
+    await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
     
     const pageFileInfo = await FileSystem.getInfoAsync(pageMangaDir.cachedFilePath)
+    const certificateFileInfo = await FileSystem.getInfoAsync(certificateFileUri)
+
     loadedPageImagesMap.current[pageNum] = {uri: pageMangaDir.cachedFilePath}
     
-    const saveDataFileInfo = await FileSystem.getInfoAsync(savableDataUri)
+    if(pageFileInfo.exists && certificateFileInfo.exists) {
+        
+        const certificate = JSON.parse(await FileSystem.readAsStringAsync(certificateFileUri))
+        console.log("certificate:", certificate.totalBytesExpectedToWrite)
+        console.log("pageFileInfo.size:", pageFileInfo.size)
 
-    if(pageFileInfo.exists && !saveDataFileInfo.exists) {
-      return {
-        uri: pageMangaDir.cachedFilePath, pageNum, 
-        fileExist: true, savableDataUri
+        if(certificate.totalBytesExpectedToWrite === pageFileInfo.size) {
+          return {
+            uri: pageMangaDir.cachedFilePath, pageNum, 
+            fileExist: true, savableDataUri
+          }
+  
+        }
+
       }
-    }
 
     const pageDownloadResumable = await downloadPageData(
       currentManga.manga, 
@@ -472,7 +499,7 @@ const HorizontalReader = ({
     const savedataJsonFileName = "-saveData.json"
     const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
     
-    ensureDirectoryExists(pageMangaDir.cachedFolderPath)
+    await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
     
     const imgUri = pageMangaDir.cachedFilePath
     console.log("BAGO:", pageNum, imgUri)
@@ -620,8 +647,6 @@ const HorizontalReader = ({
   }
 
   const handleOnTouchStart = useCallback(async (gestureEvent) => {
-    console.log("Touch start:", gestureEvent.nativeEvent.touches[0])
-
 
     const DOUBLE_TAP_TIME_THRESHOLD = 200
     const currentTouchTimeStamp = gestureEvent.nativeEvent.timestamp
@@ -685,7 +710,9 @@ const HorizontalReader = ({
     <View className="h-full w-full"
       onTouchStart={handleOnTouchStart}
       onTouchEnd={(e) => {
-        onTap()
+        if(currentZoomLevel.current > 1 && e.nativeEvent.touches.length === 0) {
+          onTap()
+        }
       }}
     >
       <ReactNativeZoomableView
@@ -701,22 +728,22 @@ const HorizontalReader = ({
           onDoubleTapAfter={handleOnDoubleTapAfter} 
           onShiftingEnd={handleOnShiftingEnd}
         >
-        <FlashList
-          pointerEvents={panEnabled ? 'none' : 'auto'}
-          ref={flashListRef}
-          data={pageImages}
-          initialScrollIndex={currentPage}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          estimatedItemSize={screenHeight}
-          // estimatedItemSize={horizontal ? screenWidth : screenHeight}
-          onViewableItemsChanged={handleViewableItemsChanged}
-          onEndReached={handleEndReached}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={ListFooterComponent}
-          // pagingEnabled  
-          // horizontal
-        />
+          <FlashList
+            pointerEvents={panEnabled ? 'none' : 'auto'}
+            ref={flashListRef}
+            data={pageImages}
+            initialScrollIndex={currentPage}
+            renderItem={renderItem}
+            keyExtractor={keyExtractor}
+            estimatedItemSize={screenHeight}
+            // estimatedItemSize={horizontal ? screenWidth : screenHeight}
+            onViewableItemsChanged={handleViewableItemsChanged}
+            onEndReached={handleEndReached}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={ListFooterComponent}
+            // pagingEnabled  
+            // horizontal
+          />
         </ReactNativeZoomableView>
       {/* <View className="flex-1 relative">
       </View> */}
