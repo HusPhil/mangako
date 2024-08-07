@@ -42,7 +42,7 @@ const HorizontalReader = ({
   const controllerRef = useRef(new AbortController());
   
   const loadedPageImagesMap = useRef({});
-  const pendingPageDownloadMap = useRef([])
+  const pendingPageDownloadMap = useRef({})
   
   const readerCurrentPage = useRef(currentPage)
   const currentZoomLevel = useRef(1);
@@ -161,10 +161,9 @@ const HorizontalReader = ({
 
   const cancelPendingDownloads = useCallback(async () => {
     await Promise.all(
-      pendingPageDownloadMap.current.map(async (pendingPageDownload) => {
+      Object.values(pendingPageDownloadMap.current).map(async (pendingPageDownload, pageNum) => {
         try {
-          
-          const { downloadResumable, savableDataUri, pageNum, resolved } = pendingPageDownload
+          const { downloadResumable, savableDataUri, resolved } = pendingPageDownload
 
           if(resolved) return
           
@@ -172,20 +171,23 @@ const HorizontalReader = ({
           console.warn("Cancelled:", pageNum)
 
           const savableData = downloadResumable.savable()
-          loadedPageImagesMap.current[pageNum]["loaded"] = false;
-
           await FileSystem.writeAsStringAsync(
             savableDataUri,
             JSON.stringify(savableData),
             {encoding: FileSystem.EncodingType.UTF8}
           );
+          console.log(loadedPageImagesMap.current[pageNum])
+          loadedPageImagesMap.current[pageNum] = {
+            ...loadedPageImagesMap.current[pageNum],
+            loaded: false,
+          };
     
         } catch (error) {
-          console.log('Error cancelling pending download:', error);
+          console.error('Error cancelling pending download:', error);
         }
       })
     );
-    pendingPageDownloadMap.current = []
+    pendingPageDownloadMap.current = {}
   }, [])
 
   const initializePageDownloads = useCallback(async (pageNumbersLoadingRange) => {
@@ -241,11 +243,10 @@ const HorizontalReader = ({
 
       const retryDownloadResumable = await createPageDownloadResumable(pageNum)
       
-      pendingPageDownloadMap.current.push({
+      pendingPageDownloadMap.current[pageNum] = {
         downloadResumable: retryDownloadResumable.downloadResumable, 
-        savableDataUri: imgSavableDataUri, 
-        pageNum,
-      })
+        savableDataUri: imgSavableDataUri,
+      }
       
       const retryDownloadResult = await retryDownloadResumable.downloadResumable.downloadAsync()
       const downloadCompleted = await handleDownloadVerification(pageNum)
@@ -264,18 +265,9 @@ const HorizontalReader = ({
 
       }
 
-      const pageNumToPendingDownloadMap = {};
-      pendingPageDownloadMap.current.forEach((item, index) => {
-        pageNumToPendingDownloadMap[item.pageNum] = { index, item };
-      });
-
-      let targetPendingPageDownloadMap = pageNumToPendingDownloadMap[pageNum];
-
-      if(targetPendingPageDownloadMap) {
-        pendingPageDownloadMap.current[targetPendingPageDownloadMap.index] = {
-          ...pendingPageDownloadMap.current[targetPendingPageDownloadMap.index],
-          resolved: true,
-        };
+      pendingPageDownloadMap.current[pageNum] = {
+        ...pendingPageDownloadMap.current[pageNum],
+        resolved: true,
       }
       
       const retryImgSize = await getImageDimensions(retryDownloadResult.uri)
@@ -335,10 +327,11 @@ const HorizontalReader = ({
       const downloadResults = await Promise.all(pageDownloadResumables.map( async pageDownloadResumable => {
         const { savableDataUri, pageNum } = downloadPageFileUriMap[pageDownloadResumable.fileUri];
 
-        pendingPageDownloadMap.current.push({
+        // ADD ALL THE CREATED DOWNLOAD RESUMABLES TO THE PENDING DOWNLOAD LIST SO WE CAN TRACK THEIR SATATUS
+        pendingPageDownloadMap.current[pageNum] = {
           downloadResumable: pageDownloadResumable, 
-          savableDataUri, pageNum,
-        })
+          savableDataUri,
+        }
 
         const saveDataFileInfo = await FileSystem.getInfoAsync(savableDataUri)
 
@@ -349,11 +342,7 @@ const HorizontalReader = ({
         return pageDownloadResumable.downloadAsync()
       }))
 
-      // ADD ALL THE CREATED DOWNLOAD RESUMABLES TO THE PENDING DOWNLOAD LIST SO WE CAN TRACK THEIR SATATUS
-      const pageNumToPendingDownloadMap = {};
-      pendingPageDownloadMap.current.forEach((item, index) => {
-        pageNumToPendingDownloadMap[item.pageNum] = { index, item };
-      });
+      
 
       // CREATE A MAP TO COMPILE ALL THE PAGES AND SHOW THEM ALL AT ONCE
       let pageNumToImgSrcMap = {}
@@ -367,16 +356,13 @@ const HorizontalReader = ({
         
         if(!allowedStatusCode[downloadResult.status] || !downloadCompleted) {
           console.warn("An error occurred, trying to retry.")
-          let targetPendingPageDownloadMap = pageNumToPendingDownloadMap[pageNum];
-
-          if(!targetPendingPageDownloadMap) continue
-          pendingPageDownloadMap.current[targetPendingPageDownloadMap.index] = {
-            ...pendingPageDownloadMap.current[targetPendingPageDownloadMap.index],
+          
+          pendingPageDownloadMap.current[pageNum] = {
+            ...pendingPageDownloadMap.current[pageNum],
             resolved: true,
-          };
+          }
 
           await FileSystem.deleteAsync(savableDataUri, {idempotent: true})
-            
 
           const retryImgSrc = await retryPageDownload(pageNum, downloadResult.uri)
           if(!retryImgSrc.imgError) {
@@ -522,12 +508,11 @@ const HorizontalReader = ({
 
     setPageImages(prev => {
       return prev.map((prevPageImage, prevPageImageIdx) => {
-        const loadedPageImagesMapItem = loadedPageImagesMap.current[prevPageImageIdx]
 
         if(prevPageImageIdx === pageNum) {
           const imgSrc = retryDownloadResult
           loadedPageImagesMap.current[prevPageImageIdx] = {
-            ...loadedPageImagesMapItem,
+            ...loadedPageImagesMap.current[prevPageImageIdx],
             loaded: true,
           }
 
