@@ -85,6 +85,31 @@ const HorizontalReader = ({
       );
     }
   }, [])
+
+  const handleDownloadVerification = useCallback(async(pageNum) => {
+    const pageUrl = chapterPages[pageNum]
+    const pageFileName = shorthash.unique(pageUrl)
+    const pageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
+    const certificateJsonFileName = "-certificate.json"
+    const certificateFileUri = pageMangaDir.cachedFilePath + certificateJsonFileName
+
+    await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
+    
+    const pageFileInfo = await FileSystem.getInfoAsync(pageMangaDir.cachedFilePath)
+    const certificateFileInfo = await FileSystem.getInfoAsync(certificateFileUri)
+    
+    if(!pageFileInfo.exists || !certificateFileInfo.exists) return false;
+
+    const certificate = JSON.parse(await FileSystem.readAsStringAsync(certificateFileUri))
+    console.log("[verification] certificate:", certificate.totalBytesExpectedToWrite)
+    console.log("[verification] pageFileInfo.size:", pageFileInfo.size)
+
+    if(certificate.totalBytesExpectedToWrite === pageFileInfo.size) {
+      return true;
+    }
+
+    return false;
+  }, [])
   
   const handleImgOnLoadError = useCallback(async (pageNum, error, imgUri) => {
     setPageImages(prev => (
@@ -106,33 +131,20 @@ const HorizontalReader = ({
     const pageFileName = shorthash.unique(pageUrl)
     const pageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
     const savedataJsonFileName = "-saveData.json"
-    const certificateJsonFileName = "-certificate.json"
     const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
-    const certificateFileUri = pageMangaDir.cachedFilePath + certificateJsonFileName
-    
     
     await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
     
-    const pageFileInfo = await FileSystem.getInfoAsync(pageMangaDir.cachedFilePath)
-    const certificateFileInfo = await FileSystem.getInfoAsync(certificateFileUri)
-
     loadedPageImagesMap.current[pageNum] = {uri: pageMangaDir.cachedFilePath}
     
-    if(pageFileInfo.exists && certificateFileInfo.exists) {
-        
-        const certificate = JSON.parse(await FileSystem.readAsStringAsync(certificateFileUri))
-        console.log("certificate:", certificate.totalBytesExpectedToWrite)
-        console.log("pageFileInfo.size:", pageFileInfo.size)
+    const downloadCompleted = await handleDownloadVerification(pageNum);
 
-        if(certificate.totalBytesExpectedToWrite === pageFileInfo.size) {
-          return {
-            uri: pageMangaDir.cachedFilePath, pageNum, 
-            fileExist: true, savableDataUri
-          }
-  
-        }
-
+    if(downloadCompleted) {
+      return {
+        uri: pageMangaDir.cachedFilePath, pageNum, 
+        fileExist: true, savableDataUri
       }
+    }
 
     const pageDownloadResumable = await downloadPageData(
       currentManga.manga, 
@@ -228,23 +240,18 @@ const HorizontalReader = ({
       }
 
       const retryDownloadResumable = await createPageDownloadResumable(pageNum)
-      const retryDownloadResult = await retryDownloadResumable.downloadResumable.downloadAsync()
-
-      if(!retryDownloadResult) {
-        console.log(`Failed to retry page: ${pageNum}`)
-        return {
-          ...imgSrc,
-          imgError: new Error("Failed to retry")
-        }
-      }
-
+      
       pendingPageDownloadMap.current.push({
         downloadResumable: retryDownloadResumable.downloadResumable, 
         savableDataUri: imgSavableDataUri, 
         pageNum,
       })
+      
+      const retryDownloadResult = await retryDownloadResumable.downloadResumable.downloadAsync()
+      const downloadCompleted = await handleDownloadVerification(pageNum)
+      console.log("downloadCompleted sa retry", downloadCompleted)
 
-      if(!allowedStatusCode[retryDownloadResult.status]) {
+      if(!retryDownloadResult || !allowedStatusCode[retryDownloadResult.status] || !downloadCompleted) {
           console.error(`Failed to retry page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`)
           ToastAndroid.show(
             `Failed to retry page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`,
@@ -309,7 +316,7 @@ const HorizontalReader = ({
 
       if(loadedPagesCount === pageNumbersLoadingRange.size) return
 
-      console.log("Not all are loaded:", loadedPagesCount)
+      console.log(`Not all are loaded: ${loadedPagesCount}/${pageNumbersLoadingRange.size}` )
 
       // determine the already downloaded pages and thos that have to be downloaded 
       // also create a map of uri to other info of page
@@ -354,20 +361,11 @@ const HorizontalReader = ({
       for (let index = 0; index < downloadResults.length; index++) {
         const downloadResult = downloadResults[index];
         if(!downloadResult) continue
-
-        const downloadedFileInfo = await FileSystem.getInfoAsync(downloadResult.uri)
-        const downloadContentLength = parseInt(downloadResult.headers['content-length'])
-
-        let downloadedFileSize = 0;
-        let imgUri = downloadResult.uri
-        if(downloadedFileInfo.exists) downloadedFileSize = downloadedFileInfo.size
         const { pageNum, savableDataUri } = downloadPageFileUriMap[downloadResult.uri]
+        const downloadCompleted = await handleDownloadVerification(pageNum)
+        let imgUri = downloadResult.uri
         
-        
-        if(
-          !allowedStatusCode[downloadResult.status] ||
-          downloadContentLength !== downloadedFileSize 
-        ) {
+        if(!allowedStatusCode[downloadResult.status] || !downloadCompleted) {
           console.warn("An error occurred, trying to retry.")
           let targetPendingPageDownloadMap = pageNumToPendingDownloadMap[pageNum];
 
@@ -386,7 +384,7 @@ const HorizontalReader = ({
             console.warn("Success retrying to fetch the image.")
           } else {
             imgUri = null
-      }
+          }
         }
 
         const imgSize = await getImageDimensions(imgUri)
@@ -444,12 +442,11 @@ const HorizontalReader = ({
       setPageImages(prev => {
         let imgSrc;
         return prev.map((prevPageImage, prevPageImageIdx) => {
-          const loadedPageImagesMapItem = loadedPageImagesMap.current[prevPageImageIdx]
 
           if(pageNumToImgSrcMap[prevPageImageIdx]) {
             imgSrc = pageNumToImgSrcMap[prevPageImageIdx];
             loadedPageImagesMap.current[prevPageImageIdx] = {
-              ...loadedPageImagesMapItem,
+              ...loadedPageImagesMap.current[prevPageImageIdx],
               loaded: true,
             }
 
