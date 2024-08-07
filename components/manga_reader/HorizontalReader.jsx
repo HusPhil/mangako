@@ -235,63 +235,72 @@ const HorizontalReader = ({
 
   const retryPageDownload = async (pageNum, imgFileUri, imgSavableDataUri) => {
       const imgSrc = {imgSize: null, imgUri: null}
-      const imgFileInfo = await FileSystem.getInfoAsync(imgFileUri)
-      const imgSavableFileInfo = await FileSystem.getInfoAsync(imgSavableDataUri)
-
-      if(imgFileInfo.exists && imgFileUri) {
-        console.warn("prev file data deleted")
-        await FileSystem.deleteAsync(imgFileUri)
-      }
-
-      if(imgSavableFileInfo.exists && imgSavableDataUri) {
-        console.warn("prev savable data deleted")
-        await FileSystem.deleteAsync(imgSavableDataUri)
-      }
-
-      const retryDownloadResumable = await createPageDownloadResumable(pageNum)
       
-      pendingPageDownloadMap.current[pageNum] = {
-        downloadResumable: retryDownloadResumable.downloadResumable, 
-        savableDataUri: imgSavableDataUri,
-      }
-      
-      const retryDownloadResult = await retryDownloadResumable.downloadResumable.downloadAsync()
-      const downloadCompleted = await handleDownloadVerification(pageNum)
-      console.log("downloadCompleted sa retry", downloadCompleted)
-
-      if(!retryDownloadResult || !allowedStatusCode[retryDownloadResult.status] || !downloadCompleted) {
-          console.error(`Failed to retry page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`)
+      try {
+        const imgFileInfo = await FileSystem.getInfoAsync(imgFileUri)
+        const imgSavableFileInfo = await FileSystem.getInfoAsync(imgSavableDataUri)
+  
+        if(imgFileInfo.exists && imgFileUri) {
+          console.warn("prev file data deleted")
+          await FileSystem.deleteAsync(imgFileUri)
+        }
+  
+        if(imgSavableFileInfo.exists && imgSavableDataUri) {
+          console.warn("prev savable data deleted")
+          await FileSystem.deleteAsync(imgSavableDataUri)
+        }
+  
+        const retryDownloadResumable = await createPageDownloadResumable(pageNum)
+        
+        pendingPageDownloadMap.current[pageNum] = {
+          downloadResumable: retryDownloadResumable.downloadResumable, 
+          savableDataUri: imgSavableDataUri,
+        }
+        
+        const retryDownloadResult = await retryDownloadResumable.downloadResumable.downloadAsync()
+        const downloadCompleted = await handleDownloadVerification(pageNum)
+        console.log("downloadCompleted sa retry", downloadCompleted)      
+  
+        if(!retryDownloadResult || !allowedStatusCode[retryDownloadResult.status] || !downloadCompleted) {
+            console.error(`Failed to retry page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`)
+            ToastAndroid.show(
+              `Failed to retry page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`,
+              ToastAndroid.SHORT
+            )
+            return {
+              ...imgSrc,
+              imgError: new Error("Failed to retry")
+            }
+  
+        }
+  
+        pendingPageDownloadMap.current[pageNum] = {
+          ...pendingPageDownloadMap.current[pageNum],
+          resolved: true,
+        }
+        
+        const retryImgSize = await getImageDimensions(retryDownloadResult.uri)
+        if(retryImgSize.width > 0 && retryImgSize.height > 0) {
           ToastAndroid.show(
-            `Failed to retry page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`,
+            `Success retrying page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`,
             ToastAndroid.SHORT
           )
           return {
-            ...imgSrc,
-            imgError: new Error("Failed to retry")
+            imgSize: retryImgSize, 
+            imgUri: retryDownloadResult.uri
           }
-
-      }
-
-      pendingPageDownloadMap.current[pageNum] = {
-        ...pendingPageDownloadMap.current[pageNum],
-        resolved: true,
-      }
-      
-      const retryImgSize = await getImageDimensions(retryDownloadResult.uri)
-      if(retryImgSize.width > 0 && retryImgSize.height > 0) {
-        ToastAndroid.show(
-          `Success retrying page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`,
-          ToastAndroid.SHORT
-        )
-        return {
-          imgSize: retryImgSize, 
-          imgUri: retryDownloadResult.uri
         }
-      }
-
-      return {
-        ...imgSrc,
-        imgError: new Error("Failed to retry")
+  
+        return {
+          ...imgSrc,
+          imgError: new Error("Failed to retry")
+        }
+      } catch (error) {
+        console.error("An error occured while retrying.", error)
+        return {
+          ...imgSrc,
+          imgError: new Error("Failed to retry")
+        }
       }
   }
 
@@ -389,7 +398,7 @@ const HorizontalReader = ({
           }
         } 
         else {
-          console.error("An error occured during setting of NEWLY downloaded images.")
+          console.error("An error occured during setting of NEWLY downloaded images:", imgUri)
           pageNumToImgSrcMap[pageNum] = {
             imgSize,
             imgUri: null,
@@ -461,7 +470,7 @@ const HorizontalReader = ({
           if(prevPageImageIdx === pageNum) {
             return {
               ...prevPageImage, 
-              imgError: error, 
+              imgError: new Error("An error occured while loading the page"), 
               imgRetry: null,
             }
           }
@@ -499,22 +508,38 @@ const HorizontalReader = ({
     const pageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
     const savedataJsonFileName = "-saveData.json"
     const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
+    const TIMEOUT_THRESHOLD = 5000;
     
     await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
     
     const imgUri = pageMangaDir.cachedFilePath
-    console.log("BAGO:", pageNum, imgUri)
-    const retryDownloadResult = await retryPageDownload(pageNum, imgUri, savableDataUri)
+    
+    let retryDownloadResult = {imgError: new Error("Timeout")};
+    
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => (reject({
+        imgError: new Error("Errror after 5 secs")
+      })), TIMEOUT_THRESHOLD);
+    })
+
+    retryDownloadResult = await Promise.race([
+      timeoutPromise,
+      retryPageDownload(pageNum, imgUri, savableDataUri),
+    ])
+
+
+    console.log("retryDownloadResult sa HANDLEretry", retryDownloadResult)
+
     const downloadCompleted = await handleDownloadVerification(pageNum)
     console.log("downloadCompleted sa HANDLEretry", downloadCompleted)
 
-    if(retryDownloadResult.imgError || !downloadCompleted){
+    if(!retryDownloadResult || retryDownloadResult?.imgError || !downloadCompleted){
       setPageImages(prev => {
         return prev.map((prevPageImage, prevPageImageIdx) => {
           if(prevPageImageIdx === pageNum) {
             return {
               ...prevPageImage, 
-              imgError: retryDownloadResult.imgError, 
+              imgError: retryDownloadResult?.imgError, 
               imgRetry: null,
             }
           }
