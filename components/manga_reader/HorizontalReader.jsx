@@ -559,7 +559,7 @@ const HorizontalReader = ({
     const pageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
     const savedataJsonFileName = "-saveData.json"
     const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
-    const TIMEOUT_THRESHOLD = 5000;
+    const TIMEOUT_THRESHOLD = 60000;
     
     await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
     
@@ -569,10 +569,19 @@ const HorizontalReader = ({
     let retryDownloadResult = {imgError: new Error("Timeout")};
     
     //createa a timeout promise for when to indicate that the retry fetching has taken too long
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => (reject({
-        imgError: new Error("Errror after 5 secs")
-      })), TIMEOUT_THRESHOLD);
+    const timeoutPromise = new Promise((resolve, reject) => {
+      setTimeout(async () => {
+
+        cancelPendingDownloads()
+          .then(() => (
+              resolve({
+                  imgError: new Error(`No response after ${TIMEOUT_THRESHOLD}ms`)
+                } 
+              )
+            )
+          )
+        
+      }, TIMEOUT_THRESHOLD);
     })
 
     //set the retry download result to which one finish first
@@ -781,7 +790,10 @@ const HorizontalReader = ({
       onTouchStart={handleOnTouchStart}
       onTouchEnd={(e) => {
         console.log("e.nativeEvent.touches.length:", e.nativeEvent.touches.length)
+
         if(currentZoomLevel.current === 1 && e.nativeEvent.touches.length === 0) {
+        console.log("magontap ka a")
+
           onTap()
         }
       }}
@@ -815,9 +827,7 @@ const HorizontalReader = ({
             // pagingEnabled  
             // horizontal
           />
-        </ReactNativeZoomableView>
-      {/* <View className="flex-1 relative">
-      </View> */}
+         </ReactNativeZoomableView>
     </View>
   );
 };

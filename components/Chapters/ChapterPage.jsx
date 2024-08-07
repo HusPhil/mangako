@@ -42,9 +42,8 @@ const ChapterPage = forwardRef(({
     return convertedResult.toFixed(2);
   }, [])
 
-  const handleRetry = useCallback(() => {
-    console.log("HELLORETRY:", id)
-    onRetry(pageNum, pageUrl)
+  const handleRetry = useCallback((gestureEvent) => {
+    
   }, [pageNum, pageUrl])
 
   useEffect(() => {
@@ -110,7 +109,11 @@ const ChapterPage = forwardRef(({
           <Text className="font-pregular text-white text-base">Something went wrong</Text>
           <Text className="font-pregular text-white text-base">while loading this page</Text>
           
-          <TouchableOpacity onPress={handleRetry}>
+          <TouchableOpacity onPress={(gestureEvent) => {
+            gestureEvent.stopPropagation()
+            console.log("HELLORETRYs:")
+            onRetry(pageNum, pageUrl)
+          }}>
             <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Click this to retry</Text>
           </TouchableOpacity>
         </View>
