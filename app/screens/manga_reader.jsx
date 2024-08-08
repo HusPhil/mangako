@@ -9,8 +9,7 @@ import { debounce } from 'lodash';
 
 import * as backend from "./_manga_reader"
 import { CONFIG_READ_WRITE_MODE, readMangaConfigData, saveMangaConfigData } from '../../services/Global';
-import VerticalReader from '../../components/manga_reader/VerticalReader';
-import HorizontalReader from '../../components/manga_reader/HorizontalReader';
+import MangaReaderComponent from '../../components/manga_reader/MangaReaderComponent';
 import DropDownList from '../../components/modal/DropdownList';
 import ModalPopup from '../../components/modal/ModalPopup';
 import HorizontalRule from '../../components/HorizontalRule';
@@ -208,6 +207,18 @@ const MangaReaderScreen = () => {
 
     }
 
+    const handleDropDownValueChange = useCallback(async (data) => {
+        dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
+        await saveMangaConfigData (
+            mangaUrl, 
+            chapterDataRef.current.chapterUrl, 
+            {"readingModeIndex": backend.READER_MODES.indexOf(data)}, 
+            CONFIG_READ_WRITE_MODE.MANGA_ONLY
+        )
+        dispatch({type: READER_ACTIONS.SET_READER_MODE, payload: data})
+    }
+    , [])
+
     return (
         <View className="h-full bg-primary">
             <ModalPopup visible={state.showModal} handleClose={() => {dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})}}>
@@ -227,16 +238,7 @@ const MangaReaderScreen = () => {
                         title={"Reading mode:"}
                         otherContainerStyles={'rounded-md p-2 px-4  z-50 '}
                         listItems={backend.READER_MODES}
-                        onValueChange={async (data) => {
-                            dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
-                            await saveMangaConfigData (
-                                mangaUrl, 
-                                chapterDataRef.current.chapterUrl, 
-                                {"readingModeIndex": backend.READER_MODES.indexOf(data)}, 
-                                CONFIG_READ_WRITE_MODE.MANGA_ONLY
-                            )
-                            dispatch({type: READER_ACTIONS.SET_READER_MODE, payload: data})
-                        }}
+                        onValueChange={handleDropDownValueChange}
                         selectedIndex={backend.READER_MODES.indexOf(state.readingMode)}
                     />
                     </View>                
@@ -268,7 +270,7 @@ const MangaReaderScreen = () => {
                 !state.errorData ? (
                     <View>
                         {state.readingMode === backend.READER_MODES[0] && (
-                            <HorizontalReader 
+                            <MangaReaderComponent 
                                 chapterPages={state.chapterPages}
                                 currentManga={{
                                     manga: mangaUrl,
@@ -283,7 +285,7 @@ const MangaReaderScreen = () => {
                         )}
 
                         {state.readingMode === backend.READER_MODES[1] && (
-                            <HorizontalReader 
+                            <MangaReaderComponent 
                                 chapterPages={state.chapterPages}
                                 currentManga={{
                                     manga: mangaUrl,
@@ -298,7 +300,7 @@ const MangaReaderScreen = () => {
                         )}
 
                         {state.readingMode === backend.READER_MODES[2] && (
-                            <HorizontalReader 
+                            <MangaReaderComponent 
                                 chapterPages={state.chapterPages}
                                 currentManga={{
                                     manga: mangaUrl,
@@ -336,4 +338,4 @@ const MangaReaderScreen = () => {
     )
 }
 
-export default MangaReaderScreen
+export default React.memo(MangaReaderScreen)

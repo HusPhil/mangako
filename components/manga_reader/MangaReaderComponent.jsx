@@ -16,7 +16,7 @@ const allowedStatusCode = Object.freeze({
   206: "PARTIAL",
 })
 
-const HorizontalReader = ({ 
+const MangaReaderComponent = ({ 
     currentManga, chapterPages, 
     onTap, onPageChange, onScroll, 
     currentPage, inverted,
@@ -865,4 +865,4 @@ const HorizontalReader = ({
   );
 };
 
-export default React.memo(HorizontalReader);
+export default React.memo(MangaReaderComponent);

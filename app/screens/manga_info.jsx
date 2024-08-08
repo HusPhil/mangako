@@ -111,6 +111,7 @@ const MangaInfoScreen = () => {
             onRefresh={handleRefresh}
             headerComponent={
               <View>
+                
                 {mangaInfo.mangaDetails && mangaInfo.mangaDetails.tags.length > 0 && mangaInfo.mangaDetails.tags[0] !== "" && (
                   <View className="flex-row flex-wrap mt-5 mx-4">
                   {mangaInfo.mangaDetails.tags.map((g, i) => (
@@ -127,6 +128,7 @@ const MangaInfoScreen = () => {
                     </Accordion>
                   </View>
                 )}
+                
                 <HorizontalRule displayText="Chapter list" otherStyles={"mx-4 sticky"} />
               </View>
             }
