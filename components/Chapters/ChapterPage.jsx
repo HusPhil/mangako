@@ -62,7 +62,7 @@ const ChapterPage = forwardRef(({
   const calculatedAspectRatio = aspectRatio || imgSrc?.imgSize?.width / imgSrc?.imgSize?.height;
 
   return (
-    <View key={id}>
+    <View>
       {!imgSrc.imgError ? (
         imgSrc.imgUri ? (
           <View className="mt-[-1px]">
@@ -74,6 +74,7 @@ const ChapterPage = forwardRef(({
                 aspectRatio: calculatedAspectRatio,
                 position: 'relative'
               }}
+              recyclingKey={id}
               cachePolicy='none'
               allowDownscaling={false}
               contentFit='cover'

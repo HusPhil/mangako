@@ -46,7 +46,10 @@ const HorizontalReader = ({
   
   const readerCurrentPage = useRef(currentPage)
   const currentZoomLevel = useRef(1);
-  const lastTouchTimeStamp = useRef(0);
+  const lastTouchStartTimeStamp = useRef(0);  
+  const lastTouchEndTimeStamp = useRef(0);  
+  const touchStartPageLocation = useRef({pageX: 0, pageY: 0});
+  const singleTapTimeout = useRef(null)
 
   useEffect(() => {
     
@@ -638,10 +641,8 @@ const HorizontalReader = ({
   const handleViewableItemsChanged = useCallback(async({ viewableItems }) => {
 
     if(viewableItems.length > 0) {
-      const currentPageNum = viewableItems.splice(-1)[0].index;
+      const currentPageNum = horizontal ? viewableItems[0].index : viewableItems.splice(-1)[0].index;
       readerCurrentPage.current = currentPageNum;
-      const pageUrl = chapterPages[currentPageNum]
-
       // call the callback func to update the ui back in the parent component
       onPageChange(currentPageNum)
       await debouncedLoadPageImages(currentPageNum)
@@ -727,32 +728,25 @@ const HorizontalReader = ({
 
   const handleOnTouchStart = useCallback(async (gestureEvent) => {
 
-    const DOUBLE_TAP_TIME_THRESHOLD = 200
     const currentTouchTimeStamp = gestureEvent.nativeEvent.timestamp
+    const { pageX, pageY, } = gestureEvent.nativeEvent
 
-    const calculatedTimeStamp = currentTouchTimeStamp - lastTouchTimeStamp.current 
-    const pageX = gestureEvent.nativeEvent.pageX
-    const pageY = gestureEvent.nativeEvent.pageY
-    const numOfTouch = gestureEvent.nativeEvent.touches.length
+    // set the new info to share with other components
+    touchStartPageLocation.current = {pageX, pageY}
+    lastTouchStartTimeStamp.current = currentTouchTimeStamp; 
+  }, [])
 
-    
+  const onDoubleTap = useCallback(() => {
 
-    if(numOfTouch > 1 && currentZoomLevel.current <= 1) {
-      await zoomableViewRef.current.zoomBy(0.5)
+    if(currentZoomLevel.current <= 1) {
+      zoomableViewRef.current.zoomBy(0.5)
       return
     }
     
-    if(
-      calculatedTimeStamp <= DOUBLE_TAP_TIME_THRESHOLD &&
-      currentZoomLevel.current <= 1 && numOfTouch === 1
-    ) {
-      await zoomableViewRef.current.zoomTo(2)
-      setTimeout(async () => {
-        await zoomableViewRef.current.moveTo(pageX, pageY)
-      }, 500);
+    if(currentZoomLevel.current <= 1) {
+      zoomableViewRef.current.zoomTo(2)
     }
 
-    lastTouchTimeStamp.current = currentTouchTimeStamp;
   }, [])
 
   const handleOnTransform = useCallback(({zoomLevel}) => {
@@ -788,14 +782,53 @@ const HorizontalReader = ({
   return (
     <View className="h-full w-full"
       onTouchStart={handleOnTouchStart}
-      onTouchEnd={(e) => {
-        console.log("e.nativeEvent.touches.length:", e.nativeEvent.touches.length)
+      onTouchEnd={(gestureEvent) => {
+        const TAP_DURATION_THRESHOLD = 200; //in ms
+        const DOUBLE_TAP_TIME_THRESHOLD = 350; // in ms
+        const TAP_DISTANCE_THRESHOLD = 10; //in px
 
-        if(currentZoomLevel.current === 1 && e.nativeEvent.touches.length === 0) {
-        console.log("magontap ka a")
+        const currentTouchTimeStamp = gestureEvent.nativeEvent.timestamp
+        const touchDuration = currentTouchTimeStamp - lastTouchStartTimeStamp.current;
+        const numOfTouch =  gestureEvent.nativeEvent.touches.length
 
-          onTap()
+        console.log("numOfTouch", numOfTouch)
+
+        const { pageX:touchEndPageX, pageY:touchEndPageY } = gestureEvent.nativeEvent;
+        const { pageX:touchStartPageX, pageY:touchStartPageY } = touchStartPageLocation.current;
+
+        const distanceX = Math.abs(touchEndPageX - touchStartPageX)
+        const distanceY = Math.abs(touchEndPageY - touchStartPageY)
+
+        const isTapGesture = touchDuration < TAP_DURATION_THRESHOLD &&
+          distanceX < TAP_DISTANCE_THRESHOLD &&
+          distanceY < TAP_DISTANCE_THRESHOLD 
+          // numOfTouch === 0
+        
+        const isDoubleTapGesture = currentTouchTimeStamp - lastTouchEndTimeStamp.current < DOUBLE_TAP_TIME_THRESHOLD;
+        
+        console.log("touchDuration", touchDuration)
+        console.log("distanceX", distanceX)
+        console.log("distanceY", distanceY)
+
+        if(!isTapGesture) {
+          lastTouchEndTimeStamp.current = currentTouchTimeStamp
+          return
         }
+
+        if(isDoubleTapGesture && singleTapTimeout.current) {
+
+          clearTimeout(singleTapTimeout.current)
+          onDoubleTap()
+          
+          lastTouchEndTimeStamp.current = currentTouchTimeStamp
+          return
+        }
+
+        singleTapTimeout.current = setTimeout(() => {
+          onTap()
+        }, DOUBLE_TAP_TIME_THRESHOLD);
+
+        lastTouchEndTimeStamp.current = currentTouchTimeStamp        
       }}
     >
       <ReactNativeZoomableView
@@ -818,18 +851,18 @@ const HorizontalReader = ({
             initialScrollIndex={currentPage}
             renderItem={renderItem}
             keyExtractor={keyExtractor}
-            estimatedItemSize={screenHeight}
-            // estimatedItemSize={horizontal ? screenWidth : screenHeight}
+            estimatedItemSize={horizontal ? screenWidth : screenHeight}
             onViewableItemsChanged={handleViewableItemsChanged}
             onEndReached={handleEndReached}
             onEndReachedThreshold={0.5}
             ListFooterComponent={ListFooterComponent}
-            // pagingEnabled  
-            // horizontal
+            pagingEnabled={horizontal}
+            horizontal={horizontal}
+            inverted={inverted} 
           />
          </ReactNativeZoomableView>
     </View>
   );
 };
 
-export default HorizontalReader;
+export default React.memo(HorizontalReader);

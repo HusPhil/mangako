@@ -228,6 +228,7 @@ const MangaReaderScreen = () => {
                         otherContainerStyles={'rounded-md p-2 px-4  z-50 '}
                         listItems={backend.READER_MODES}
                         onValueChange={async (data) => {
+                            dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
                             await saveMangaConfigData (
                                 mangaUrl, 
                                 chapterDataRef.current.chapterUrl, 
@@ -276,7 +277,8 @@ const MangaReaderScreen = () => {
                                 onTap={handleTap}
                                 currentPage={state.currentPage}
                                 onPageChange={handlePageChange}
-                                horizontal
+                                inverted={false}
+                                horizontal={true}
                             />
                         )}
 
@@ -289,14 +291,14 @@ const MangaReaderScreen = () => {
                                 }}
                                 onPageChange={handlePageChange}
                                 onTap={handleTap}
-                                currentPage={state.chapterPages.length - 1 - state.currentPage}
-                                inverted
-                                horizontal
+                                currentPage={state.currentPage}
+                                inverted={true}
+                                horizontal={true}
                             />
                         )}
 
                         {state.readingMode === backend.READER_MODES[2] && (
-                            <VerticalReader 
+                            <HorizontalReader 
                                 chapterPages={state.chapterPages}
                                 currentManga={{
                                     manga: mangaUrl,
@@ -305,9 +307,8 @@ const MangaReaderScreen = () => {
                                 onPageChange={handlePageChange}
                                 onTap={handleTap}
                                 currentPage={state.currentPage}
-                                savedScrollOffsetY={state.scrollOffSetY}
-                                onScroll={handleVertScroll}
-                                
+                                inverted={false}
+                                horizontal={false}
                             />
                         )}
                         <View pointerEvents='none' className="bg-transparent absolute bottom-2 items-center w-full">
