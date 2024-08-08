@@ -52,10 +52,10 @@ const MangaHeader = ({
               </View>
               <View className="ml-3 mt-1 w-[65%]">
                 <Text className="text-white font-pmedium text-lg" numberOfLines={3}>{mangaTitle}</Text>
-                <ScrollView className="rounded-md max-w-[98%] max-h-[60%]" showsVerticalScrollIndicator={false}>
-                  <Text className="text-white p-2 font-pregular text-xs text-justify">{details ? details.desc : "Loading"}</Text>
+                <ScrollView className="rounded-mdmax-h-[60%]" showsVerticalScrollIndicator={false}>
+                  <Text className="text-white p-2 pr-1 max-w-[98%] font-pregular text-xs text-justify">{details ? details.desc : "Loading"}</Text>
                 </ScrollView>
-                <Text numberOfLines={2} className="text-white p-2 font-pregular text-xs text-justify">{details ? `By: ${details.author}` : ""}</Text>
+                <Text numberOfLines={2} className="text-white p-2 pr-1 font-pregular text-xs text-justify">{details ? `By: ${details.author}` : ""}</Text>
               </View>
               
             </View>
