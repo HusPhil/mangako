@@ -42,25 +42,24 @@ const ModalPopup = ({ otherStyles, children, visible, handleClose }) => {
         <View
           style={[
             {
-              justifyContent: 'flex-end',
               alignItems: 'center',
               backgroundColor: 'rgba(0, 0, 0, 0.5)',
               padding: 10,
               height: '100%',
             },
-            otherStyles,
+            
           ]}
         >
           <Animated.View
-            style={{
-              transform: [{ translateY: slideUp }],
-              height: 'auto',
-              width: '100%',
-              borderRadius: 10,
-              backgroundColor: colors.secondary.DEFAULT,
-              shadowColor: 'black',
-              elevation: 3,
-            }}
+            style={[
+              otherStyles,
+              {
+                transform: [{ translateY: slideUp }],
+                height: 'auto',
+                width: '100%',
+                borderRadius: 10,
+              }
+            ]}
           >
             {children}
           </Animated.View>

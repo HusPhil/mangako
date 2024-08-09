@@ -18,6 +18,7 @@ import * as FileSystem from 'expo-file-system';
 import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
 import { readerReducer, INITIAL_STATE } from '../../redux/readerScreen/readerReducer';
 import { READER_ACTIONS } from '../../redux/readerScreen/readerActions';
+import colors from '../../constants/colors';
 
 const MangaReaderScreen = () => {
     const {mangaUrl, currentChapterData, currentChapterIndex } = useLocalSearchParams()
@@ -221,48 +222,52 @@ const MangaReaderScreen = () => {
 
     return (
         <View className="h-full bg-primary">
-            <ModalPopup visible={state.showModal} handleClose={() => {dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})}}>
-                <View className="mx-4">
-
-                    <TouchableOpacity onPress={handleReadFinish}>
-                        <View className="justify-center items-center w-full flex-row ">
-                            <Text numberOfLines={1} className="text-white font-pregular text-base text-center pr-1 py-3 flex-1 ">{chapterDataRef.current.chTitle}</Text>
-                            {state.finished && <Feather name="check-circle" size={24} color="red" />}
-                        </View>
-                    </TouchableOpacity>
-
-                    <HorizontalRule />
-                   
-                    <View className="w-full">
-                    <DropDownList
-                        title={"Reading mode:"}
-                        otherContainerStyles={'rounded-md p-2 px-4  z-50 '}
-                        listItems={backend.READER_MODES}
-                        onValueChange={handleDropDownValueChange}
-                        selectedIndex={backend.READER_MODES.indexOf(state.readingMode)}
-                    />
-                    </View>                
-                
-                <View className="flex-row justify-between m-2 my-3">
-                    <View className="flex-row justify-between">
-                        <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md " onPress={async () => {
-                            await handleChapterNavigation(backend.CHAPTER_NAVIGATION.PREV)
-                        }}>
-                            <AntDesign name="stepbackward" size={12} color="white" />
+            <ModalPopup 
+                visible={state.showModal} otherStyles={{backgroundColor: 'transparent',}}
+                handleClose={() => {dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})}}
+            
+            >
+                <View className="h-full w-full justify-end items-center bg-transparent">
+                    <View className="bg-secondary justify-end rounded-md p-1 px-2">
+                        <TouchableOpacity onPress={handleReadFinish}>
+                            <View className="justify-center items-center w-full flex-row ">
+                                <Text numberOfLines={1} className="text-white font-pregular text-base text-center pr-1 py-3 flex-1 ">{chapterDataRef.current.chTitle}</Text>
+                                {state.finished && <Feather name="check-circle" size={24} color="red" />}
+                            </View>
                         </TouchableOpacity>
-                        
-                        <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md ml-2" onPress={async () => {
-                            await handleChapterNavigation(backend.CHAPTER_NAVIGATION.NEXT)
-                        }}>
-                            <AntDesign name="stepforward" size={12} color="white" />
-                        </TouchableOpacity> 
+
+                        <HorizontalRule />
+                    
+                        <View className="w-full">
+                            <DropDownList
+                                title={"Reading mode:"}
+                                otherContainerStyles={'rounded-md p-2 px-4  z-50 '}
+                                listItems={backend.READER_MODES}
+                                onValueChange={handleDropDownValueChange}
+                                selectedIndex={backend.READER_MODES.indexOf(state.readingMode)}
+                            />
+                        </View>                
+                    
+                        <View className="flex-row justify-between m-2 my-3">
+                            <View className="flex-row justify-between">
+                                <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md " onPress={async () => {
+                                    await handleChapterNavigation(backend.CHAPTER_NAVIGATION.PREV)
+                                }}>
+                                    <AntDesign name="stepbackward" size={12} color="white" />
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md ml-2" onPress={async () => {
+                                    await handleChapterNavigation(backend.CHAPTER_NAVIGATION.NEXT)
+                                }}>
+                                    <AntDesign name="stepforward" size={12} color="white" />
+                                </TouchableOpacity> 
+                            </View>
+
+                            <TouchableOpacity className="py-1 px-3 bg-accent rounded-md flex-1 ml-4 " onPress={handleClearCache}>
+                                <Text className="text-white font-pregular text-center">Clear cache</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
-
-                    <TouchableOpacity className="py-1 px-3 bg-accent rounded-md flex-1 ml-4 " onPress={handleClearCache}>
-                        <Text className="text-white font-pregular text-center">Clear cache</Text>
-                    </TouchableOpacity>
-                </View>
-
                 </View>
             
           </ModalPopup>

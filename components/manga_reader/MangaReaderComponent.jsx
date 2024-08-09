@@ -22,6 +22,7 @@ const MangaReaderComponent = ({
     currentPage, inverted,
     horizontal, vertical,
   }) => {
+    
   const [pageImages, setPageImages] = useState(() => 
     chapterPages.map((pageUrl) => ({
       id: pageUrl,

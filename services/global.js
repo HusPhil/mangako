@@ -92,3 +92,48 @@ export const getMangaDirectory = (mangaUrl, chapterUrl, type, filename) => {
 
     return {cachedFolderPath, cachedFilePath}
 }
+
+export const readSavedMangaList = async () => {
+  const fileName = "mangaList.json"
+  const folderName = "mangaList"
+  const folderPath = `${FileSystem.documentDirectory}${folderName}`
+  const filePath = `${FileSystem.documentDirectory}${folderName}/${fileName}`
+  let savedMangaList = []
+
+  try {
+    await ensureDirectoryExists(folderPath)
+
+    const fileInfo = await FileSystem.getInfoAsync(filePath)
+
+    if(fileInfo.exists) {
+      const retrievedFileData = await FileSystem.readAsStringAsync(filePath)
+      savedMangaList = JSON.parse(retrievedFileData)
+    }
+
+  } catch (error) {
+    console.error(error)
+  }
+
+  return savedMangaList;
+  
+}
+
+export const saveMangaList = async (mangaListToSave) => {
+  const fileName = "mangaList.json"
+  const folderName = "mangaList"
+  const folderPath = `${FileSystem.documentDirectory}${folderName}`
+  const filePath = `${FileSystem.documentDirectory}${folderName}/${fileName}`
+
+  try {
+    await ensureDirectoryExists(folderPath)
+
+    await FileSystem.writeAsStringAsync(
+      filePath,
+      JSON.stringify(mangaListToSave),
+      {encoding: FileSystem.EncodingType.UTF8}
+    )
+
+  } catch (error) {
+    console.error(error)
+  }
+}
