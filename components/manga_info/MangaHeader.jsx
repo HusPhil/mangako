@@ -1,17 +1,101 @@
-import { View, Text, ScrollView, ImageBackground, TouchableOpacity } from 'react-native';
+import React, {useEffect, useState} from 'react';
+import { View, Text, ScrollView, ImageBackground, TouchableOpacity, FlatList } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { MangaCard } from '../../components/manga_menu';
+import { useCallback } from 'react';
+import ModalPopup from '../modal/ModalPopup';
+import HorizontalRule from '../HorizontalRule';
+import colors from '../../constants/colors';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { readSavedMangaList } from '../../services/Global';
+import TabListItem from '../manga_home/TabListItem';
+
 
 const MangaHeader = ({
     mangaCover, 
     mangaId, 
     mangaTitle,
+    mangaUrl,
     isLoading,
     details
 }) => {
+  const [showModal, setShowModal] = useState(false)
+  const [tabs, setTabs] = useState([])
+  const [selectedTabs, setSelectedTabs] = useState([])
+
+  useEffect(() => {
+
+    const AsyncEffect = async () => {
+      const savedMangaList = await readSavedMangaList();
+      setTabs(savedMangaList)
+    }
+    AsyncEffect()
+
+  }, [])
+
+  const handleShowModal = useCallback(() => {
+    setShowModal(prev => !prev)
+  }, [])
+
+  const handleAddToList = useCallback(async () => {
+    for (const selectedTab of selectedTabs) {
+      
+      console.log("selectedTab:", selectedTab)
+    }
+  }, [selectedTabs])
+
+  const handleSelectItem = useCallback(async (selectedItem) => {
+    // console.log(selectedItem)
+    if(!selectedTabs.includes(selectedItem)) {
+      setSelectedTabs(prev => {
+        const newSelectedTabs = [...prev]
+        newSelectedTabs.push(selectedItem)
+        return newSelectedTabs
+      })
+    }
+    else {
+      setSelectedTabs(prev => (
+        prev.filter(item => item !== selectedItem)
+      ))
+    }
+  }, [selectedTabs])
+
+  const renderItem = ({item}) => {
+    return (
+      <TabListItem item={item} onSelectItem={handleSelectItem}
+      iconComponent={<MaterialIcons name="check-circle-outline" size={15} color="white" />}/>
+    );
+  };
+
+  const keyExtractor = useCallback((item, index) => {
+    return `${item}-${index}`;
+  }, [])
+
   return (
-    <View className="">
+    <View>
+      <ModalPopup visible={showModal} handleClose={handleShowModal} otherStyles={{backgroundColor: 'transparent', alignSelf: 'center',}}>
+        <View className="h-full w-full justify-center items-center px-3 bg-transparent self-center">
+          <View className="w-full bg-secondary rounded-md p-3 max-h-[420px]">
+            <Text className="text-white font-pregular text-center pb-2">Select the Tabs you want to delete</Text>
+            <HorizontalRule /> 
+            <FlatList
+              className="mt-3"
+              data={tabs}
+              keyExtractor={keyExtractor}
+              renderItem={renderItem}
+            />
+            <TouchableOpacity className="border-2 mt-3 border-white rounded-md py-1 px-3 self-center flex-row justify-between"
+              onPress={handleAddToList}>
+              <View>
+                <MaterialIcons name="add-circle-outline" size={15} color="white" />
+              </View> 
+              <Text className=" text-center text-xs font-pregular text-white ml-1">Add to List</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ModalPopup>
+      
         <ScrollView>
           <View>
           
@@ -42,7 +126,7 @@ const MangaHeader = ({
                 </MangaCard>
                 {!isLoading && (
                   <TouchableOpacity className="rounded-md p-1  border-white border flex-row justify-center items-center"
-                      onPress={()=>{console.log("HELLO WORLD")}}>
+                      onPress={handleShowModal}>
                       <Text className="font-pregular text-white text-center mr-1" style={{fontSize: 11, textShadowColor: "#000", textShadowRadius: 10,}}>
                         Add to List
                       </Text>

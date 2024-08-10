@@ -107,19 +107,22 @@ const Index = () => {
   }
 
   const deleteTabConfirmed = useCallback(async () => {
-    const retrievedMangaList = await readSavedMangaList()
-    console.log("tabsToDelete", tabsToDelete)
+    await saveMangaList([{
+      tabTitle: "DEFAULT",
+    }])
+    // const retrievedMangaList = await readSavedMangaList()
+    // console.log("tabsToDelete", tabsToDelete)
 
-    const mangaListToSave = retrievedMangaList.filter(
-      (tabListItem) => !tabsToDelete.includes(tabListItem)
-    );
+    // const mangaListToSave = retrievedMangaList.filter(
+    //   (tabListItem) => !tabsToDelete.includes(tabListItem)
+    // );
     
-    console.log("mangaListToSave", mangaListToSave)
+    // console.log("mangaListToSave", mangaListToSave)
 
-    await saveMangaList(mangaListToSave)
-    setData(mangaListToSave)
-    setShowModal(MODAL_MODES.HIDDEN)
-    setTabsToDelete([])
+    // await saveMangaList(mangaListToSave)
+    // setData(mangaListToSave)
+    // setShowModal(MODAL_MODES.HIDDEN)
+    // setTabsToDelete([])
   }, [tabsToDelete])
 
   const deleteTabCanceled = useCallback(() => {
@@ -205,7 +208,8 @@ const Index = () => {
 
   const renderItem = ({item}) => {
     return (
-      <TabListItem item={item} onSelectItem={handleSelectItem}/>
+      <TabListItem item={item} onSelectItem={handleSelectItem}
+      iconComponent={<MaterialIcons name="delete-outline" size={18} color={colors.accent.DEFAULT} />}/>
     );
   };
 
@@ -228,8 +232,9 @@ const Index = () => {
           )} 
           {showModal === MODAL_MODES.ADD_TAB && (
               <View className="w-full bg-secondary rounded-md p-3 max-h-[420px]">
-                <Text className="text-white font-pregular text-center">Add a new Tab on the List!</Text>
-                <View className="flex-row px-4 pt-2 items-center">
+                <Text className="text-white font-pregular text-center pb-2">Add a new Tab on the List!</Text>
+                <HorizontalRule />
+                <View className="flex-row px-4 pt-2 items-center mt-2">
                     <TextInput 
                       placeholder='ex: Favorites' 
                       placeholderTextColor={colors.secondary[100]} 
@@ -241,9 +246,12 @@ const Index = () => {
                       selectionColor={colors.accent.DEFAULT}
                     />
                 </View>
-                <TouchableOpacity className="bg-accent-100 w-[80%] rounded-md mt-3 self-center"
+                <TouchableOpacity className="flex-row justify-between border-2 border-white py-1 px-2  rounded-md mt-3 self-center"
                   onPress={handleAddTab}>
-                  <Text className=" text-center font-pregular text-white">Add new Tab</Text>
+                  <View>
+                  <MaterialIcons name="add-circle-outline" size={15} color="white" />
+                  </View>
+                  <Text className=" text-center text-xs font-pregular text-white ml-1">Add Tab</Text>
                 </TouchableOpacity>
               </View>
           )}
@@ -262,9 +270,9 @@ const Index = () => {
               <TouchableOpacity className="border-2 mt-3 border-accent rounded-md py-1 px-3 self-center flex-row justify-between"
               onPress={handleDeleteTab}>
                 <View>
-                  <MaterialIcons name="delete-outline" size={18} color={colors.accent.DEFAULT} />
+                  <MaterialIcons name="delete-outline" size={15} color={colors.accent.DEFAULT} />
                 </View>
-                <Text className="text-accent text-center font-pregular ml-1">Delete</Text>
+                <Text className="text-accent text-xs text-center font-pregular ml-1">Delete</Text>
               </TouchableOpacity>
             </View>
           )}

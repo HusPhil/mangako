@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import colors from '../../constants/colors';
 
-const TabListItem = ({item, onSelectItem}) => {
+const TabListItem = ({item, onSelectItem, iconComponent}) => {
     const [isSelected, setIsSelected] = useState(false);
 
     const handleSelectItem = () => {
@@ -25,7 +25,7 @@ const TabListItem = ({item, onSelectItem}) => {
 
             {isSelected && (
             <View>
-                <MaterialIcons name="delete-outline" size={18} color={colors.accent.DEFAULT} />
+                {iconComponent}
             </View>
             )}
 

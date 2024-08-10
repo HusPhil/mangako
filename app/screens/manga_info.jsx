@@ -94,6 +94,7 @@ const MangaInfoScreen = () => {
           mangaCover={mangaCover}
           mangaId={mangaId}
           mangaTitle={mangaTitle}
+          mangaUrl={mangaUrl}
           details={mangaInfo ? mangaInfo.mangaDetails : null}
           isLoading={isLoading}
         />
