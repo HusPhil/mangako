@@ -25,7 +25,9 @@ const MangaHeader = ({
   const [selectedTabs, setSelectedTabs] = useState([])
 
   useEffect(() => {
-
+    console.log(
+      mangaId, mangaCover, mangaTitle, mangaUrl
+    )
     const AsyncEffect = async () => {
       const savedMangaList = await readSavedMangaList();
       setTabs(savedMangaList)
@@ -39,6 +41,8 @@ const MangaHeader = ({
   }, [])
 
   const handleAddToList = useCallback(async () => {
+    const retrievedMangaList = await readSavedMangaList()
+
     for (const selectedTab of selectedTabs) {
       
       console.log("selectedTab:", selectedTab)

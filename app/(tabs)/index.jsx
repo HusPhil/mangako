@@ -14,6 +14,7 @@ import { readSavedMangaList, saveMangaList } from '../../services/Global';
 import { FlashList } from '@shopify/flash-list';
 import HorizontalRule from '../../components/HorizontalRule';
 import TabListItem from '../../components/manga_home/TabListItem';
+import { MangaGrid } from '../../components/manga_menu';
 
 
 
@@ -38,7 +39,7 @@ const HomeScreen = ({ title }) => (
 const Index = () => {
 
   const [showModal, setShowModal] = useState(MODAL_MODES.HIDDEN)
-  const [data, setData] = useState([])
+  const [tabs, setTabs] = useState([])
   const [tabTitleToAdd, setTabTitleToAdd] = useState('')
   const [tabsToDelete, setTabsToDelete] = useState([])
   const faveData = ['Reading', 'Queue', 'Completed', 'Dropped', "KinemeMoNaMayMahabangPangalanTimesTwoKinemeMoNaMayMahabangPangalanTimesTwo"];
@@ -69,13 +70,15 @@ const Index = () => {
   useEffect(() => {
     const AsyncEffect = async () => {
       const savedMangaList = await readSavedMangaList();
-      setData(savedMangaList)
+      console.log(savedMangaList[0].title)
+      setTabs(savedMangaList)
     }
     AsyncEffect()
   }, [])
 
   const keyExtractor = (str) => {
-    return str;
+    console.log(str.title)
+    return str.title;
   }
 
   const handleAddTab = async () => {
@@ -89,11 +92,19 @@ const Index = () => {
       return
     }
     
-    if(!data.includes(validTabTitleToAdd)) {
+    if(!tabs.includes(validTabTitleToAdd)) {
       const savedMangaList = await readSavedMangaList();
-      const mangaListToSave = [...savedMangaList, validTabTitleToAdd]
+      
+      const newTabObject = {
+        title: validTabTitleToAdd,
+        data: [],
+      }
+
+      const mangaListToSave = [...savedMangaList, newTabObject]
+      console.log("mangaListToSave", mangaListToSave)      
       await saveMangaList(mangaListToSave)
-      setData(mangaListToSave)
+      
+      setTabs(mangaListToSave)
       setTabTitleToAdd('')
     }
     else {
@@ -107,22 +118,29 @@ const Index = () => {
   }
 
   const deleteTabConfirmed = useCallback(async () => {
-    await saveMangaList([{
-      tabTitle: "DEFAULT",
-    }])
-    // const retrievedMangaList = await readSavedMangaList()
-    // console.log("tabsToDelete", tabsToDelete)
+    // await saveMangaList([{
+    //   title: "DEFAULT",
+    //   data: [
+    //     {
+    //       id: "78edf336-6318-45e5-ab19-dd3642e95810",
+    //       link: "https://chapmanganato.to/manga-bt978676",
+    //       cover: "https://avt.mkklcdnv6temp.com/13/f/16-1583493949.jpg",
+    //       title: "Apotheosis"
+    //     }
+    //   ]
+    // }])
+    const retrievedMangaList = await readSavedMangaList()
 
-    // const mangaListToSave = retrievedMangaList.filter(
-    //   (tabListItem) => !tabsToDelete.includes(tabListItem)
-    // );
+    const mangaListToSave = retrievedMangaList.filter (
+      (tabListItem) => (!tabsToDelete.includes(tabListItem.title))
+    );
     
-    // console.log("mangaListToSave", mangaListToSave)
+    console.log("mangaListToSave", mangaListToSave)
+    await saveMangaList(mangaListToSave)
 
-    // await saveMangaList(mangaListToSave)
-    // setData(mangaListToSave)
-    // setShowModal(MODAL_MODES.HIDDEN)
-    // setTabsToDelete([])
+    setTabs(mangaListToSave)
+    setShowModal(MODAL_MODES.HIDDEN)
+    setTabsToDelete([])
   }, [tabsToDelete])
 
   const deleteTabCanceled = useCallback(() => {
@@ -130,7 +148,7 @@ const Index = () => {
       'Deleting tabs canceled', 
       ToastAndroid.SHORT
     )
-    setShowModal(MODAL_MODES.HIDDEN)
+    setShowModal(MODAL_MODES.HIDDEN) 
     setTabsToDelete([])
   }, [])
 
@@ -152,28 +170,31 @@ const Index = () => {
         ],
         { cancelable: false }
       )
+      console.log(tabsToDelete)
   }, [tabsToDelete])
 
   const handleReordered = async (fromIndex, toIndex) => {
-    const copy = [...data]; // Don't modify react data in-place
+    const copy = [...tabs]; // Don't modify react data in-place
     const removed = copy.splice(fromIndex, 1);
     copy.splice(toIndex, 0, removed[0]); // Now insert at the new pos
-    setData(copy);
+    setTabs(copy);
   }
 
   const handleSelectItem = (selectedItem) => {
-    if(!tabsToDelete.includes(selectedItem)) {
+    if(!tabsToDelete.includes(selectedItem.title)) {
       setTabsToDelete(prev => {
         const newTabsToDelete = [...prev]
-        newTabsToDelete.push(selectedItem)
+        newTabsToDelete.push(selectedItem.title)
         return newTabsToDelete
       })
     }
     else {
+      console.log("called")
       setTabsToDelete(prev => (
-        prev.filter(item => item !== selectedItem)
+        prev.filter(item => item !== selectedItem.title)
       ))
     }
+
   }
 
   const draggableRenderItem = ({
@@ -185,7 +206,7 @@ const Index = () => {
     return (
       <View>
         <TouchableOpacity
-        key={item}
+        key={item.title}
         onLongPress={() => {
           console.log(onDragStart)
           onDragStart()
@@ -197,7 +218,7 @@ const Index = () => {
           className="font-pregular text-white p-1"
           style={{ backgroundColor: isActive ? "red" : "transparent" }}
         >
-          {item}
+          {item.title}
         </Text>
       </TouchableOpacity>
       
@@ -206,7 +227,7 @@ const Index = () => {
     );
   };
 
-  const renderItem = ({item}) => {
+  const renderItem = ({item, index}) => {
     return (
       <TabListItem item={item} onSelectItem={handleSelectItem}
       iconComponent={<MaterialIcons name="delete-outline" size={18} color={colors.accent.DEFAULT} />}/>
@@ -222,7 +243,7 @@ const Index = () => {
           {showModal === MODAL_MODES.SORT_TABS && (
             <View className="w-full bg-secondary rounded-md">
                 <DragList
-                  data={data}
+                  data={tabs}
                   keyExtractor={keyExtractor}
                   onReordered={handleReordered}
                   renderItem={draggableRenderItem}
@@ -262,8 +283,8 @@ const Index = () => {
               <HorizontalRule />
               <FlatList
                 className="mt-3"
-                data={data}
-                keyExtractor={keyExtractor}
+                data={tabs}
+                keyExtractor={(item, index) => (`${item.title}-${index}`)}
                 renderItem={renderItem}
               />
               
@@ -279,7 +300,7 @@ const Index = () => {
 
         </View>
       </ModalPopup>
-      {data.length > 0 && (
+      {tabs.length > 0 && (
         <Tab.Navigator
           screenOptions={{
             tabBarActiveTintColor: colors.accent[100],
@@ -293,13 +314,29 @@ const Index = () => {
             tabBarBounces: false,
           }}
         >
-          {data.map((tabTitle, index) => (
+          {tabs.map((tabItem, index) => (
             <Tab.Screen
               key={index}
-              name={tabTitle}
-              options={{ title: tabTitle }}
+              name={tabItem.title}
+              options={{ title: tabItem.title }}
             >
-              {() => <HomeScreen title={tabTitle} />}
+              {() => {
+                if(tabItem.data.length > 0) {
+                  return (
+                    // <View className="bg-yellow-400 h-full justify-center items-center">
+                    //   <Text className="text-purple-900">{tabItem.data[0].title}</Text>
+                    //   <Text className="text-purple-900">yehey</Text>
+                    // </View>
+                    <MangaGrid 
+                      mangaData={tabItem.data}
+                      numColumns={3}
+                    />
+                  )
+                }
+                return (
+                  <HomeScreen title={tabItem.title} />
+                )
+              }}
             </Tab.Screen>
           ))}
         </Tab.Navigator>

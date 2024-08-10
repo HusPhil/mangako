@@ -20,7 +20,7 @@ const TabListItem = ({item, onSelectItem, iconComponent}) => {
             }}>
             
             <Text className="font-pregular text-white p-1 text-xs capitalize">
-            {item}
+            {item.title}
             </Text>
 
             {isSelected && (

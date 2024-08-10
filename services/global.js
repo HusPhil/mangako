@@ -100,6 +100,8 @@ export const readSavedMangaList = async () => {
   const filePath = `${FileSystem.documentDirectory}${folderName}/${fileName}`
   let savedMangaList = []
 
+  //add verification if the saved data is valid
+
   try {
     await ensureDirectoryExists(folderPath)
 
