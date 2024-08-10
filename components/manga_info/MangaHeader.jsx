@@ -8,9 +8,8 @@ import ModalPopup from '../modal/ModalPopup';
 import HorizontalRule from '../HorizontalRule';
 import colors from '../../constants/colors';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { readSavedMangaList } from '../../services/Global';
+import { readMangaListItemConfig, readSavedMangaList, saveMangaList, saveMangaListItemConfig } from '../../services/Global';
 import TabListItem from '../manga_home/TabListItem';
-
 
 const MangaHeader = ({
     mangaCover, 
@@ -25,50 +24,98 @@ const MangaHeader = ({
   const [selectedTabs, setSelectedTabs] = useState([])
 
   useEffect(() => {
-    console.log(
-      mangaId, mangaCover, mangaTitle, mangaUrl
-    )
     const AsyncEffect = async () => {
       const savedMangaList = await readSavedMangaList();
+      const listItemConfig = await readMangaListItemConfig(mangaUrl);
+      console.log(listItemConfig)
+      setSelectedTabs(listItemConfig ?? [])
       setTabs(savedMangaList)
     }
     AsyncEffect()
 
   }, [])
 
-  const handleShowModal = useCallback(() => {
+  const handleShowModal = useCallback(async () => {
+    const listItemConfig = await readMangaListItemConfig(mangaUrl);
+    setSelectedTabs(listItemConfig ?? [])
+    console.log(listItemConfig)
+
     setShowModal(prev => !prev)
   }, [])
 
   const handleAddToList = useCallback(async () => {
+    // retrieve the saved list
     const retrievedMangaList = await readSavedMangaList()
-
-    for (const selectedTab of selectedTabs) {
-      
-      console.log("selectedTab:", selectedTab)
+    const mangaListToSave = retrievedMangaList
+    console.log("selectedTabs", typeof(selectedTabs))
+    let listItemConfigToSave = new Set(selectedTabs)
+    const mangaListItemToAdd = {
+      'id': mangaId,
+      'cover': mangaCover,
+      'link': mangaUrl,
+      'title': mangaTitle,
     }
+
+    //iterate over all the savedMangaList
+    for (let tabIndex = 0; tabIndex < retrievedMangaList.length; tabIndex++) {
+      const tab = retrievedMangaList[tabIndex];
+      const mangaAlreadyAdded = tab.data.some(manga => manga.link === mangaListItemToAdd.link)
+
+      if(selectedTabs.includes(tab.title)) {
+        //check if this manga is already there, if not add it
+        if(!mangaAlreadyAdded) {
+          console.log(`${mangaTitle} is selected ${tab.title} tab`)
+          mangaListToSave[tabIndex].data = [...tab.data, mangaListItemToAdd]
+        }
+        listItemConfigToSave.add(tab.title)
+        continue
+      }
+
+      //this manga must be removed from all tabs which are not selected
+      if(mangaAlreadyAdded) {
+        console.log(`${mangaTitle} can be removed from ${tab.title} tab`)
+        mangaListToSave[tabIndex].data = tab.data.filter(manga => manga.link !== mangaListItemToAdd.link )
+      }
+      
+    }
+
+    console.log("mangaListToSave", mangaListToSave)
+
+    console.log("listItemConfigToSave", )
+
+    //check if the tab title has been selected
+    await saveMangaList(mangaListToSave)
+    listItemConfigToSave = [...listItemConfigToSave]
+    await saveMangaListItemConfig(mangaUrl, listItemConfigToSave)
+    handleShowModal()
+    
+    //if it is then add this manga to the saved list
+
+    //if it is not then remove it from that list
+    
   }, [selectedTabs])
 
   const handleSelectItem = useCallback(async (selectedItem) => {
     // console.log(selectedItem)
-    if(!selectedTabs.includes(selectedItem)) {
+    if(!selectedTabs.includes(selectedItem.title)) {
       setSelectedTabs(prev => {
         const newSelectedTabs = [...prev]
-        newSelectedTabs.push(selectedItem)
+        newSelectedTabs.push(selectedItem.title)
         return newSelectedTabs
       })
     }
     else {
       setSelectedTabs(prev => (
-        prev.filter(item => item !== selectedItem)
+        prev.filter(item => item !== selectedItem.title)
       ))
     }
   }, [selectedTabs])
 
-  const renderItem = ({item}) => {
+  const renderItem = ({item, index}) => {
     return (
       <TabListItem item={item} onSelectItem={handleSelectItem}
-      iconComponent={<MaterialIcons name="check-circle-outline" size={15} color="white" />}/>
+      iconComponent={<MaterialIcons name="check-circle-outline" size={15} color="white" />}
+      selected={selectedTabs.includes(item.title)}/>
     );
   };
 

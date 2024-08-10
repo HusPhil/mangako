@@ -80,13 +80,14 @@ export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject, ma
     }
   };
 
-export const getMangaDirectory = (mangaUrl, chapterUrl, type, filename) => {
+export const getMangaDirectory = (mangaUrl, chapterUrl, type, filename, directoryOption) => {
     const parentKey = shorthash.unique(mangaUrl)
     const cacheKey = shorthash.unique(chapterUrl);
+     const directory = directoryOption ?? FileSystem.cacheDirectory 
 
     const cachedFolderPath = chapterUrl === "N/A" ?  
-    `${FileSystem.cacheDirectory}${parentKey}/${type}` :
-    `${FileSystem.cacheDirectory}${parentKey}/${cacheKey}/${type}`;
+    `${directory}${parentKey}/${type}` :
+    `${directory}${parentKey}/${cacheKey}/${type}`;
 
     const cachedFilePath = cachedFolderPath + "/" + filename
 
@@ -137,5 +138,45 @@ export const saveMangaList = async (mangaListToSave) => {
 
   } catch (error) {
     console.error(error)
+  }
+}
+
+export const readMangaListItemConfig = async (mangaUrl) => {
+  try {
+    const fileName = "listItemConfig.dat"
+    const mangaListItemConfigDir = getMangaDirectory(mangaUrl, "N/A", "listItemConfig", fileName, FileSystem.documentDirectory)
+  
+    await ensureDirectoryExists(mangaListItemConfigDir.cachedFolderPath)
+    
+    const fileInfo = await FileSystem.getInfoAsync(mangaListItemConfigDir.cachedFilePath)
+
+    if(fileInfo.exists) {
+      const retrievedFileData = await FileSystem.readAsStringAsync(mangaListItemConfigDir.cachedFilePath)
+      return JSON.parse(retrievedFileData)
+    }
+
+    return []
+    
+  } catch (error) {
+    console.error('An error occured while reading manga list item config:', error)
+    return []
+  }
+}
+
+export const saveMangaListItemConfig = async (mangaUrl, listItemConfigToSave) => {
+  try {
+    const fileName = "listItemConfig.dat"
+    const mangaListItemConfigDir = getMangaDirectory(mangaUrl, "N/A", "listItemConfig", fileName, FileSystem.documentDirectory)
+  
+    await ensureDirectoryExists(mangaListItemConfigDir.cachedFolderPath)
+    
+    await FileSystem.writeAsStringAsync(
+      mangaListItemConfigDir.cachedFilePath,
+      JSON.stringify(listItemConfigToSave),
+      {encoding: FileSystem.EncodingType.UTF8}
+    )
+    
+  } catch (error) {
+    console.error('An error occured while saving manga list item config:', error)
   }
 }

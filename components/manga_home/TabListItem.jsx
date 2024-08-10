@@ -3,8 +3,8 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import colors from '../../constants/colors';
 
-const TabListItem = ({item, onSelectItem, iconComponent}) => {
-    const [isSelected, setIsSelected] = useState(false);
+const TabListItem = ({item, onSelectItem, iconComponent, selected}) => {
+    const [isSelected, setIsSelected] = useState(selected);
 
     const handleSelectItem = () => {
         setIsSelected(prev => !prev)

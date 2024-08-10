@@ -67,23 +67,41 @@ const Index = () => {
     StatusBar.setBarStyle('light-content')
   }, []);
 
-  useEffect(() => {
-    const AsyncEffect = async () => {
-      const savedMangaList = await readSavedMangaList();
-      console.log(savedMangaList[0].title)
-      setTabs(savedMangaList)
-    }
-    AsyncEffect()
-  }, [])
+  // useEffect(() => {
+  //   const AsyncEffect = async () => {
+  //     const savedMangaList = await readSavedMangaList();
+  //     console.log(savedMangaList[0].title)
+  //     setTabs(savedMangaList)
+  //   } 
+  //   AsyncEffect()
+  // }, [])
+
+  useFocusEffect(
+    useCallback(() => {
+      const AsyncEffect = async () => {
+        const savedMangaList = await readSavedMangaList();
+        setTabs(savedMangaList)
+      }
+      AsyncEffect()
+  
+    }, [])
+  )
 
   const keyExtractor = (str) => {
-    console.log(str.title)
-    return str.title;
+     return str.title;
   }
 
   const handleAddTab = async () => {
     const validTabTitleToAdd = tabTitleToAdd.toUpperCase().trim() 
+
+    const existingTabTiltes = new Set()
+    tabs.forEach((tab) => {
+      existingTabTiltes.add(tab.title)
+    })
     
+
+    console.log(existingTabTiltes)
+
     if(validTabTitleToAdd === '') {
       ToastAndroid.show(
         'Provide a Tab title',
@@ -92,7 +110,7 @@ const Index = () => {
       return
     }
     
-    if(!tabs.includes(validTabTitleToAdd)) {
+    if(!existingTabTiltes.has(validTabTitleToAdd)) {
       const savedMangaList = await readSavedMangaList();
       
       const newTabObject = {
@@ -227,6 +245,11 @@ const Index = () => {
     );
   };
 
+  const handleHideModal = useCallback(() => {
+    setShowModal(MODAL_MODES.HIDDEN)
+    setTabsToDelete([])
+  }, [])
+
   const renderItem = ({item, index}) => {
     return (
       <TabListItem item={item} onSelectItem={handleSelectItem}
@@ -237,7 +260,7 @@ const Index = () => {
   return (  
     <SafeAreaView style={styles.container}>
       <MangaListHeader/>
-      <ModalPopup visible={showModal !== MODAL_MODES.HIDDEN} handleClose={() => {setShowModal(MODAL_MODES.HIDDEN)}} otherStyles={{backgroundColor: 'transparent', alignSelf: 'center',}}>
+      <ModalPopup visible={showModal !== MODAL_MODES.HIDDEN} handleClose={handleHideModal} otherStyles={{backgroundColor: 'transparent', alignSelf: 'center',}}>
         <View className="h-full w-full justify-center items-center px-3 bg-transparent self-center">
           
           {showModal === MODAL_MODES.SORT_TABS && (

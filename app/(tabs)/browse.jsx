@@ -33,7 +33,6 @@ const BrowseTab = () => {
         'div.list-truyen-item-wrap'
       );
 
-      console.log(popularManga[0])
       setNewestManga(newestManga)
       setPopularManga(popularManga)
 
