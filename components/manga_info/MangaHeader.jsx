@@ -181,10 +181,10 @@ const MangaHeader = ({
                   </TouchableOpacity>
                 )}
               </View>
-              <View className="ml-3 mt-1 w-[65%]">
+              <View className="ml-3 mt-1 pr-4 flex-1">
                 <Text className="text-white font-pmedium text-lg" numberOfLines={3}>{mangaTitle}</Text>
                 <ScrollView className="rounded-md max-h-[60%]" showsVerticalScrollIndicator={false}>
-                  <Text className="text-white pl-1 max-w-[95%] font-pregular text-xs text-justify">{details ? details.desc : "Loading"}</Text>
+                  <Text className="text-white pl-1 font-pregular text-xs text-justify">{details ? details.desc : "Loading"}</Text>
                 </ScrollView>
                 <Text numberOfLines={2} className="text-white pl-1 py-2 font-pregular text-xs text-justify">{details ? `By: ${details.author}` : ""}</Text>
               </View>
