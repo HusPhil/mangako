@@ -9,6 +9,7 @@ import HorizontalRule from '../HorizontalRule';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { readMangaListItemConfig, readSavedMangaList, saveMangaList, saveMangaListItemConfig } from '../../services/Global';
 import TabListItem from '../manga_home/TabListItem';
+import colors from '../../constants/colors';
 
 const MangaHeader = ({
     mangaCover, 
@@ -16,18 +17,29 @@ const MangaHeader = ({
     mangaTitle,
     mangaUrl,
     isLoading,
-    details
+    details,
 }) => {
   const [showModal, setShowModal] = useState(false)
   const [tabs, setTabs] = useState([])
+  const [isListed, setIsListed] = useState(false)
   const [selectedTabs, setSelectedTabs] = useState([])
 
   useEffect(() => {
     const AsyncEffect = async () => {
       const savedMangaList = await readSavedMangaList();
       const listItemConfig = await readMangaListItemConfig(mangaUrl);
-      console.log(listItemConfig)
+      
       setSelectedTabs(listItemConfig ?? [])
+
+      console.log("listItemConfig", listItemConfig)
+
+      if(listItemConfig.length > 0) {
+        setIsListed(true)
+      }
+      else {
+        setIsListed(false)
+      }
+
       setTabs(savedMangaList)
     }
     AsyncEffect()
@@ -79,6 +91,14 @@ const MangaHeader = ({
     //check if the tab title has been selected
     await saveMangaList(mangaListToSave)
     listItemConfigToSave = [...listItemConfigToSave]
+
+    if(listItemConfigToSave.length > 0) {
+      setIsListed(true)
+    }
+    else {
+      setIsListed(false)
+    }
+
     await saveMangaListItemConfig(mangaUrl, listItemConfigToSave)
     
     handleShowModal()
@@ -128,7 +148,7 @@ const MangaHeader = ({
                   keyExtractor={keyExtractor}
                   renderItem={renderItem}
                 />
-                <TouchableOpacity className="border-2 mt-3 border-white rounded-md py-1 px-3 self-center flex-row justify-between"
+                <TouchableOpacity className={`border-2 mt-3 border-white rounded-md py-1 px-3 self-center flex-row justify-between`}
                   onPress={handleAddToList}>
                   <View>
                     <MaterialIcons name="add-circle-outline" size={15} color="white" />
@@ -172,12 +192,12 @@ const MangaHeader = ({
                 )}
                 </MangaCard>
                 {!isLoading && (
-                  <TouchableOpacity className="rounded-md p-1  border-white border flex-row justify-center items-center"
+                  <TouchableOpacity className={`rounded-md p-1 border-white ${isListed && "bg-accent-100"} border flex-row justify-center items-center`}
                       onPress={handleShowModal}>
-                      <Text className="font-pregular text-white text-center mr-1" style={{fontSize: 11, textShadowColor: "#000", textShadowRadius: 10,}}>
-                        Add to List
+                      <Text className={`font-pregular text-white text-center mr-1`} style={{fontSize: 11, textShadowColor: "#000", textShadowRadius: 10,}}>
+                        {!isListed ? "Add to List" : "Edit"}
                       </Text>
-                      <MaterialCommunityIcons name="heart-plus-outline" size={15} color="white" />
+                      <MaterialCommunityIcons name="heart-plus-outline" size={15} color={"white"} />
                   </TouchableOpacity>
                 )}
               </View>
