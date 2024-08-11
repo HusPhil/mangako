@@ -773,10 +773,10 @@ const MangaReaderComponent = ({
     
     zoomableViewRef.current.zoomTo(1) 
     if(zoomableViewEvent.offsetX < 0) {
-      handleReaderNavigation({mode: "next"})
+      handleReaderNavigation({mode: inverted ? 'prev' : 'next'})
       return
     } 
-    handleReaderNavigation({mode: "prev"})
+    handleReaderNavigation({mode: inverted ? 'next' : 'prev'})
 
   }, [])
  
