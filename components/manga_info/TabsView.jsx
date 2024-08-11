@@ -9,7 +9,7 @@ import colors from '../../constants/colors';
 const Tab = createMaterialTopTabNavigator();
 
 
-const TabsView = ({tabs, onAddTab}) => {
+const TabsView = ({tabs, onAddTab, isLoading}) => {
 
   const getTabScreenComponent = useCallback((tabItem) => {
     if(tabItem.data.length > 0) {
@@ -29,6 +29,8 @@ const TabsView = ({tabs, onAddTab}) => {
     )
   }, [tabs])
 
+  if(isLoading) return null
+
   return (
     <View className='flex-1'>
         {tabs.length > 0 ? (
@@ -37,18 +39,20 @@ const TabsView = ({tabs, onAddTab}) => {
                     tabBarActiveTintColor: colors.accent[100],
                     tabBarIndicatorStyle: { backgroundColor: colors.accent.DEFAULT},
                     tabBarLabelStyle: styles.tabBarLabelStyle,
-                    tabBarItemStyle: {width: "auto"},
                     tabBarStyle: { backgroundColor: 'transparent'},
+                    tabBarItemStyle: {padding: 10},
                     tabBarScrollEnabled: true,
                     tabBarPressColor: colors.accent[100],
+                    tabBarAllowFontScaling: true,
                 }}>
                 {tabs.map((tabItem, index) => (
                     <Tab.Screen
-                        key={index}
-                        name={tabItem.title}
-                        options={{ title: tabItem.title }}
-                        >
-                        {() => (getTabScreenComponent(tabItem))}
+                      key={index}
+                      name={tabItem.title}
+                      options={{ title: tabItem.title }}
+                      
+                      >
+                      {() => (getTabScreenComponent(tabItem))}
                     </Tab.Screen>
                 ))}
             </Tab.Navigator>
@@ -73,10 +77,7 @@ const styles = StyleSheet.create({
   tabBarLabelStyle: {
     color: 'white', 
     fontFamily: "Poppins-Regular",
-    fontSize: 12,
-    whiteSpace: 'nowrap', // For web, but in React Native this isn't needed
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
+    fontSize: 10,
   },
   container: {
     flex: 1,

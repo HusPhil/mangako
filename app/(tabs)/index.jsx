@@ -9,14 +9,14 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import ModalPopup from '../../components/modal/ModalPopup';
 import colors from '../../constants/colors';
-import { readSavedMangaList, saveMangaList } from '../../services/Global';
+import { readMangaListItemConfig, readSavedMangaList, saveMangaList, saveMangaListItemConfig } from '../../services/Global';
 import HorizontalRule from '../../components/HorizontalRule';
 import TabListItem from '../../components/manga_home/TabListItem';
 import TabsView from '../../components/manga_info/TabsView';
 
 const MODAL_MODES = {
   ADD_TAB: "ADD_TAB",
-  REMOVE_TAB: "REMOVE_TAB",
+  DELETE_TAB: "DELETE_TAB",
   SORT_TABS: "SORT_TABS",
   HIDDEN: "HIDDEN"
 }
@@ -28,6 +28,7 @@ const Index = () => {
   const [tabTitleToAdd, setTabTitleToAdd] = useState('');
   const [tabsToDelete, setTabsToDelete] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSorting, setIsSorting] = useState(false)
   
   const [loaded] = useFonts({
     "Poppins-Regular": require("../../assets/fonts/Poppins-Regular.ttf"),
@@ -41,7 +42,7 @@ const Index = () => {
       <Text className="text-3xl mt-8 mb-2 text-white font-pregular ">Manga List</Text>
       <View className="flex-row mt-4 justify-around w-[35%]">
           <TouchableOpacity className="p-2" onPress={handleShowAddTab}><MaterialIcons name="playlist-add" size={20} color="white" /></TouchableOpacity>
-          <TouchableOpacity className="p-2" onPress={handleShowRemoveTab}><MaterialIcons name="playlist-remove" size={20} color="white" /></TouchableOpacity>
+          <TouchableOpacity className="p-2" onPress={handleShowDeleteTab}><MaterialIcons name="playlist-remove" size={20} color="white" /></TouchableOpacity>
           <TouchableOpacity className="p-2" onPress={handleShowSortTab}><MaterialIcons name="filter-list" size={20} color="white" /></TouchableOpacity>
       </View>
     </View>
@@ -50,14 +51,28 @@ const Index = () => {
   useFocusEffect(
     useCallback(() => {
       const AsyncEffect = async () => {
-        setIsLoading(true)
         
         StatusBar.setBackgroundColor(colors.secondary.DEFAULT)
         StatusBar.setBarStyle('light-content')
 
         const savedMangaList = await readSavedMangaList();
-        setTabs(savedMangaList)
+        console.log(savedMangaList.length)
         
+        if(savedMangaList.length <= 0) {
+          const mangaListToSave = [
+            {
+              title: "DEFAULT",
+              data: []
+            }
+          ]
+          await saveMangaList(mangaListToSave)
+          setTabs(mangaListToSave)
+
+        }
+        else {
+          setTabs(savedMangaList)
+        }
+
         setIsLoading(false)
       }
       AsyncEffect()
@@ -73,8 +88,8 @@ const Index = () => {
     setShowModal(MODAL_MODES.ADD_TAB)
   }, [])
 
-  const handleShowRemoveTab = useCallback(() => {
-    setShowModal(MODAL_MODES.REMOVE_TAB)
+  const handleShowDeleteTab = useCallback(() => {
+    setShowModal(MODAL_MODES.DELETE_TAB)
   }, [])
 
   const handleShowSortTab = useCallback(() => {
@@ -126,25 +141,48 @@ const Index = () => {
   }
 
   const deleteTabConfirmed = useCallback(async () => {
-    // await saveMangaList([{
-    //   title: "DEFAULT",
-    //   data: [
-    //     {
-    //       id: "78edf336-6318-45e5-ab19-dd3642e95810",
-    //       link: "https://chapmanganato.to/manga-bt978676",
-    //       cover: "https://avt.mkklcdnv6temp.com/13/f/16-1583493949.jpg",
-    //       title: "Apotheosis"
-    //     }
-    //   ]
-    // }])
     const retrievedMangaList = await readSavedMangaList()
 
+    const tabsToDeletedAsSet = new Set(tabsToDelete)
+    const tabTitleToDataMap = new Map()
+
+    retrievedMangaList.forEach((tab, index) => {
+      if(tabsToDeletedAsSet.has(tab.title)) {
+        tabTitleToDataMap.set(tab.title, tab.data)
+      }
+    })
+
+    console.log(tabTitleToDataMap)
+
     const mangaListToSave = retrievedMangaList.filter (
-      (tabListItem) => (!tabsToDelete.includes(tabListItem.title))
+      (tabListItem) => (!tabTitleToDataMap.has(tabListItem.title))
     );
     
     console.log("mangaListToSave", mangaListToSave)
+
+    for (let tabIndex = 0; tabIndex < tabsToDelete.length; tabIndex++) {
+      const tabTitle = tabsToDelete[tabIndex];
+      const tabData = tabTitleToDataMap.get(tabTitle) // this is a list
+
+      tabData.forEach(async (manga) => {
+        const retrievedMangaListItemConfig = await readMangaListItemConfig(manga.link)
+        console.log(`${tabTitle}-${manga.link}-${retrievedMangaListItemConfig}`)
+
+        const mangaListItemConfigToSave = retrievedMangaListItemConfig.filter(
+          (retrievedtabTitle) => (retrievedtabTitle !== tabTitle)
+        )
+
+        console.log("mangaListItemConfigToSave", mangaListItemConfigToSave)
+
+        await saveMangaListItemConfig(manga.link, mangaListItemConfigToSave)
+
+      })
+      
+
+    }
+
     await saveMangaList(mangaListToSave)
+    
 
     setTabs(mangaListToSave)
     setShowModal(MODAL_MODES.HIDDEN)
@@ -178,18 +216,17 @@ const Index = () => {
         ],
         { cancelable: false }
       )
-      console.log(tabsToDelete)
   }, [tabsToDelete])
 
   const handleReordered = async (fromIndex, toIndex) => {
-    setIsLoading(true)
+    setIsSorting(true)
     const copy = [...tabs]; // Don't modify react data in-place
     const removed = copy.splice(fromIndex, 1);
     copy.splice(toIndex, 0, removed[0]); // Now insert at the new pos
     await saveMangaList(copy)
     
     setTabs(copy);
-    setIsLoading(false)
+    setIsSorting(false)
   }
 
   const handleSelectItem = (selectedItem) => {
@@ -263,7 +300,7 @@ const Index = () => {
               <Text className="text-white font-pregular text-center pb-2">Sort the tabs however you like!</Text>
               <HorizontalRule />
               {tabs.length >= 2 ? (
-                !isLoading ? (
+                !isSorting ? (
                   <DragList
                   className="mt-3"
                   data={tabs}
@@ -309,12 +346,12 @@ const Index = () => {
               </View>
           )}
 
-          {showModal === MODAL_MODES.REMOVE_TAB && (
+          {showModal === MODAL_MODES.DELETE_TAB && (
             <View className="w-full bg-secondary rounded-md p-3 max-h-[420px]">
               <Text className="text-white font-pregular text-center pb-2">Select the Tabs you want to delete</Text>
               <HorizontalRule />
               
-              {tabs.length > 0 ? (
+              {true ? (
                 <>
                 <FlatList
                   className="mt-3"
@@ -341,9 +378,7 @@ const Index = () => {
 
         </View>
       </ModalPopup>
-      {!isLoading && (
-        <TabsView tabs={tabs} onAddTab={() => (setShowModal(MODAL_MODES.ADD_TAB))} />
-      )} 
+        <TabsView tabs={tabs} onAddTab={() => (setShowModal(MODAL_MODES.ADD_TAB))} isLoading={isLoading}/>
     </SafeAreaView>
   );
 };
