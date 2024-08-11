@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import { View, Text, StatusBar, StyleSheet, TouchableOpacity, TextInput, Alert, ToastAndroid, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -257,6 +257,22 @@ const Index = () => {
     );
   };
 
+  const getTabScreenComponent = (tabItem) => {
+    if(tabItem.data.length > 0) {
+      return (
+        <View className="flex-1 bg-primary">
+          <MangaGrid 
+            mangaData={tabItem.data}
+            numColumns={3}
+          />
+        </View>
+      )
+    }
+    return (
+      <HomeScreen title={tabItem.title} />
+    )
+  }
+
   return (  
     <SafeAreaView style={styles.container}>
       <MangaListHeader/>
@@ -343,23 +359,7 @@ const Index = () => {
               name={tabItem.title}
               options={{ title: tabItem.title }}
             >
-              {() => {
-                if(tabItem.data.length > 0) {
-                  return (
-                    // <View className="bg-yellow-400 h-full justify-center items-center">
-                    //   <Text className="text-purple-900">{tabItem.data[0].title}</Text>
-                    //   <Text className="text-purple-900">yehey</Text>
-                    // </View>
-                    <MangaGrid 
-                      mangaData={tabItem.data}
-                      numColumns={3}
-                    />
-                  )
-                }
-                return (
-                  <HomeScreen title={tabItem.title} />
-                )
-              }}
+              {() => (getTabScreenComponent(tabItem))}
             </Tab.Screen>
           ))}
         </Tab.Navigator>

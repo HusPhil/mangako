@@ -6,7 +6,6 @@ import { MangaCard } from '../../components/manga_menu';
 import { useCallback } from 'react';
 import ModalPopup from '../modal/ModalPopup';
 import HorizontalRule from '../HorizontalRule';
-import colors from '../../constants/colors';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { readMangaListItemConfig, readSavedMangaList, saveMangaList, saveMangaListItemConfig } from '../../services/Global';
 import TabListItem from '../manga_home/TabListItem';
@@ -44,10 +43,10 @@ const MangaHeader = ({
   }, [])
 
   const handleAddToList = useCallback(async () => {
+    
     // retrieve the saved list
     const retrievedMangaList = await readSavedMangaList()
     const mangaListToSave = retrievedMangaList
-    console.log("selectedTabs", typeof(selectedTabs))
     let listItemConfigToSave = new Set(selectedTabs)
     const mangaListItemToAdd = {
       'id': mangaId,
@@ -64,7 +63,6 @@ const MangaHeader = ({
       if(selectedTabs.includes(tab.title)) {
         //check if this manga is already there, if not add it
         if(!mangaAlreadyAdded) {
-          console.log(`${mangaTitle} is selected ${tab.title} tab`)
           mangaListToSave[tabIndex].data = [...tab.data, mangaListItemToAdd]
         }
         listItemConfigToSave.add(tab.title)
@@ -73,25 +71,17 @@ const MangaHeader = ({
 
       //this manga must be removed from all tabs which are not selected
       if(mangaAlreadyAdded) {
-        console.log(`${mangaTitle} can be removed from ${tab.title} tab`)
         mangaListToSave[tabIndex].data = tab.data.filter(manga => manga.link !== mangaListItemToAdd.link )
       }
       
     }
 
-    console.log("mangaListToSave", mangaListToSave)
-
-    console.log("listItemConfigToSave", )
-
     //check if the tab title has been selected
     await saveMangaList(mangaListToSave)
     listItemConfigToSave = [...listItemConfigToSave]
     await saveMangaListItemConfig(mangaUrl, listItemConfigToSave)
-    handleShowModal()
     
-    //if it is then add this manga to the saved list
-
-    //if it is not then remove it from that list
+    handleShowModal()
     
   }, [selectedTabs])
 
