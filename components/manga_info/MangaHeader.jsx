@@ -118,21 +118,27 @@ const MangaHeader = ({
       <ModalPopup visible={showModal} handleClose={handleShowModal} otherStyles={{backgroundColor: 'transparent', alignSelf: 'center',}}>
         <View className="h-full w-full justify-center items-center px-3 bg-transparent self-center">
           <View className="w-full bg-secondary rounded-md p-3 max-h-[420px]">
-            <Text className="text-white font-pregular text-center pb-2">Select the Tabs you want to delete</Text>
+            <Text className="text-white font-pregular text-center pb-2">Select where to add this manga</Text>
             <HorizontalRule /> 
-            <FlatList
-              className="mt-3"
-              data={tabs}
-              keyExtractor={keyExtractor}
-              renderItem={renderItem}
-            />
-            <TouchableOpacity className="border-2 mt-3 border-white rounded-md py-1 px-3 self-center flex-row justify-between"
-              onPress={handleAddToList}>
-              <View>
-                <MaterialIcons name="add-circle-outline" size={15} color="white" />
-              </View> 
-              <Text className=" text-center text-xs font-pregular text-white ml-1">Add to List</Text>
-            </TouchableOpacity>
+            {tabs.length > 0 ? (
+                <>
+                <FlatList
+                  className="mt-3"
+                  data={tabs}
+                  keyExtractor={keyExtractor}
+                  renderItem={renderItem}
+                />
+                <TouchableOpacity className="border-2 mt-3 border-white rounded-md py-1 px-3 self-center flex-row justify-between"
+                  onPress={handleAddToList}>
+                  <View>
+                    <MaterialIcons name="add-circle-outline" size={15} color="white" />
+                  </View> 
+                  <Text className=" text-center text-xs font-pregular text-white ml-1">Add to List</Text>
+                </TouchableOpacity>
+                </>
+              ) : (
+                <Text className="text-white font-pregular text-center text-xs mt-3">No tabs available</Text>
+              )}
           </View>
         </View>
       </ModalPopup>
