@@ -50,7 +50,8 @@ const MangaReaderComponent = ({
   const lastTouchStartTimeStamp = useRef(0);  
   const lastTouchEndTimeStamp = useRef(0);  
   const touchStartPageLocation = useRef({pageX: 0, pageY: 0});
-  const singleTapTimeout = useRef(null)
+  const singleTapTimeout = useRef(null);
+  const cancelSingleTap = useRef(false);
 
   useEffect(() => {
     
@@ -539,6 +540,7 @@ const MangaReaderComponent = ({
 
   const handleRetry = useCallback(async (pageNum, pageUrl) => {
     //indicate that the this page is in retry state
+    cancelSingleTap.current = true
     setPageImages(prev => {
       return prev.map((prevPageImage, prevPageImageIdx) => {
         if(prevPageImageIdx === pageNum) {
@@ -784,6 +786,12 @@ const MangaReaderComponent = ({
     <View className="h-full w-full"
       onTouchStart={handleOnTouchStart}
       onTouchEnd={(gestureEvent) => {
+        
+        if(cancelSingleTap.current) {
+          cancelSingleTap.current = false;
+          return
+        }
+
         const TAP_DURATION_THRESHOLD = 200; //in ms
         const DOUBLE_TAP_TIME_THRESHOLD = 350; // in ms
         const TAP_DISTANCE_THRESHOLD = 10; //in px
