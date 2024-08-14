@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native'
 import React, { useCallback } from 'react'
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -50,7 +50,6 @@ const TabsView = ({tabs, onAddTab, isLoading}) => {
                       key={index}
                       name={tabItem.title}
                       options={{ title: tabItem.title }}
-                      
                       >
                       {() => (getTabScreenComponent(tabItem))}
                     </Tab.Screen>

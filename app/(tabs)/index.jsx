@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useState, useMemo } from 'react';
-import { View, Text, StatusBar, StyleSheet, TouchableOpacity, TextInput, Alert, ToastAndroid, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text,  Image, StatusBar, StyleSheet, TouchableOpacity, TextInput, Alert, ToastAndroid, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import DragList, {DragListRenderItemInfo} from 'react-native-draglist';
@@ -12,9 +12,10 @@ import colors from '../../constants/colors';
 import { readMangaListItemConfig, readSavedMangaList, saveMangaList, saveMangaListItemConfig } from '../../services/Global';
 import HorizontalRule from '../../components/HorizontalRule';
 import TabListItem from '../../components/manga_home/TabListItem';
-import TabsView from '../../components/manga_info/TabsView';
+import TabsView from '../../components/manga_home/TabsView';
+import { images } from '../../constants';
 
-const MODAL_MODES = {
+const MODAL_MODES = { 
   ADD_TAB: "ADD_TAB",
   DELETE_TAB: "DELETE_TAB",
   SORT_TABS: "SORT_TABS",
@@ -39,7 +40,13 @@ const Index = () => {
   }
   const MangaListHeader = () => (
     <View className="flex-row justify-between items-center mx-4">
-      <Text className="text-3xl mt-8 mb-2 text-white font-pregular ">Manga List</Text>
+      <View className="flex-row justify-center items-center">
+        <Image 
+          source={images.ramenMiniIcon}
+          style={{height: 'undefined', width: 35 , aspectRatio: 1, marginTop: 20, marginRight: 5 }}
+        />
+        <Text className="text-2xl mt-7 mb-2 text-white font-pregular ">Manga List</Text>
+      </View>
       <View className="flex-row mt-4 justify-around w-[35%]">
           <TouchableOpacity className="p-2" onPress={handleShowAddTab}><MaterialIcons name="playlist-add" size={20} color="white" /></TouchableOpacity>
           <TouchableOpacity className="p-2" onPress={handleShowDeleteTab}><MaterialIcons name="playlist-remove" size={20} color="white" /></TouchableOpacity>
