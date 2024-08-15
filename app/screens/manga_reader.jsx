@@ -22,8 +22,9 @@ import { READER_ACTIONS } from '../../redux/readerScreen/readerActions';
 import colors from '../../constants/colors';
 
 const MangaReaderScreen = () => {
-    const {mangaUrl, currentChapterData, currentChapterIndex, isListed } = useLocalSearchParams()
+    const {mangaUrl, currentChapterData, currentChapterIndex, isListedAsString } = useLocalSearchParams()
     const parsedCurrentChapterData = JSON.parse(currentChapterData)
+    const isListed = isListedAsString.toLowerCase() === "true"
 
     const [state, dispatch] = useReducer(readerReducer, INITIAL_STATE)
 
@@ -35,7 +36,7 @@ const MangaReaderScreen = () => {
     const controllerRef = useRef(null)
 
     const AsyncEffect = useCallback(async () => {
-        
+        console.log(typeof(isListed), isListed)
         dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
         const savedConfig = await readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, isListed)
 

@@ -41,7 +41,8 @@ const ChapterList = ({
       params: {
         currentChapterData: JSON.stringify(item),
         currentChapterIndex: index,
-        mangaUrl, isListed
+        isListedAsString: isListed,
+        mangaUrl, 
       }
     });
   }, [chaptersData, mangaUrl]);

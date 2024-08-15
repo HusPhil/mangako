@@ -59,7 +59,8 @@ export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject, is
       
       if(isListed) {
         const cacheConfigInfo = await FileSystem.getInfoAsync(`${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`)
-        console.log("cacheConfigInfo", cacheConfigInfo)
+        console.log("cacheConfigInfo", cacheConfigInfo)  
+        await FileSystem.deleteAsync(path_mangaOnly, {idempotent: true})
         if(cacheConfigInfo.exists) {
           await FileSystem.moveAsync( {
             from: `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`,
