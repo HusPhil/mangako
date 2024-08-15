@@ -21,6 +21,7 @@ const MangaReaderComponent = ({
     onTap, onPageChange, onScroll, 
     currentPage, inverted,
     horizontal, vertical,
+    loadingRange
   }) => {
     
   const [pageImages, setPageImages] = useState(() => 
@@ -348,9 +349,8 @@ const MangaReaderComponent = ({
   }
 
   const loadPageImages = useCallback(async (pageNum) => {
-    const LOADING_RANGE = 1  //this is supposed to be adjustable thru UI, how?
-    
-    const pageNumbersLoadingRange = generatePageNumbers(pageNum, LOADING_RANGE, chapterPages.length)
+    console.log("loadingRange", loadingRange)
+    const pageNumbersLoadingRange = generatePageNumbers(pageNum, loadingRange, chapterPages.length)
 
     try {
       //cancell all pendjing download (so only new pages are downloaded when changing into new page)
@@ -800,8 +800,6 @@ const MangaReaderComponent = ({
         const touchDuration = currentTouchTimeStamp - lastTouchStartTimeStamp.current;
         const numOfTouch =  gestureEvent.nativeEvent.touches.length
 
-        console.log("numOfTouch", numOfTouch)
-
         const { pageX:touchEndPageX, pageY:touchEndPageY } = gestureEvent.nativeEvent;
         const { pageX:touchStartPageX, pageY:touchStartPageY } = touchStartPageLocation.current;
 
@@ -815,10 +813,6 @@ const MangaReaderComponent = ({
         
         const isDoubleTapGesture = currentTouchTimeStamp - lastTouchEndTimeStamp.current < DOUBLE_TAP_TIME_THRESHOLD;
         
-        console.log("touchDuration", touchDuration)
-        console.log("distanceX", distanceX)
-        console.log("distanceY", distanceY)
-
         if(!isTapGesture) {
           lastTouchEndTimeStamp.current = currentTouchTimeStamp
           return

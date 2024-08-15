@@ -27,6 +27,7 @@ export const CHAPTER_NAVIGATION = {
     JUMP: "JUMP",
 }
 
+export const loadingRangeDesc = "Range to load from the current page. Higher values improve reading smoothness but increase processing power usage."
 
 // --------------------------------------- VARIABLES ONLY ---------------------------------------*/}
 

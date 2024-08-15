@@ -5,6 +5,7 @@ import Toast from 'react-native-simple-toast';
 import { Feather } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
 import { debounce } from 'lodash';
+import Slider from '@react-native-community/slider';
 
 
 import * as backend from "./_manga_reader"
@@ -43,7 +44,8 @@ const MangaReaderScreen = () => {
             currentPage: savedConfig?.chapter?.currentPage || 0,
             readingModeIndex: savedConfig?.manga?.readingModeIndex || 0,
             scrollOffSetY: savedConfig?.chapter?.scrollOffSetY || 0,
-            finished: savedConfig?.chapter?.finished
+            finished: savedConfig?.chapter?.finished,
+            loadingRange: savedConfig?.manga?.loadingRange || 1,
         }})
 
         if(savedConfig?.manga?.readingStats) {
@@ -73,11 +75,6 @@ const MangaReaderScreen = () => {
                 `An error occured: ${error}`,
                 Toast.LONG,
             );
-            // if (signal.aborted) {
-            //     console.log("Fetch aborted");
-            // } else {
-            //     console.log("Error fetching chapter pages:", error);
-            // }
             dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_ERROR, payload: {error, chapterPages: []}})
             
         } 
@@ -220,12 +217,23 @@ const MangaReaderScreen = () => {
     }
     , [])
 
+    const handleSliderValueChange = useCallback(debounce(async (currentValue) => {
+        dispatch({type: READER_ACTIONS.SET_LOADING_RANGE, payload: currentValue})
+        await saveMangaConfigData(
+            mangaUrl, 
+            chapterDataRef.current.chapterUrl, 
+            {loadingRange: currentValue},
+            CONFIG_READ_WRITE_MODE.MANGA_ONLY
+        )
+        console.log("currentValue", currentValue)
+
+    }, [500]), [state.loadingRange])
+
     return (
         <View className="h-full bg-primary">
             <ModalPopup 
                 visible={state.showModal} otherStyles={{backgroundColor: 'transparent',}}
                 handleClose={() => {dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})}}
-            
             >
                 <View className="h-full w-full justify-end items-center bg-transparent">
                     <View className="bg-secondary justify-end rounded-md p-1 px-2">
@@ -246,7 +254,26 @@ const MangaReaderScreen = () => {
                                 onValueChange={handleDropDownValueChange}
                                 selectedIndex={backend.READER_MODES.indexOf(state.readingMode)}
                             />
-                        </View>                
+                        </View>  
+
+                        <View>
+                            <View className="flex-row pl-4 items-center justify-between pt-2 ">
+                                <Text className="font-pregular text-white text">Loading range:</Text>
+                                <Slider
+                                    style={{flex: 1}}
+                                    value={state.loadingRange}
+                                    minimumValue={1}
+                                    maximumValue={10}
+                                    step={1}
+                                    thumbTintColor={colors.accent.DEFAULT}
+                                    minimumTrackTintColor={colors.accent.DEFAULT}
+                                    maximumTrackTintColor={colors.primary.DEFAULT}
+                                    onValueChange={handleSliderValueChange}
+                                    />  
+                                <Text className="text-white font-pregular text-xs pr-4">{state.loadingRange}</Text>
+                            </View>     
+                            <Text className="text-white font-pregular text-xs mt-2 px-4">{"• " + backend.loadingRangeDesc}</Text>
+                        </View>       
                     
                         <View className="flex-row justify-between m-2 my-3">
                             <View className="flex-row justify-between">
@@ -273,10 +300,11 @@ const MangaReaderScreen = () => {
           </ModalPopup>
             {!state.isLoading ? (
                 !state.errorData ? (
-                    <View>
+                    <View key={state.loadingRange}>
                         {state.readingMode === backend.READER_MODES[0] && (
                             <MangaReaderComponent 
                                 chapterPages={state.chapterPages}
+                                loadingRange={state.loadingRange}
                                 currentManga={{
                                     manga: mangaUrl,
                                     chapter: chapterDataRef.current.chapterUrl
@@ -292,6 +320,7 @@ const MangaReaderScreen = () => {
                         {state.readingMode === backend.READER_MODES[1] && (
                             <MangaReaderComponent 
                                 chapterPages={state.chapterPages}
+                                loadingRange={state.loadingRange}
                                 currentManga={{
                                     manga: mangaUrl,
                                     chapter: chapterDataRef.current.chapterUrl
@@ -307,6 +336,7 @@ const MangaReaderScreen = () => {
                         {state.readingMode === backend.READER_MODES[2] && (
                             <MangaReaderComponent 
                                 chapterPages={state.chapterPages}
+                                loadingRange={state.loadingRange}
                                 currentManga={{
                                     manga: mangaUrl,
                                     chapter: chapterDataRef.current.chapterUrl

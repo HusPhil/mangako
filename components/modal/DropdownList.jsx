@@ -69,7 +69,7 @@ import {
       
       {listItems[selectedIndex].desc && (
         <View>
-          <Text className="text-white font-pregular text-xs mx-4 text-start">{listItems[selectedIndex].desc}</Text>
+          <Text className="text-white font-pregular text-xs mx-4 text-start">{"• " + listItems[selectedIndex].desc}</Text>
         </View>
       )}
 

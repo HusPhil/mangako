@@ -2,6 +2,9 @@
 import React, {useState} from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import DragList, {DragListRenderItemInfo} from 'react-native-draglist';
+import NumericRange from '../../components/NumericRange';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 
 const SOUND_OF_SILENCE = ['hello', 'darkness', 'my', 'old', 'friend'];
 
@@ -35,14 +38,15 @@ const more = () => {
   }
 
   return (
-    <View>
-      <DragList
+    <SafeAreaView>
+      {/* <DragList
         data={data}
         keyExtractor={keyExtractor}
         onReordered={onReordered}
         renderItem={renderItem}
-      />
-    </View>
+      /> */}
+      <NumericRange />
+    </SafeAreaView>
   );
 }
 

@@ -10,6 +10,7 @@ export const INITIAL_STATE = {
     currentPage: 0,
     readingMode: READER_MODES['0'],
     scrollOffSetY: 0,
+    loadingRange: 1,
 }
 
 export const readerReducer = (state, action) => {
@@ -49,6 +50,11 @@ export const readerReducer = (state, action) => {
                 ...state,
                 finished: action.payload,
             };
+        case READER_ACTIONS.SET_LOADING_RANGE:
+            return {
+                ...state,
+                loadingRange: action.payload,
+            };
         case READER_ACTIONS.LOAD_CONFIG:
             return {
                 ...state,
@@ -56,6 +62,7 @@ export const readerReducer = (state, action) => {
                 readingMode: READER_MODES[action.payload.readingModeIndex.toString()],
                 scrollOffSetY: action.payload.scrollOffSetY,
                 finished: action.payload.finished,
+                loadingRange: action.payload.loadingRange,
             };
         case READER_ACTIONS.CHAPTER_NAVIGATION:
             return {
