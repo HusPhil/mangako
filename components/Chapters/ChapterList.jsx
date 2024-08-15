@@ -12,11 +12,11 @@ import { readMangaConfigData, CONFIG_READ_WRITE_MODE } from '../../services/Glob
 const ChapterList = ({ 
   mangaUrl, chaptersData, 
   headerComponent, listStyles, 
-  onRefresh, 
+  onRefresh, isListed
 }) => {
   const [showBtnToBottom, setShowBtnToBottom] = useState(false)
   const [showBtnToTop, setShowBtnToTop] = useState(false)
-  const [readingStatusList, setReadingStatusList] = useState([])
+  const [chapterList, setChapterList] = useState(chaptersData)
 
   const flashListref = useRef(null)
   const previousScrollY = useRef(0);
@@ -41,7 +41,7 @@ const ChapterList = ({
       params: {
         currentChapterData: JSON.stringify(item),
         currentChapterIndex: index,
-        mangaUrl,
+        mangaUrl, isListed
       }
     });
   }, [chaptersData, mangaUrl]);
@@ -79,7 +79,7 @@ const ChapterList = ({
 
   const getChapterCurrentPageList = useCallback(async () => {
     try {
-      const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY);
+      const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY, isListed);
 
       let retrievedReadingStatusList = {};
 
@@ -87,15 +87,42 @@ const ChapterList = ({
         retrievedReadingStatusList = savedMangaConfigData.manga.readingStats;
       }
 
-      setReadingStatusList(retrievedReadingStatusList);
+      setChapterList(prev => prev.map(item => {
+        if(retrievedReadingStatusList[item.chapterUrl]) {
+          return {
+            ...item,
+            ...retrievedReadingStatusList[item.chapterUrl]
+          }
+        }
+        return item
+      }))
+      
     } catch (error) {
       console.error("Error fetching chapter current page list:", error);
     }
   }, []);
-  
-  useEffect(() => {
-    getChapterCurrentPageList()
+
+  const handleFetchReadingStatus = useCallback((chapterUrl, readingStatus) => {
+
+    setChapterList(prev => prev.map(item => {
+      if(item.chapterUrl === chapterUrl) {
+        return {
+          ...item,
+          finished: readingStatus
+        }
+      }
+      return item
+    }))
+
   }, [])
+  
+  useFocusEffect(
+    useCallback(() => {
+      console.log("isListed", isListed)
+      getChapterCurrentPageList()
+    }, [])
+  );
+
   
   const renderItem = useCallback(({ item, index }) => (
     <View className="w-full px-2">
@@ -104,11 +131,13 @@ const ChapterList = ({
         chapterTitle={item.chTitle}
         publishedDate={item.publishDate}
         handlePress={() => handleChapterPress(item, index)}
-        finished={readingStatusList[item.chapterUrl] ? readingStatusList[item.chapterUrl].finished : false}
+        finished={item.finished}
+        onFetchReadingStatus={handleFetchReadingStatus}
         currentPage={index}
+        isListed={isListed}
       />
     </View>
-  ), [handleChapterPress, readingStatusList, mangaUrl]);
+  ), [handleChapterPress, mangaUrl]);
 
   const keyExtractor = useCallback((item, index) => {
     return ` ${item}-${index}`;
@@ -119,7 +148,7 @@ const ChapterList = ({
       <View className="h-full relative">
         <FlashList
           ref={flashListref}
-          data={chaptersData}
+          data={chapterList}
           renderItem={renderItem}
           estimatedItemSize={200}
           contentContainerStyle={listStyles}

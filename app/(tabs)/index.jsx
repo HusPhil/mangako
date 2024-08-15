@@ -63,7 +63,6 @@ const Index = () => {
         StatusBar.setBarStyle('light-content')
 
         const savedMangaList = await readSavedMangaList();
-        console.log(savedMangaList.length)
         
         if(savedMangaList.length <= 0) {
           const mangaListToSave = [

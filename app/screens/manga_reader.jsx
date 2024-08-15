@@ -22,7 +22,7 @@ import { READER_ACTIONS } from '../../redux/readerScreen/readerActions';
 import colors from '../../constants/colors';
 
 const MangaReaderScreen = () => {
-    const {mangaUrl, currentChapterData, currentChapterIndex } = useLocalSearchParams()
+    const {mangaUrl, currentChapterData, currentChapterIndex, isListed } = useLocalSearchParams()
     const parsedCurrentChapterData = JSON.parse(currentChapterData)
 
     const [state, dispatch] = useReducer(readerReducer, INITIAL_STATE)
@@ -37,7 +37,7 @@ const MangaReaderScreen = () => {
     const AsyncEffect = useCallback(async () => {
         
         dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
-        const savedConfig = await readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl)
+        const savedConfig = await readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, isListed)
 
         
         if(savedConfig) dispatch({type: READER_ACTIONS.LOAD_CONFIG, payload: {
@@ -82,8 +82,8 @@ const MangaReaderScreen = () => {
     }, [])
 
     const saveLastViewedChapterPage = useCallback(debounce(async (pageToSave) => {
-        await saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {"currentPage": pageToSave})
-      }, 1000), []);
+        await saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {"currentPage": pageToSave}, isListed)
+      }, 500), []);
 
     useEffect(() => {
         AsyncEffect()
@@ -132,12 +132,12 @@ const MangaReaderScreen = () => {
 
     const handleVertScroll = useCallback(async (scrollOffSetY) => {
         console.log("save:", scrollOffSetY)
-        await saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {scrollOffSetY})
+        await saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {scrollOffSetY}, isListed)
     }, [])
 
     const handleChapterNavigation = async (navigationMode) => {
         try {
-            const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
+            const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY, isListed)
 
             dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
             dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
@@ -186,7 +186,7 @@ const MangaReaderScreen = () => {
     const handleReadFinish = async () => {
         dispatch({type:READER_ACTIONS.SET_STATUS_FINISHED, payload: !state.finished})
         chapterFinishedref.current = !state.finished
-        const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
+        const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY, isListed)
         let newReadingStats;
 
         newReadingStats = {}
@@ -200,6 +200,7 @@ const MangaReaderScreen = () => {
             mangaUrl, 
             chapterDataRef.current.chapterUrl, 
             {readingStats: newReadingStats}, 
+            isListed,
             CONFIG_READ_WRITE_MODE.MANGA_ONLY
         )
 
@@ -210,7 +211,8 @@ const MangaReaderScreen = () => {
         await saveMangaConfigData (
             mangaUrl, 
             chapterDataRef.current.chapterUrl, 
-            {"readingModeIndex": backend.READER_MODES.indexOf(data)}, 
+            {"readingModeIndex": backend.READER_MODES.indexOf(data)},
+            isListed,
             CONFIG_READ_WRITE_MODE.MANGA_ONLY
         )
         dispatch({type: READER_ACTIONS.SET_READER_MODE, payload: data})
@@ -223,6 +225,7 @@ const MangaReaderScreen = () => {
             mangaUrl, 
             chapterDataRef.current.chapterUrl, 
             {loadingRange: currentValue},
+            isListed,
             CONFIG_READ_WRITE_MODE.MANGA_ONLY
         )
         console.log("currentValue", currentValue)

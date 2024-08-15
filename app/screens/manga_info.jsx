@@ -8,15 +8,14 @@ import Accordion from '../../components/Accordion';
 import HorizontalRule from '../../components/HorizontalRule';
 
 import * as backend from "./_manga_info";
-import { readMangaConfigData, saveMangaConfigData, CONFIG_READ_WRITE_MODE } from '../../services/Global';
-
-
+import { readMangaListItemConfig } from '../../services/Global';
 
 const MangaInfoScreen = () => {
   const params = useLocalSearchParams();
   const { mangaId, mangaCover, mangaTitle, mangaUrl } = params;
   const [mangaInfo, setMangaInfo] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [tabsListed, setTabsListed] = useState([])
   const [errorData, setErrorData] = useState(null);
 
   const controllerRef = useRef(null);
@@ -33,7 +32,9 @@ const MangaInfoScreen = () => {
 
   const handleRefresh = async () => {
     setIsLoading(true)
-    await backend.deleteSavedMangaInfo(mangaUrl)
+    const isListed = tabsListed?.length > 0
+
+    await backend.deleteSavedMangaInfo(mangaUrl, isListed)
     await AsyncEffect()
     setIsLoading(false)
   }
@@ -45,7 +46,12 @@ const MangaInfoScreen = () => {
     const signal = controllerRef.current.signal;
     
     try {
-      const res = await backend.fetchData(mangaUrl, signal);
+      const listItemConfig = await readMangaListItemConfig(mangaUrl);
+      const isListed = listItemConfig?.length > 0
+      const res = await backend.fetchData(mangaUrl, signal, isListed);
+
+      setTabsListed(listItemConfig ?? [])
+
       if (isMounted.current) {
         setMangaInfo(res.data);
       }
@@ -89,14 +95,16 @@ const MangaInfoScreen = () => {
   return (
     <View className="h-full w-full bg-primary">
       <StatusBar backgroundColor={'transparent'} barStyle={'light-content'} />
-      <View className="h-full w-full" >
+      <View className="h-full w-full">
         <MangaHeader 
+          key={tabsListed}
           mangaCover={mangaCover}
           mangaId={mangaId}
           mangaTitle={mangaTitle}
           mangaUrl={mangaUrl}
           details={mangaInfo ? mangaInfo.mangaDetails : null}
           isLoading={isLoading}
+          tabsListed={tabsListed}
         />
         {isLoading ? (
           <View className="flex-1 justify-center items-center">
@@ -106,33 +114,34 @@ const MangaInfoScreen = () => {
         ) : (
           !errorData ? (
             <ChapterList 
-            mangaUrl={mangaUrl}
-            chaptersData={mangaInfo.chapterList}
-            listStyles={{paddingBottom: 8, paddingHorizontal: 8}}
-            onRefresh={handleRefresh}
-            headerComponent={
-              <View>
-                
-                {mangaInfo.mangaDetails && mangaInfo.mangaDetails.tags.length > 0 && mangaInfo.mangaDetails.tags[0] !== "" && (
-                  <View className="flex-row flex-wrap mt-5 mx-4">
-                  {mangaInfo.mangaDetails.tags.map((g, i) => (
-                    <Text key={i} className="p-2 m-1 font-pregular text-xs rounded-md text-white bg-accent-100">
-                      {g}
-                    </Text>
-                  ))}
-                </View>
-                )}
-                {mangaInfo.mangaDetails && (
-                  <View>
-                    <Accordion details={mangaInfo.mangaDetails.alternativeNames.join('\n')}>
-                      <Text className="text-white font-pbold">Alternative Titles</Text>
-                    </Accordion>
+              mangaUrl={mangaUrl}
+              chaptersData={mangaInfo.chapterList}  
+              listStyles={{paddingBottom: 8, paddingHorizontal: 8}}
+              onRefresh={handleRefresh}
+              isListed={tabsListed?.length > 0}
+              headerComponent={
+                <View>
+                  
+                  {mangaInfo.mangaDetails && mangaInfo.mangaDetails.tags.length > 0 && mangaInfo.mangaDetails.tags[0] !== "" && (
+                    <View className="flex-row flex-wrap mt-5 mx-4">
+                    {mangaInfo.mangaDetails.tags.map((g, i) => (
+                      <Text key={i} className="p-2 m-1 font-pregular text-xs rounded-md text-white bg-accent-100">
+                        {g}
+                      </Text>
+                    ))}
                   </View>
-                )}
-                
-                <HorizontalRule displayText="Chapter list" otherStyles={"mx-4 sticky"} />
-              </View>
-            }
+                  )}
+                  {mangaInfo.mangaDetails && (
+                    <View>
+                      <Accordion details={mangaInfo.mangaDetails.alternativeNames.join('\n')}>
+                        <Text className="text-white font-pbold">Alternative Titles</Text>
+                      </Accordion>
+                    </View>
+                  )}
+                  
+                  <HorizontalRule displayText="Chapter list" otherStyles={"mx-4 sticky"} />
+                </View>
+              }
           />
           ) : (
             <View className="h-full justify-center items-center">

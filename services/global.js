@@ -17,12 +17,12 @@ export const ensureDirectoryExists = async (directory) => {
     }
 };
 
-export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject, mangaOnly) => {
+export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject, isListed, mangaOnly) => {
     try {
       const parentKey = shorthash.unique(mangaUrl);
       const chapterKey = shorthash.unique(chapterUrl);
-      const path_mangaOnly = `${FileSystem.cacheDirectory}${parentKey}/configs`;
-      const path_mangaWithChapter = `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`;
+      const path_mangaOnly = `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}${parentKey}/configs`;
+      const path_mangaWithChapter = `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`;
       
       const cachedConfigFilePath = mangaOnly ? path_mangaOnly : path_mangaWithChapter
       const cachedFile = "/config.json";
@@ -45,17 +45,28 @@ export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject, ma
     }
   };
   
-  export const readMangaConfigData = async (mangaUrl, chapterUrl) => {
+  export const readMangaConfigData = async (mangaUrl, chapterUrl, isListed) => {
     try {
       const parentKey = shorthash.unique(mangaUrl);
       const chapterKey = shorthash.unique(chapterUrl);
-      const path_mangaOnly = `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`;
-      const path_mangaWithChapter = `${FileSystem.cacheDirectory}${parentKey}/configs`;
+      const path_mangaOnly = `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`;
+      const path_mangaWithChapter = `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}${parentKey}/configs`;
       const cachedFile = "/config.json";
       let savedMangaConfig = {}
       let cachedConfig = "";
   
       await ensureDirectoryExists(path_mangaOnly);
+      
+      if(isListed) {
+        const cacheConfigInfo = await FileSystem.getInfoAsync(`${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`)
+        console.log("cacheConfigInfo", cacheConfigInfo)
+        if(cacheConfigInfo.exists) {
+          await FileSystem.moveAsync( {
+            from: `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`,
+            to: path_mangaOnly
+          })
+        }
+      }
 
       if(chapterUrl !== CONFIG_READ_WRITE_MODE.MANGA_ONLY) {
         await ensureDirectoryExists(path_mangaWithChapter);

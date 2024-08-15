@@ -17,29 +17,28 @@ const MangaHeader = ({
     mangaTitle,
     mangaUrl,
     isLoading,
+    tabsListed,
     details,
 }) => {
   const [showModal, setShowModal] = useState(false)
   const [tabs, setTabs] = useState([])
-  const [isListed, setIsListed] = useState(false)
+  const [isListed, setIsListed] = useState(tabsListed?.length > 0)
+
   const [selectedTabs, setSelectedTabs] = useState([])
 
   useEffect(() => {
     const AsyncEffect = async () => {
-      const savedMangaList = await readSavedMangaList();
-      const listItemConfig = await readMangaListItemConfig(mangaUrl);
       
-      setSelectedTabs(listItemConfig ?? [])
+      setSelectedTabs(tabsListed ?? [])
 
-      console.log("listItemConfig", listItemConfig)
-
-      if(listItemConfig.length > 0) {
+      if(tabsListed?.length > 0) {
         setIsListed(true)
       }
       else {
         setIsListed(false)
       }
 
+      const savedMangaList = await readSavedMangaList();
       setTabs(savedMangaList)
     }
     AsyncEffect()

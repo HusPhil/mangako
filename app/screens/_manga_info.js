@@ -3,9 +3,12 @@ import { getMangaInfo } from '../../services/MangakakalotClient';
 import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
 
 
-export const fetchData = async (mangaUrl, abortSignal) => {
+export const fetchData = async (mangaUrl, abortSignal, isListed) => {
   try {
-      const cachedMangaInfoDir =  getMangaDirectory(mangaUrl, "N/A", "mangaInfo", "mangaInfo.json")
+      const cachedMangaInfoDir =  isListed ? 
+        getMangaDirectory(mangaUrl, "N/A", "mangaInfo", "mangaInfo.json", FileSystem.documentDirectory) :
+        getMangaDirectory(mangaUrl, "N/A", "mangaInfo", "mangaInfo.json")
+      
       let mangaInfodata;
       
       await ensureDirectoryExists(cachedMangaInfoDir.cachedFolderPath)
@@ -31,9 +34,11 @@ export const fetchData = async (mangaUrl, abortSignal) => {
   }
 }
 
-export const deleteSavedMangaInfo = async (mangaUrl) => {
+export const deleteSavedMangaInfo = async (mangaUrl, isListed) => {
   try {
-    const cachedMangaInfoDir =  getMangaDirectory(mangaUrl, "N/A", "mangaInfo", "mangaInfo.json")
+    const cachedMangaInfoDir =  isListed ? 
+        getMangaDirectory(mangaUrl, "N/A", "mangaInfo", "mangaInfo.json", FileSystem.documentDirectory) :
+        getMangaDirectory(mangaUrl, "N/A", "mangaInfo", "mangaInfo.json")
     await FileSystem.deleteAsync(cachedMangaInfoDir.cachedFilePath)
   } catch (error) {
     throw error
