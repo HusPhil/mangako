@@ -33,7 +33,7 @@ const ChapterListItem = ({ chapterTitle, currentManga, publishedDate, finished, 
 
   const additionalInfo = (currentPage > 0 && !finished) 
     ? publishedDate + ` • Page ${currentPage + 1}` 
-    : (finished ? publishedDate + ` √` : publishedDate)
+    : (finished ? publishedDate + ` • √` : publishedDate)
 
   return (
     <TouchableOpacity

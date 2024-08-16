@@ -49,39 +49,27 @@ export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject, is
     try {
       const parentKey = shorthash.unique(mangaUrl);
       const chapterKey = shorthash.unique(chapterUrl);
-      const path_mangaOnly = `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`;
-      const path_mangaWithChapter = `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}${parentKey}/configs`;
+      const path_mangaOnly = `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}${parentKey}/configs`;
+      const path_mangaWithChapter = `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`;
       const cachedFile = "/config.json";
       let savedMangaConfig = {}
       let cachedConfig = "";
-  
-      await ensureDirectoryExists(path_mangaOnly);
       
-      if(isListed) {
-        const cacheConfigInfo = await FileSystem.getInfoAsync(`${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`)
-        console.log("cacheConfigInfo", cacheConfigInfo)  
-        await FileSystem.deleteAsync(path_mangaOnly, {idempotent: true})
-        if(cacheConfigInfo.exists) {
-          await FileSystem.moveAsync( {
-            from: `${FileSystem.cacheDirectory}${parentKey}/${chapterKey}/configs`,
-            to: path_mangaOnly
-          })
-        }
-      }
+      await ensureDirectoryExists(path_mangaWithChapter);            
 
       if(chapterUrl !== CONFIG_READ_WRITE_MODE.MANGA_ONLY) {
-        await ensureDirectoryExists(path_mangaWithChapter);
-        const chapter_fileInfo = await FileSystem.getInfoAsync(path_mangaOnly + cachedFile);
+        await ensureDirectoryExists(path_mangaOnly);
+        const chapter_fileInfo = await FileSystem.getInfoAsync(path_mangaWithChapter + cachedFile);
         
         if (chapter_fileInfo.exists) {
-            cachedConfig = await FileSystem.readAsStringAsync(path_mangaOnly + cachedFile);
+            cachedConfig = await FileSystem.readAsStringAsync(path_mangaWithChapter + cachedFile);
             savedMangaConfig["chapter"] = (JSON.parse(cachedConfig))
         }
       }
       
-      const manga_fileInfo = await FileSystem.getInfoAsync(path_mangaWithChapter + cachedFile);
+      const manga_fileInfo = await FileSystem.getInfoAsync(path_mangaOnly + cachedFile);
       if (!manga_fileInfo.exists) return savedMangaConfig;  
-      cachedConfig = await FileSystem.readAsStringAsync(path_mangaWithChapter + cachedFile);
+      cachedConfig = await FileSystem.readAsStringAsync(path_mangaOnly + cachedFile);
       savedMangaConfig["manga"] = (JSON.parse(cachedConfig))
   
       return savedMangaConfig;  

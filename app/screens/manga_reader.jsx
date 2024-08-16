@@ -62,7 +62,10 @@ const MangaReaderScreen = () => {
         const signal = controllerRef.current.signal;
 
         try {
-            const fetchedChapterPages = await backend.fetchData(mangaUrl, chapterDataRef.current.chapterUrl, signal);
+            const fetchedChapterPages = await backend.fetchData(
+                mangaUrl, chapterDataRef.current.chapterUrl, 
+                signal, isListed
+                );
             if(fetchedChapterPages.error) {
                 console.log(fetchedChapterPages.error)
                 throw fetchedChapterPages.error
@@ -101,7 +104,11 @@ const MangaReaderScreen = () => {
 
     const handleClearCache = useCallback(async () => {
         const pageFileName = "NO-PAGE-FILE"
-        const pageMangaDir = getMangaDirectory(mangaUrl, chapterDataRef.current.chapterUrl, "chapterPageImages", pageFileName)
+        const pageMangaDir = getMangaDirectory(
+            mangaUrl, chapterDataRef.current.chapterUrl, 
+            "chapterPageImages", pageFileName,
+            `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+            )
         
         ensureDirectoryExists(pageMangaDir.cachedFolderPath)
     
@@ -316,6 +323,7 @@ const MangaReaderScreen = () => {
                                 onTap={handleTap}
                                 currentPage={state.currentPage}
                                 onPageChange={handlePageChange}
+                                isListed={isListed}
                                 inverted={false}
                                 horizontal={true}
                             />
@@ -330,6 +338,7 @@ const MangaReaderScreen = () => {
                                     chapter: chapterDataRef.current.chapterUrl
                                 }}
                                 onPageChange={handlePageChange}
+                                isListed={isListed}
                                 onTap={handleTap}
                                 currentPage={state.currentPage}
                                 inverted={true}
@@ -346,6 +355,7 @@ const MangaReaderScreen = () => {
                                     chapter: chapterDataRef.current.chapterUrl
                                 }}
                                 onPageChange={handlePageChange}
+                                isListed={isListed}
                                 onTap={handleTap}
                                 currentPage={state.currentPage}
                                 inverted={false}

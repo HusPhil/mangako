@@ -7,7 +7,11 @@ import { Image } from 'react-native';
 export const fetchData = async (mangaUrl, chapterUrl, pageUrl, abortSignal) => {
     try {
         const pageFileName = shorthash.unique(pageUrl)
-        const cachedChapterPageImagesDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPageImages", pageFileName)
+        const cachedChapterPageImagesDir =  getMangaDirectory(
+          mangaUrl, chapterUrl, 
+          "chapterPageImages", pageFileName,
+          `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+          )
         let pageImg = [];
         
         await ensureDirectoryExists(cachedChapterPageImagesDir.cachedFolderPath)

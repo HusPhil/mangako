@@ -21,7 +21,7 @@ const MangaReaderComponent = ({
     onTap, onPageChange, onScroll, 
     currentPage, inverted,
     horizontal, vertical,
-    loadingRange
+    isListed, loadingRange
   }) => {
     
   const [pageImages, setPageImages] = useState(() => 
@@ -81,7 +81,11 @@ const MangaReaderComponent = ({
     // take care of events for when the download finish
     if(progress.totalBytesWritten/progress.totalBytesExpectedToWrite === 1) {
       const pageFileName = shorthash.unique(pageUrl)
-      const pageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
+      const pageMangaDir = getMangaDirectory(
+        currentManga.manga, currentManga.chapter, 
+        "chapterPageImages", pageFileName,
+        `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+        )
       
       //create completion certificate which can be used for download verification
       const certificateJsonFileName = "-certificate.json"
@@ -108,7 +112,11 @@ const MangaReaderComponent = ({
   const handleDownloadVerification = useCallback(async(pageNum) => {
     const pageUrl = chapterPages[pageNum]
     const pageFileName = shorthash.unique(pageUrl)
-    const pageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
+    const pageMangaDir = getMangaDirectory(
+      currentManga.manga, currentManga.chapter, 
+      "chapterPageImages", pageFileName,
+      `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+      )
     const certificateJsonFileName = "-certificate.json"
     const certificateFileUri = pageMangaDir.cachedFilePath + certificateJsonFileName
 
@@ -148,9 +156,19 @@ const MangaReaderComponent = ({
     
     const pageUrl = chapterPages[pageNum]
     const pageFileName = shorthash.unique(pageUrl)
-    const pageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
+    const pageMangaDir = getMangaDirectory(
+      currentManga.manga, currentManga.chapter, 
+      "chapterPageImages", pageFileName,
+      `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+      )
     const savedataJsonFileName = "-saveData.json"
     const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
+
+    console.log(
+      "\nisListed:", isListed,
+      "\nPageMangaDir:", pageMangaDir.cachedFilePath,
+      "\n"
+      )
     
     await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
     
@@ -174,6 +192,7 @@ const MangaReaderComponent = ({
       currentManga.chapter, 
       pageUrl,
       savableDataUri,
+      isListed,
       handleDownloadResumableCallback,
       { pageNum }
     )
@@ -562,7 +581,11 @@ const MangaReaderComponent = ({
     )
     
     const pageFileName = shorthash.unique(pageUrl)
-    const pageMangaDir = getMangaDirectory(currentManga.manga, currentManga.chapter, "chapterPageImages", pageFileName)
+    const pageMangaDir = getMangaDirectory(
+      currentManga.manga, currentManga.chapter, 
+      "chapterPageImages", pageFileName,
+      `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+      )
     const savedataJsonFileName = "-saveData.json"
     const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
     const TIMEOUT_THRESHOLD = 60000;

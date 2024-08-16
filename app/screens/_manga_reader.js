@@ -32,10 +32,14 @@ export const loadingRangeDesc = "Range to load from the current page. Higher val
 // --------------------------------------- VARIABLES ONLY ---------------------------------------*/}
 
 
-export const fetchData = async (mangaUrl, chapterUrl, abortSignal) => {
+export const fetchData = async (mangaUrl, chapterUrl, abortSignal, isListed) => {
     try {
-        const cachedChapterPagesDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPages", "pages.json")
-        let pageUrls = [];
+        const cachedChapterPagesDir =  getMangaDirectory(
+          mangaUrl, chapterUrl, 
+          "chapterPages", "pages.json", 
+          `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`)
+        
+          let pageUrls = [];
                 
         await ensureDirectoryExists(cachedChapterPagesDir.cachedFolderPath)
         const fileInfo = await FileSystem.getInfoAsync(cachedChapterPagesDir.cachedFilePath);

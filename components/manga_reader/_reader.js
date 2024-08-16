@@ -14,7 +14,11 @@ export const SWIPE_DIRECTION = {
 
 export const savePageLayout = async (mangaUrl, chapterUrl, pageLayout) => {
     try {
-        const cachedChapterPageLayoutDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPageLayout", "pageLayout.json")
+        const cachedChapterPageLayoutDir =  getMangaDirectory(
+            mangaUrl, chapterUrl, 
+            "chapterPageLayout", "pageLayout.json"
+            `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+            )
         await ensureDirectoryExists(cachedChapterPageLayoutDir.cachedFolderPath)
 
         await FileSystem.writeAsStringAsync(cachedChapterPageLayoutDir.cachedFilePath, JSON.stringify(pageLayout));
@@ -26,7 +30,11 @@ export const savePageLayout = async (mangaUrl, chapterUrl, pageLayout) => {
 export const readPageLayout = async (mangaUrl, chapterUrl) => {
     try {
         
-        const cachedChapterPageLayoutDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPageLayout", "pageLayout.json")
+        const cachedChapterPageLayoutDir =  getMangaDirectory(
+            mangaUrl, chapterUrl, 
+            "chapterPageLayout", "pageLayout.json"
+            `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+            )
         const fileInfo = await FileSystem.getInfoAsync(cachedChapterPageLayoutDir.cachedFilePath);
         if (!fileInfo.exists) return {data: [], error: new Error("No page layout found")}
 
@@ -49,7 +57,11 @@ export const scrollToPageNum = (pageNum, pageLayout) => {
 export const fetchPageData = async (mangaUrl, chapterUrl, pageUrl, abortSignal, callback, options) => {
     try {
         const pageFileName = shorthash.unique(pageUrl)
-        const cachedChapterPageImagesDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPageImages", pageFileName)
+        const cachedChapterPageImagesDir =  getMangaDirectory(
+            mangaUrl, chapterUrl, 
+            "chapterPageImages", pageFileName
+            `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+            )
         let pageImg = [];
         
         await ensureDirectoryExists(cachedChapterPageImagesDir.cachedFolderPath)
@@ -126,10 +138,14 @@ export const fetchPageData = async (mangaUrl, chapterUrl, pageUrl, abortSignal, 
 
 //   }, [])
 
-export const downloadPageData = async (mangaUrl, chapterUrl, pageUrl, pageSaveableDataFileUri, callback, otherData) => {
+export const downloadPageData = async (mangaUrl, chapterUrl, pageUrl, pageSaveableDataFileUri, isListed, callback, otherData) => {
     try {
         const pageFileName = shorthash.unique(pageUrl)
-        const cachedChapterPageImagesDir =  getMangaDirectory(mangaUrl, chapterUrl, "chapterPageImages", pageFileName)
+        const cachedChapterPageImagesDir =  getMangaDirectory(
+            mangaUrl, chapterUrl, 
+            "chapterPageImages", pageFileName,
+            `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+            )
         
         await ensureDirectoryExists(cachedChapterPageImagesDir.cachedFolderPath)
         const saveableDataFileInfo = await FileSystem.getInfoAsync(pageSaveableDataFileUri);
@@ -159,7 +175,11 @@ export const downloadPageData = async (mangaUrl, chapterUrl, pageUrl, pageSaveab
 
 export const fetchPageDataAsPromise = (mangaUrl, chapterUrl, pageUrl, abortSignal) => {
     const pageFileName = shorthash.unique(pageUrl);
-    const cachedChapterPageImagesDir = getMangaDirectory(mangaUrl, chapterUrl, "chapterPageImages", pageFileName);
+    const cachedChapterPageImagesDir = getMangaDirectory(
+        mangaUrl, chapterUrl, 
+        "chapterPageImages", pageFileName,
+        `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+        );
 
     FileSystem
 
