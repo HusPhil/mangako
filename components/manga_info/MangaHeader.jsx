@@ -7,9 +7,12 @@ import { useCallback } from 'react';
 import ModalPopup from '../modal/ModalPopup';
 import HorizontalRule from '../HorizontalRule';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { readMangaListItemConfig, readSavedMangaList, saveMangaList, saveMangaListItemConfig } from '../../services/Global';
+import { getMangaDirectory, readMangaListItemConfig, readSavedMangaList, saveMangaList, saveMangaListItemConfig } from '../../services/Global';
 import TabListItem from '../manga_home/TabListItem';
+import * as FileSystem from 'expo-file-system';
 import colors from '../../constants/colors';
+import shorthash from 'shorthash';
+
 
 const MangaHeader = ({
     mangaCover, 
@@ -87,6 +90,7 @@ const MangaHeader = ({
       
     }
 
+    
     //check if the tab title has been selected
     await saveMangaList(mangaListToSave)
     listItemConfigToSave = [...listItemConfigToSave]
@@ -147,12 +151,12 @@ const MangaHeader = ({
                   keyExtractor={keyExtractor}
                   renderItem={renderItem}
                 />
-                <TouchableOpacity className={`border-2 mt-3 border-white rounded-md py-1 px-3 self-center flex-row justify-between`}
+                <TouchableOpacity className={`border-2 mt-3 border-white rounded-md py-1 px-3 self-center flex-row justify-between items-center`}
                   onPress={handleAddToList}>
                   <View>
                     <MaterialIcons name="add-circle-outline" size={15} color="white" />
                   </View> 
-                  <Text className=" text-center text-xs font-pregular text-white ml-1">Add to List</Text>
+                  <Text className=" text-center text-xs font-pregular text-white ml-1">{isListed ? `Save` : `Add to List`}</Text>
                 </TouchableOpacity>
                 </>
               ) : (

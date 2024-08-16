@@ -11,6 +11,7 @@ export const INITIAL_STATE = {
     readingMode: READER_MODES['0'],
     scrollOffSetY: 0,
     loadingRange: 1,
+    isListed: false
 }
 
 export const readerReducer = (state, action) => {
@@ -54,6 +55,11 @@ export const readerReducer = (state, action) => {
             return {
                 ...state,
                 loadingRange: action.payload,
+            };
+        case READER_ACTIONS.SET_IS_LISTED:
+            return {
+                ...state,
+                isListed: action.payload,
             };
         case READER_ACTIONS.LOAD_CONFIG:
             return {

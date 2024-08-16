@@ -27,7 +27,7 @@ export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject, is
       const cachedConfigFilePath = mangaOnly ? path_mangaOnly : path_mangaWithChapter
       const cachedFile = "/config.json";
   
-      const existingConfig = await readMangaConfigData(mangaUrl, chapterUrl);
+      const existingConfig = await readMangaConfigData(mangaUrl, chapterUrl, isListed);
   
       const configToSave = mangaOnly ? 
           { ...existingConfig?.manga, ...configObject } : 
@@ -40,7 +40,7 @@ export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject, is
       return { error: null };
   
     } catch (error) {
-      console.error("Fetch data error:", error);
+      console.error("Save manga config error:", error);
       return { error };
     }
   };
@@ -75,7 +75,7 @@ export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject, is
       return savedMangaConfig;  
   
     } catch (error) {
-      console.error("Fetch data error:", error);
+      console.error("Read manga config data error:", error);
       return { error };
     }
   };

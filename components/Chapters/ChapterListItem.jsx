@@ -14,6 +14,7 @@ const ChapterListItem = ({ chapterTitle, currentManga, publishedDate, finished, 
 
       if (savedMangaConfigData?.chapter?.currentPage) { 
         const retrievedCurrentPage = savedMangaConfigData.chapter.currentPage;
+        console.log("retrievedCurrentPage", retrievedCurrentPage)
         setCurrentPage(retrievedCurrentPage);
       }
 

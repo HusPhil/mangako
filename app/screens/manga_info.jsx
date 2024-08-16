@@ -1,6 +1,8 @@
 import { View, Text, ActivityIndicator, StatusBar, BackHandler, TouchableOpacity } from 'react-native';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import shorthash from 'shorthash';
+import * as FileSystem from 'expo-file-system';
 
 import ChapterList from '../../components/chapters/ChapterList';
 import MangaHeader from '../../components/manga_info/MangaHeader';
@@ -48,8 +50,35 @@ const MangaInfoScreen = () => {
     try {
       const listItemConfig = await readMangaListItemConfig(mangaUrl);
       const isListed = listItemConfig?.length > 0
-      const res = await backend.fetchData(mangaUrl, signal, isListed);
 
+      if(isListed) {
+        const mangaDir = shorthash.unique(mangaUrl)
+        const mangaCacheDir = `${FileSystem.cacheDirectory}${mangaDir}`
+        const mangaDocsDir = `${FileSystem.documentDirectory}${mangaDir}`
+        
+        const mangaDirDocsContent = await FileSystem.readDirectoryAsync(mangaDocsDir)
+        console.log("mangaDirContent Docs", mangaDirDocsContent)
+
+        const mangaCacheInfo = await FileSystem.getInfoAsync(mangaCacheDir)
+        if(mangaCacheInfo.exists) {
+          const mangaDirCacheContent = await FileSystem.readDirectoryAsync(mangaCacheDir)
+          console.log("mangaDirContent Cache", mangaDirCacheContent, typeof(mangaDirCacheContent))
+
+          mangaDirCacheContent.forEach(async item => {
+            const content = await FileSystem.readDirectoryAsync(mangaCacheDir + `/${item}`)
+            console.log(content)
+          })
+
+          await FileSystem.copyAsync({
+            from: mangaCacheDir,
+            to: mangaDocsDir
+          })
+          await FileSystem.deleteAsync(mangaCacheInfo.uri)
+          console.log("COPIED DONE")
+        }
+      }
+
+      const res = await backend.fetchData(mangaUrl, signal, isListed);
       setTabsListed(listItemConfig ?? [])
 
       if (isMounted.current) {

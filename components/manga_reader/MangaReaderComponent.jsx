@@ -64,6 +64,9 @@ const MangaReaderComponent = ({
       )
     }
 
+    console.log(typeof(isListed), isListed, "manga reader comp")
+
+
     return () => {
       isMounted.current = false;
       controllerRef.current.abort();
@@ -164,11 +167,11 @@ const MangaReaderComponent = ({
     const savedataJsonFileName = "-saveData.json"
     const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
 
-    console.log(
-      "\nisListed:", isListed,
-      "\nPageMangaDir:", pageMangaDir.cachedFilePath,
-      "\n"
-      )
+    // console.log(
+    //   "\nisListed:", isListed,
+    //   "\nPageMangaDir:", pageMangaDir.cachedFilePath,
+    //   "\n"
+    //   )
     
     await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
     

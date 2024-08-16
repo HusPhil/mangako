@@ -9,7 +9,7 @@ import Slider from '@react-native-community/slider';
 
 
 import * as backend from "./_manga_reader"
-import { CONFIG_READ_WRITE_MODE, readMangaConfigData, saveMangaConfigData } from '../../services/Global';
+import { CONFIG_READ_WRITE_MODE, readMangaConfigData, readMangaListItemConfig, saveMangaConfigData } from '../../services/Global';
 import MangaReaderComponent from '../../components/manga_reader/MangaReaderComponent';
 import DropDownList from '../../components/modal/DropdownList';
 import ModalPopup from '../../components/modal/ModalPopup';
@@ -24,21 +24,25 @@ import colors from '../../constants/colors';
 const MangaReaderScreen = () => {
     const {mangaUrl, currentChapterData, currentChapterIndex, isListedAsString } = useLocalSearchParams()
     const parsedCurrentChapterData = JSON.parse(currentChapterData)
-    const isListed = isListedAsString.toLowerCase() === "true"
-
+    
     const [state, dispatch] = useReducer(readerReducer, INITIAL_STATE)
 
     const chapterDataRef = useRef(parsedCurrentChapterData)
     const chapterNumRef = useRef(parseInt(currentChapterIndex))
     const chapterFinishedref = useRef(false)
+    const isListedRef = useRef(isListedAsString === "true")
     const longHeightWarned = useRef(false)
     const isMounted = useRef(true)
     const controllerRef = useRef(null)
 
     const AsyncEffect = useCallback(async () => {
-        console.log(typeof(isListed), isListed)
         dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
-        const savedConfig = await readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, isListed)
+        
+        const listItemConfig = await readMangaListItemConfig(mangaUrl);
+        dispatch({type: READER_ACTIONS.SET_IS_LISTED, payload: listItemConfig?.length > 0})
+        isListedRef.current = listItemConfig?.length > 0
+
+        const savedConfig = await readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, (listItemConfig?.length > 0))
 
         
         if(savedConfig) dispatch({type: READER_ACTIONS.LOAD_CONFIG, payload: {
@@ -64,7 +68,7 @@ const MangaReaderScreen = () => {
         try {
             const fetchedChapterPages = await backend.fetchData(
                 mangaUrl, chapterDataRef.current.chapterUrl, 
-                signal, isListed
+                signal, (listItemConfig?.length > 0)
                 );
             if(fetchedChapterPages.error) {
                 console.log(fetchedChapterPages.error)
@@ -85,9 +89,10 @@ const MangaReaderScreen = () => {
         
     }, [])
 
-    const saveLastViewedChapterPage = useCallback(debounce(async (pageToSave) => {
-        await saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {"currentPage": pageToSave}, isListed)
-      }, 500), []);
+    const saveLastViewedChapterPage = debounce(async (pageToSave) => {
+        console.log("isListedRef.current sa saveLastKineme", isListedRef.current)
+        await saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {"currentPage": pageToSave}, isListedRef.current)
+      }, 500)
 
     useEffect(() => {
         AsyncEffect()
@@ -107,7 +112,7 @@ const MangaReaderScreen = () => {
         const pageMangaDir = getMangaDirectory(
             mangaUrl, chapterDataRef.current.chapterUrl, 
             "chapterPageImages", pageFileName,
-            `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+            `${isListedRef.current ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
             )
         
         ensureDirectoryExists(pageMangaDir.cachedFolderPath)
@@ -126,6 +131,7 @@ const MangaReaderScreen = () => {
       })
 
     const handlePageChange = useCallback(async (currentPage, readingStatus) => {
+        console.log("isListed sa handlePgeChange", isListedRef.current)
         dispatch({ type: READER_ACTIONS.SET_CURRENT_PAGE, payload: currentPage });
         if (readingStatus?.finished && !chapterFinishedref.current) {
             await handleReadFinish()
@@ -136,16 +142,11 @@ const MangaReaderScreen = () => {
     
         saveLastViewedChapterPage(currentPage);
     
-    }, [])
-
-    const handleVertScroll = useCallback(async (scrollOffSetY) => {
-        console.log("save:", scrollOffSetY)
-        await saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {scrollOffSetY}, isListed)
-    }, [])
+    }, [isListedRef.current])
 
     const handleChapterNavigation = async (navigationMode) => {
         try {
-            const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY, isListed)
+            const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY, isListedRef.current)
 
             dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
             dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
@@ -194,7 +195,7 @@ const MangaReaderScreen = () => {
     const handleReadFinish = async () => {
         dispatch({type:READER_ACTIONS.SET_STATUS_FINISHED, payload: !state.finished})
         chapterFinishedref.current = !state.finished
-        const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY, isListed)
+        const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY, isListedRef.current)
         let newReadingStats;
 
         newReadingStats = {}
@@ -204,11 +205,12 @@ const MangaReaderScreen = () => {
         }
         
         newReadingStats[chapterDataRef.current.chapterUrl] = {finished: !state.finished}
+        console.log("isListed sa handleReAdFInsig", isListedRef.current)
         await saveMangaConfigData(
             mangaUrl, 
             chapterDataRef.current.chapterUrl, 
             {readingStats: newReadingStats}, 
-            isListed,
+            isListedRef.current,
             CONFIG_READ_WRITE_MODE.MANGA_ONLY
         )
 
@@ -216,29 +218,33 @@ const MangaReaderScreen = () => {
 
     const handleDropDownValueChange = useCallback(async (data) => {
         dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
+        console.log("isListed sa handleDropDownValueChange", isListedRef.current)
+
         await saveMangaConfigData (
             mangaUrl, 
             chapterDataRef.current.chapterUrl, 
             {"readingModeIndex": backend.READER_MODES.indexOf(data)},
-            isListed,
+            isListedRef.current,
             CONFIG_READ_WRITE_MODE.MANGA_ONLY
         )
         dispatch({type: READER_ACTIONS.SET_READER_MODE, payload: data})
     }
-    , [])
+    , [isListedRef.current])
 
     const handleSliderValueChange = useCallback(debounce(async (currentValue) => {
         dispatch({type: READER_ACTIONS.SET_LOADING_RANGE, payload: currentValue})
+        console.log("isListed sa handleSliderValueChange", isListedRef.current)
+
         await saveMangaConfigData(
             mangaUrl, 
             chapterDataRef.current.chapterUrl, 
             {loadingRange: currentValue},
-            isListed,
+            isListedRef.current,
             CONFIG_READ_WRITE_MODE.MANGA_ONLY
         )
         console.log("currentValue", currentValue)
 
-    }, [500]), [state.loadingRange])
+    }, [500]), [state.loadingRange, isListedRef.current])
 
     return (
         <View className="h-full bg-primary">
@@ -323,7 +329,7 @@ const MangaReaderScreen = () => {
                                 onTap={handleTap}
                                 currentPage={state.currentPage}
                                 onPageChange={handlePageChange}
-                                isListed={isListed}
+                                isListed={isListedRef.current}
                                 inverted={false}
                                 horizontal={true}
                             />
@@ -338,7 +344,7 @@ const MangaReaderScreen = () => {
                                     chapter: chapterDataRef.current.chapterUrl
                                 }}
                                 onPageChange={handlePageChange}
-                                isListed={isListed}
+                                isListed={isListedRef.current}
                                 onTap={handleTap}
                                 currentPage={state.currentPage}
                                 inverted={true}
@@ -355,7 +361,7 @@ const MangaReaderScreen = () => {
                                     chapter: chapterDataRef.current.chapterUrl
                                 }}
                                 onPageChange={handlePageChange}
-                                isListed={isListed}
+                                isListed={isListedRef.current}
                                 onTap={handleTap}
                                 currentPage={state.currentPage}
                                 inverted={false}
