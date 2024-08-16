@@ -69,4 +69,4 @@ const ModalPopup = ({ otherStyles, children, visible, handleClose }) => {
   );
 };
 
-export default ModalPopup;
+export default React.memo(ModalPopup);

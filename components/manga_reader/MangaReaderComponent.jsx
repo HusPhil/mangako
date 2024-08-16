@@ -765,6 +765,55 @@ const MangaReaderComponent = ({
     lastTouchStartTimeStamp.current = currentTouchTimeStamp; 
   }, [])
 
+  const handleOnTouchEnd = useCallback((gestureEvent) => {
+        
+    if(cancelSingleTap.current) {
+      cancelSingleTap.current = false;
+      return
+    }
+
+    const TAP_DURATION_THRESHOLD = 200; //in ms
+    const DOUBLE_TAP_TIME_THRESHOLD = 350; // in ms
+    const TAP_DISTANCE_THRESHOLD = 10; //in px
+
+    const currentTouchTimeStamp = gestureEvent.nativeEvent.timestamp
+    const touchDuration = currentTouchTimeStamp - lastTouchStartTimeStamp.current;
+    const numOfTouch =  gestureEvent.nativeEvent.touches.length
+
+    const { pageX:touchEndPageX, pageY:touchEndPageY } = gestureEvent.nativeEvent;
+    const { pageX:touchStartPageX, pageY:touchStartPageY } = touchStartPageLocation.current;
+
+    const distanceX = Math.abs(touchEndPageX - touchStartPageX)
+    const distanceY = Math.abs(touchEndPageY - touchStartPageY)
+
+    const isTapGesture = touchDuration < TAP_DURATION_THRESHOLD &&
+      distanceX < TAP_DISTANCE_THRESHOLD &&
+      distanceY < TAP_DISTANCE_THRESHOLD 
+      // numOfTouch === 0
+    
+    const isDoubleTapGesture = currentTouchTimeStamp - lastTouchEndTimeStamp.current < DOUBLE_TAP_TIME_THRESHOLD;
+    
+    if(!isTapGesture) {
+      lastTouchEndTimeStamp.current = currentTouchTimeStamp
+      return
+    }
+
+    if(isDoubleTapGesture && singleTapTimeout.current) {
+
+      clearTimeout(singleTapTimeout.current)
+      onDoubleTap()
+      
+      lastTouchEndTimeStamp.current = currentTouchTimeStamp
+      return
+    }
+
+    singleTapTimeout.current = setTimeout(() => {
+      onTap()
+    }, DOUBLE_TAP_TIME_THRESHOLD);
+
+    lastTouchEndTimeStamp.current = currentTouchTimeStamp        
+  }, [])
+
   const onDoubleTap = useCallback(() => {
 
     if(currentZoomLevel.current <= 1) {
@@ -811,54 +860,7 @@ const MangaReaderComponent = ({
   return (
     <View className="h-full w-full"
       onTouchStart={handleOnTouchStart}
-      onTouchEnd={(gestureEvent) => {
-        
-        if(cancelSingleTap.current) {
-          cancelSingleTap.current = false;
-          return
-        }
-
-        const TAP_DURATION_THRESHOLD = 200; //in ms
-        const DOUBLE_TAP_TIME_THRESHOLD = 350; // in ms
-        const TAP_DISTANCE_THRESHOLD = 10; //in px
-
-        const currentTouchTimeStamp = gestureEvent.nativeEvent.timestamp
-        const touchDuration = currentTouchTimeStamp - lastTouchStartTimeStamp.current;
-        const numOfTouch =  gestureEvent.nativeEvent.touches.length
-
-        const { pageX:touchEndPageX, pageY:touchEndPageY } = gestureEvent.nativeEvent;
-        const { pageX:touchStartPageX, pageY:touchStartPageY } = touchStartPageLocation.current;
-
-        const distanceX = Math.abs(touchEndPageX - touchStartPageX)
-        const distanceY = Math.abs(touchEndPageY - touchStartPageY)
-
-        const isTapGesture = touchDuration < TAP_DURATION_THRESHOLD &&
-          distanceX < TAP_DISTANCE_THRESHOLD &&
-          distanceY < TAP_DISTANCE_THRESHOLD 
-          // numOfTouch === 0
-        
-        const isDoubleTapGesture = currentTouchTimeStamp - lastTouchEndTimeStamp.current < DOUBLE_TAP_TIME_THRESHOLD;
-        
-        if(!isTapGesture) {
-          lastTouchEndTimeStamp.current = currentTouchTimeStamp
-          return
-        }
-
-        if(isDoubleTapGesture && singleTapTimeout.current) {
-
-          clearTimeout(singleTapTimeout.current)
-          onDoubleTap()
-          
-          lastTouchEndTimeStamp.current = currentTouchTimeStamp
-          return
-        }
-
-        singleTapTimeout.current = setTimeout(() => {
-          onTap()
-        }, DOUBLE_TAP_TIME_THRESHOLD);
-
-        lastTouchEndTimeStamp.current = currentTouchTimeStamp        
-      }}
+      onTouchEnd={handleOnTouchEnd}
     >
       <ReactNativeZoomableView
           ref={zoomableViewRef}

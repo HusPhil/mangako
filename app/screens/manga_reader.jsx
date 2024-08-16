@@ -103,7 +103,7 @@ const MangaReaderScreen = () => {
         }
     }, [])
 
-    const handleTap = useCallback((testData) => {
+    const handleTap = useCallback(() => {
         dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
     }, [])
 
