@@ -211,7 +211,8 @@ export const getChapterList = async (mangaUrl, abortSignal) => {
       return null;
     }
   } catch (error) {
-    console.error(`Error: ${error.message}`);
+    console.error(`Error getting chapter list: ${error.message}`);
+    throw error
     return null;
   }
 };

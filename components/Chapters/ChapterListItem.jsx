@@ -4,8 +4,20 @@ import { useFocusEffect } from 'expo-router';
 
 import { readMangaConfigData } from '../../services/Global';
 
-const ChapterListItem = ({ chapterTitle, currentManga, publishedDate, finished, handlePress, isListed }) => {
+const CHAPTER_LIST_MODE = Object.freeze({
+  SELECT_MODE: "SELECT_MODE",
+  MULTI_SELECT_MODE: "MULTI_SELECT_MODE",
+})
+
+const ChapterListItem = ({ 
+  chapterTitle, currentManga, 
+  publishedDate, finished, 
+  onPress, onLongPress, 
+  isListed, chapterData, 
+  listMode, isSelected
+ }) => {
   const [currentPage, setCurrentPage] = useState(0);
+  // const [isSelected, setIsSelected] = useState(false)
   
   // Function to fetch current page and reading status •
   const getChapterCurrentPageList = useCallback(async () => {
@@ -14,7 +26,6 @@ const ChapterListItem = ({ chapterTitle, currentManga, publishedDate, finished, 
 
       if (savedMangaConfigData?.chapter?.currentPage) { 
         const retrievedCurrentPage = savedMangaConfigData.chapter.currentPage;
-        console.log("retrievedCurrentPage", retrievedCurrentPage)
         setCurrentPage(retrievedCurrentPage);
       }
 
@@ -36,10 +47,19 @@ const ChapterListItem = ({ chapterTitle, currentManga, publishedDate, finished, 
     ? publishedDate + ` • Page ${currentPage + 1}` 
     : (finished ? publishedDate + ` • √` : publishedDate)
 
+  const handlePress = useCallback(() => {    
+    onPress(chapterData)
+  }, [chapterData])
+
+  const handleLongPress = useCallback(() => {
+    onLongPress(chapterData)
+  }, [chapterData])
+
   return (
     <TouchableOpacity
-      className={`bg-secondary p-2 rounded-md my-1 ${ finished ? 'opacity-50' : ''}`}
+      className={`bg-secondary p-2 rounded-md my-1 ${ finished && 'opacity-50'} ${isSelected && 'border border-accent'}`}
       onPress={handlePress}
+      onLongPress={handleLongPress}
     >
       <Text numberOfLines={1} className="font-pregular text-white">
         {chapterTitle || 'Loading'}{' '}

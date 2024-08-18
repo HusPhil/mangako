@@ -65,15 +65,14 @@ export const fetchData = async (mangaUrl, chapterUrl, abortSignal, isListed) => 
     }
 };
 
-export const chapterNavigator = async (mangaUrl, targetIndex, abortSignal) => {
+export const chapterNavigator = async (mangaUrl, targetIndex, chapterList, abortSignal, isListed) => {
     
    try {
-    const cachedChapterList = await getChapterList(mangaUrl, abortSignal)
-    const targetChapter = cachedChapterList[targetIndex] 
+    const targetChapter = chapterList[targetIndex] 
 
     if(!targetChapter) throw new Error("Target chapter undefined")
 
-    const fetchedNextChapter = await fetchData(mangaUrl, targetChapter.chapterUrl, abortSignal)
+    const fetchedNextChapter = await fetchData(mangaUrl, targetChapter.chapterUrl, abortSignal, isListed)
 
     return { ...fetchedNextChapter, targetChapter}
 

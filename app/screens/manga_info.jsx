@@ -55,9 +55,6 @@ const MangaInfoScreen = () => {
         const mangaDir = shorthash.unique(mangaUrl)
         const mangaCacheDir = `${FileSystem.cacheDirectory}${mangaDir}`
         const mangaDocsDir = `${FileSystem.documentDirectory}${mangaDir}`
-        
-        const mangaDirDocsContent = await FileSystem.readDirectoryAsync(mangaDocsDir)
-        console.log("mangaDirContent Docs", mangaDirDocsContent)
 
         const mangaCacheInfo = await FileSystem.getInfoAsync(mangaCacheDir)
         if(mangaCacheInfo.exists) {
@@ -66,7 +63,6 @@ const MangaInfoScreen = () => {
 
           mangaDirCacheContent.forEach(async item => {
             const content = await FileSystem.readDirectoryAsync(mangaCacheDir + `/${item}`)
-            console.log(content)
           })
 
           await FileSystem.copyAsync({

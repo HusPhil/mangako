@@ -9,6 +9,11 @@ import ChapterListItem from './ChapterListItem';
 
 import { readMangaConfigData, CONFIG_READ_WRITE_MODE } from '../../services/Global';
 
+const CHAPTER_LIST_MODE = Object.freeze({
+  SELECT_MODE: "SELECT_MODE",
+  MULTI_SELECT_MODE: "MULTI_SELECT_MODE",
+})
+
 const ChapterList = ({ 
   mangaUrl, chaptersData, 
   headerComponent, listStyles, 
@@ -17,9 +22,12 @@ const ChapterList = ({
   const [showBtnToBottom, setShowBtnToBottom] = useState(false)
   const [showBtnToTop, setShowBtnToTop] = useState(false)
   const [chapterList, setChapterList] = useState(chaptersData)
+  const [selectedChapters, setSelectedChapters] = useState([])
 
+  
   const flashListref = useRef(null)
   const previousScrollY = useRef(0);
+  const listModeRef = useRef(CHAPTER_LIST_MODE.SELECT_MODE)
 
   const handleScrollToTop = () => {
     const flashList = flashListref.current
@@ -35,17 +43,52 @@ const ChapterList = ({
     }
   } 
 
-  const handleChapterPress = useCallback((item, index) => {
-    router.push({
-      pathname: "screens/manga_reader",
-      params: {
-        currentChapterData: JSON.stringify(item),
-        currentChapterIndex: index,
-        isListedAsString: isListed,
-        mangaUrl, 
+  const handleChapterPress = useCallback((chapterData) => {
+    
+    if(listModeRef.current !== CHAPTER_LIST_MODE.MULTI_SELECT_MODE) {
+      router.push({
+        pathname: "screens/manga_reader",
+        params: {
+          currentChapterData: JSON.stringify(chapterData),
+          currentChapterIndex: chapterData.index,
+          isListedAsString: isListed,
+          mangaUrl, 
+        }
+      });
+      return
+    }
+
+    console.log(`${chapterData.chTitle} was selected!`)
+
+    //indicate that the item was selected or deselected
+    setChapterList(prev => prev.map((item, index) => {
+      if (index === chapterData.index) {
+        return {
+          ...item,
+          isSelected: item.isSelected ? !item.isSelected : true 
+        }
       }
-    });
-  }, [chaptersData, mangaUrl]);
+      return item
+    }))
+
+  }, [])
+
+  const handleLongPress = useCallback((chapterData) => {
+    console.log("long press called in chapter list")
+    listModeRef.current = CHAPTER_LIST_MODE.MULTI_SELECT_MODE
+
+    //indicate that the item was selected or deselected
+    setChapterList(prev => prev.map((item, index) => {
+      if (index === chapterData.index) {
+        return {
+          ...item,
+          isSelected: item.isSelected ? !item.isSelected : true 
+        }
+      }
+      return item
+    }))
+
+  }, [chaptersData, mangaUrl])
 
   const handleScroll = (event) => {
     const {
@@ -128,21 +171,25 @@ const ChapterList = ({
   const renderItem = useCallback(({ item, index }) => (
     <View className="w-full px-2">
       <ChapterListItem
+        chapterData={{...item, index}}
         currentManga={{ manga: mangaUrl, chapter: item.chapterUrl }}
         chapterTitle={item.chTitle}
         publishedDate={item.publishDate}
-        handlePress={() => handleChapterPress(item, index)}
+        onPress={handleChapterPress}
+        onLongPress={handleLongPress}
         finished={item.finished}
         onFetchReadingStatus={handleFetchReadingStatus}
         currentPage={index}
         isListed={isListed}
+        isSelected={item.isSelected}
+        listMode={item.listMode}
       />
     </View>
-  ), [handleChapterPress, mangaUrl]);
+  ), [handleChapterPress, handleLongPress, mangaUrl, listModeRef.current]);
 
   const keyExtractor = useCallback((item, index) => {
-    return ` ${item}-${index}`;
-  }, []);
+    return ` ${item.chapterUrl}-${index}`;
+  }, [chapterList]);
 
   return (
     <View className="flex-1">
