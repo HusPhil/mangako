@@ -13,16 +13,18 @@ import * as backend from "./_manga_info";
 import { readMangaListItemConfig } from '../../services/Global';
 
 const MangaInfoScreen = () => {
-  const params = useLocalSearchParams();
-  const { mangaId, mangaCover, mangaTitle, mangaUrl } = params;
+  const { mangaId, mangaCover, mangaTitle, mangaUrl } = useLocalSearchParams();;
   const [mangaInfo, setMangaInfo] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [tabsListed, setTabsListed] = useState([])
   const [errorData, setErrorData] = useState(null);
+  const [listMode, setListMode] = useState(backend.CHAPTER_LIST_MODE.SELECT_MODE)
+
 
   const controllerRef = useRef(null);
   const isMounted = useRef(true);
   const router = useRouter();
+  const selectedChapters = useRef([])
 
   const handleBackPress = () => {
     if (controllerRef.current) {
@@ -114,6 +116,18 @@ const MangaInfoScreen = () => {
   }, [mangaUrl]);
   
 
+  const handleListModeChange = useCallback((currentListMode) => {
+    setListMode(currentListMode)
+  }, [])
+
+  const handleMarkAsRead = useCallback(() => {
+    console.log("the chapters to be selected as read:\n", selectedChapters.current)
+  }, [])
+
+  const handleChapterSelect = useCallback((currentSelectedChapters) => {
+    selectedChapters.current = currentSelectedChapters;
+  }, [])
+
   
 
 
@@ -130,7 +144,10 @@ const MangaInfoScreen = () => {
           details={mangaInfo ? mangaInfo.mangaDetails : null}
           isLoading={isLoading}
           tabsListed={tabsListed}
+          listMode={listMode}
+          onMarkAsRead={handleMarkAsRead}
         />
+        
         {isLoading ? (
           <View className="flex-1 justify-center items-center">
             <ActivityIndicator color={'white'} size={'large'}/>
@@ -144,6 +161,8 @@ const MangaInfoScreen = () => {
               listStyles={{paddingBottom: 8, paddingHorizontal: 8}}
               onRefresh={handleRefresh}
               isListed={tabsListed?.length > 0}
+              onListModeChange={handleListModeChange}
+              onChapterSelect={handleChapterSelect}
               headerComponent={
                 <View>
                   

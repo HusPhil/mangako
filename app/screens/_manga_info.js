@@ -3,6 +3,11 @@ import { getMangaInfo } from '../../services/MangakakalotClient';
 import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
 
 
+export const CHAPTER_LIST_MODE = Object.freeze({
+  SELECT_MODE: "SELECT_MODE",
+  MULTI_SELECT_MODE: "MULTI_SELECT_MODE",
+})
+
 export const fetchData = async (mangaUrl, abortSignal, isListed) => {
   try {
       const cachedMangaInfoDir =  isListed ? 

@@ -12,16 +12,15 @@ import TabListItem from '../manga_home/TabListItem';
 import * as FileSystem from 'expo-file-system';
 import colors from '../../constants/colors';
 import shorthash from 'shorthash';
+import { CHAPTER_LIST_MODE } from '../../app/screens/_manga_info';
 
 
 const MangaHeader = ({
-    mangaCover, 
-    mangaId, 
-    mangaTitle,
-    mangaUrl,
-    isLoading,
-    tabsListed,
-    details,
+    mangaCover, mangaId, 
+    mangaTitle, mangaUrl,
+    isLoading, tabsListed,
+    details, listMode,
+    onMarkAsRead,
 }) => {
   const [showModal, setShowModal] = useState(false)
   const [tabs, setTabs] = useState([])
@@ -124,6 +123,10 @@ const MangaHeader = ({
     }
   }, [selectedTabs])
 
+  const handleMarkAsRead = useCallback(() => {
+    onMarkAsRead()
+  }, [])
+
   const renderItem = ({item, index}) => {
     return (
       <TabListItem item={item} onSelectItem={handleSelectItem}
@@ -168,7 +171,7 @@ const MangaHeader = ({
       
         <ScrollView>
           <View>
-          
+            
           
             <ImageBackground
               source={{ uri: mangaCover }}
@@ -215,7 +218,6 @@ const MangaHeader = ({
             </View>
           </View>
         </ScrollView>
-        
       </View>
   )
 }
