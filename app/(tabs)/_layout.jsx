@@ -74,14 +74,14 @@ const TabsLayout = () => {
             }}
         />
         <Tabs.Screen
-            name="more"
+            name="download"
             options={{
-              title: "More",
+              title: "Downloads",
               headerShown: false,
               tabBarIcon: ({color, focused}) => (
                   <TabIcon 
-                    name="More"
-                    icon={icons.more}
+                    name="Downloads"
+                    icon={icons.download}
                     color={color}
                     focused={focused}
                   />

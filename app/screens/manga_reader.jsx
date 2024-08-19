@@ -112,7 +112,7 @@ const MangaReaderScreen = () => {
     }, [])
 
     const handleTap = useCallback(() => {
-        dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
+        dispatch({type: READER_ACTIONS.SHOW_MODAL})
     }, [])
 
     const handleClearCache = useCallback(async () => {
@@ -151,33 +151,36 @@ const MangaReaderScreen = () => {
     
     }, [isListedRef.current])
 
-    const handleChapterNavigation = async (navigationMode) => {
+    const handleChapterNavigation = useCallback(async (navigationMode) => {
         try {
             const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY, isListedRef.current)
-
+            const currentChapterPages = state.chapterPages
             dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
-            dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
+            dispatch({type: READER_ACTIONS.SHOW_MODAL})
             
     
             controllerRef.current =  new AbortController()
             const signal = controllerRef.current.signal
-    
-            const currentChapterPages = state.chapterPages
-    
+        
             const currentIndex = chapterNumRef.current
             const targetIndex = navigationMode === backend.CHAPTER_NAVIGATION.NEXT ? 
                 currentIndex - 1 : currentIndex + 1
-        
-            const chapterNavigator = await backend.chapterNavigator(mangaUrl, targetIndex, chapterListref.current, signal, isListedRef.current)
-    
-            if(chapterNavigator.error) {
-                dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_ERROR, payload: {chapterPages: currentChapterPages}})
+
+
+            if(targetIndex > chapterListref.current.length - 1 || targetIndex < 0) {
                 const alertMessage = navigationMode === backend.CHAPTER_NAVIGATION.NEXT ? "Next chapter no found." : "Previous chapter not found." 
                 Toast.show(
                     alertMessage,
                     Toast.LONG,
                   );
+                dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_SUCCESS, payload: currentChapterPages})
                 return
+            }
+        
+            const chapterNavigator = await backend.chapterNavigator(mangaUrl, targetIndex, chapterListref.current, signal, isListedRef.current)
+    
+            if(chapterNavigator.error) {
+                throw chapterNavigator.error
             }
     
             if(savedMangaConfigData?.manga?.readingStats) {
@@ -197,7 +200,15 @@ const MangaReaderScreen = () => {
         } catch (error) {
             console.error(error)
         }
-    }
+    }, [state.chapterPages])
+
+    const handleToNextChapter = useCallback(async () => {
+        await handleChapterNavigation(backend.CHAPTER_NAVIGATION.NEXT)
+    }, [state.chapterPages])
+
+    const handleToPrevChapter = useCallback(async () => {
+        await handleChapterNavigation(backend.CHAPTER_NAVIGATION.PREV)
+    }, [state.chapterPages])
 
     const handleReadFinish = async () => {
         dispatch({type:READER_ACTIONS.SET_STATUS_FINISHED, payload: !state.finished})
@@ -223,7 +234,7 @@ const MangaReaderScreen = () => {
     }
 
     const handleDropDownValueChange = useCallback(async (data) => {
-        dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})
+        dispatch({type: READER_ACTIONS.SHOW_MODAL})
 
         await saveMangaConfigData (
             mangaUrl, 
@@ -251,10 +262,10 @@ const MangaReaderScreen = () => {
     }, [500]), [state.loadingRange, isListedRef.current])
 
     return (
-        <View className="h-full bg-primary">
-            <ModalPopup 
+        <>
+        <ModalPopup 
                 visible={state.showModal} otherStyles={{backgroundColor: 'transparent',}}
-                handleClose={() => {dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: state.showModal})}}
+                handleClose={handleTap}
             >
                 <View className="h-full w-full justify-end items-center bg-transparent">
                     <View className="bg-secondary justify-end rounded-md p-1 px-2">
@@ -298,15 +309,11 @@ const MangaReaderScreen = () => {
                     
                         <View className="flex-row justify-between m-2 my-3">
                             <View className="flex-row justify-between">
-                                <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md " onPress={async () => {
-                                    await handleChapterNavigation(backend.CHAPTER_NAVIGATION.PREV)
-                                }}>
+                                <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md " onPress={handleToPrevChapter}>
                                     <AntDesign name="stepbackward" size={12} color="white" />
                                 </TouchableOpacity>
                                 
-                                <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md ml-2" onPress={async () => {
-                                    await handleChapterNavigation(backend.CHAPTER_NAVIGATION.NEXT)
-                                }}>
+                                <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md ml-2" onPress={handleToNextChapter}>
                                     <AntDesign name="stepforward" size={12} color="white" />
                                 </TouchableOpacity> 
                             </View>
@@ -319,9 +326,11 @@ const MangaReaderScreen = () => {
                 </View>
             
           </ModalPopup>
+        <View className="h-full bg-primary">
+            
             {!state.isLoading ? (
                 !state.errorData ? (
-                    <View key={state.loadingRange}>
+                    <View key={state.loadingRange} className="flex-1">
                         {state.readingMode === backend.READER_MODES[0] && (
                             <MangaReaderComponent 
                                 chapterPages={state.chapterPages}
@@ -394,6 +403,7 @@ const MangaReaderScreen = () => {
             )}
 
         </View>
+        </>
     )
 }
 

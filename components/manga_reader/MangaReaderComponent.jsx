@@ -64,9 +64,6 @@ const MangaReaderComponent = ({
       )
     }
 
-    console.log(typeof(isListed), isListed, "manga reader comp")
-
-
     return () => {
       isMounted.current = false;
       controllerRef.current.abort();
@@ -167,12 +164,6 @@ const MangaReaderComponent = ({
     const savedataJsonFileName = "-saveData.json"
     const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
 
-    // console.log(
-    //   "\nisListed:", isListed,
-    //   "\nPageMangaDir:", pageMangaDir.cachedFilePath,
-    //   "\n"
-    //   )
-    
     await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
     
     //add this page to the loaded page images but do not indicate that is is already loaded (might need to be removed)
@@ -371,7 +362,6 @@ const MangaReaderComponent = ({
   }
 
   const loadPageImages = useCallback(async (pageNum) => {
-    console.log("loadingRange", loadingRange)
     const pageNumbersLoadingRange = generatePageNumbers(pageNum, loadingRange, chapterPages.length)
 
     try {
@@ -387,8 +377,6 @@ const MangaReaderComponent = ({
       }
 
       if(loadedPagesCount === pageNumbersLoadingRange.size) return
-
-      console.log(`Not all are loaded: ${loadedPagesCount}/${pageNumbersLoadingRange.size}` )
 
       // determine the already downloaded pages and thos that have to be downloaded 
       // also create a map of uri to other info of page
@@ -858,7 +846,7 @@ const MangaReaderComponent = ({
   }, [])
  
   return (
-    <View className="h-full w-full"
+    <View className="flex-1"
       onTouchStart={handleOnTouchStart}
       onTouchEnd={handleOnTouchEnd}
     >

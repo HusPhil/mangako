@@ -1,4 +1,4 @@
-import { View, Text, RefreshControl, TouchableOpacity, Vibration } from 'react-native';
+import { View, Text, RefreshControl, TouchableOpacity, Vibration, ToastAndroid } from 'react-native';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import { router, useFocusEffect } from 'expo-router';
@@ -317,6 +317,13 @@ const ChapterList = ({
     }
 
   }, [chapterList, readMarkMode])
+
+  const handleDownload = useCallback(() => {
+    ToastAndroid.show(
+      "Coming soon",
+      ToastAndroid.LONG
+    )
+  }, [])
   
   const renderItem = useCallback(({ item, index }) => (
     <View className="w-full px-2">
@@ -416,7 +423,7 @@ const ChapterList = ({
                     </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity className="flex-row justify-center items-center flex-1">
+                <TouchableOpacity className="flex-row justify-center items-center flex-1" onPress={handleDownload}>
                   <View>
                     <MaterialIcons name="file-download" size={24} color="white" />
                   </View> 

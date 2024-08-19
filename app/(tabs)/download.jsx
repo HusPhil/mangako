@@ -4,11 +4,12 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import DragList, {DragListRenderItemInfo} from 'react-native-draglist';
 import NumericRange from '../../components/NumericRange';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import colors from '../../constants/colors';
 
 const SOUND_OF_SILENCE = ['hello', 'darkness', 'my', 'old', 'friend'];
 
-const more = () => {
+const download = () => {
   const [data, setData] = useState(SOUND_OF_SILENCE);
 
   function keyExtractor(str) {
@@ -38,16 +39,18 @@ const more = () => {
   }
 
   return (
-    <SafeAreaView>
+    <SafeAreaView className="h-full bg-primary justify-center items-center">
       {/* <DragList
         data={data}
         keyExtractor={keyExtractor}
         onReordered={onReordered}
         renderItem={renderItem}
       /> */}
-      <NumericRange />
+      {/* <NumericRange /> */}
+      <MaterialIcons name="construction" size={125} color={colors.accent.DEFAULT} />
+      <Text className="text-white font-pregular text-2xl">Under construction</Text>
     </SafeAreaView>
   );
 }
 
-export default more
+export default download
