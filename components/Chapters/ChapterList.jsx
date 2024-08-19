@@ -26,7 +26,7 @@ const ChapterList = ({
   const flashListref = useRef(null)
   const previousScrollY = useRef(0);
   const listModeRef = useRef(CHAPTER_LIST_MODE.SELECT_MODE)
-  const readMarkModeRef = useRef(READ_MARK_MODE.MARK_AS_READ)
+  const [readMarkMode, setReadMarkMode] = useState(READ_MARK_MODE.MARK_AS_READ)
   const selectedChapters = useRef([])
 
   const handleScrollToTop = () => {
@@ -97,8 +97,10 @@ const ChapterList = ({
 
     console.log(chapterList[chapterData.index])
 
-    readMarkModeRef.current = chapterList[chapterData.index]?.finished ?
+    setReadMarkMode(
+      chapterList[chapterData.index]?.finished ?
       READ_MARK_MODE.MARK_AS_UNREAD : READ_MARK_MODE.MARK_AS_READ
+    )
 
     listModeRef.current = CHAPTER_LIST_MODE.MULTI_SELECT_MODE
     Vibration.vibrate(100)
@@ -251,7 +253,7 @@ const ChapterList = ({
     
     selectedChapters.current.forEach(item => {
       newReadingStats[item.chapterUrl] = {
-        finished: readMarkModeRef.current === READ_MARK_MODE.MARK_AS_READ
+        finished: readMarkMode === READ_MARK_MODE.MARK_AS_READ
       }
       chapterUrlToDataMap.set(item.chapterUrl, item)
     })
@@ -260,7 +262,7 @@ const ChapterList = ({
       if(chapterUrlToDataMap.has(item.chapterUrl)) {
         return {
           ...item,
-          finished: readMarkModeRef.current === READ_MARK_MODE.MARK_AS_READ
+          finished: readMarkMode === READ_MARK_MODE.MARK_AS_READ
         }
       }
       return item;
@@ -276,7 +278,7 @@ const ChapterList = ({
 
     selectedChapters.current = [];
 
-  }, [chaptersData, mangaUrl, listModeRef.current])
+  }, [chaptersData, mangaUrl, listModeRef.current, readMarkMode])
 
   const handleSelectAll = useCallback(() => {
     //indicate that the item was selected or deselected
@@ -288,6 +290,8 @@ const ChapterList = ({
   }, [chapterList])
 
   const handleSelectInverse = useCallback(() => {
+    console.log("read", readMarkMode)
+    
     //indicate that the item was selected or deselected
     selectedChapters.current = []
     setChapterList(prev => prev.map(item => {
@@ -302,6 +306,17 @@ const ChapterList = ({
     }))
 
   }, [chapterList])
+
+  const handleSwitchReadMode = useCallback(() => {
+    console.log("read", readMarkMode)
+    if(readMarkMode === READ_MARK_MODE.MARK_AS_READ) {
+      setReadMarkMode(READ_MARK_MODE.MARK_AS_UNREAD)
+    }
+    else {
+      setReadMarkMode(READ_MARK_MODE.MARK_AS_READ)
+    }
+
+  }, [chapterList, readMarkMode])
   
   const renderItem = useCallback(({ item, index }) => (
     <View className="w-full px-2">
@@ -390,15 +405,14 @@ const ChapterList = ({
 
               <HorizontalRule otherStyles={"mx-2"}/>
 
-              <View className="flex-row flex-1 my-3">
+              <View className="flex-row flex-1 my-3" >
                 <TouchableOpacity className="flex-row justify-center items-center flex-1"
-                  onPress={handleMarkAsRead} key={readMarkModeRef.current}>
+                  onPress={handleMarkAsRead} onLongPress={handleSwitchReadMode} key={readMarkMode}>
                   <View>
-                    <MaterialIcons name={readMarkModeRef.current  === READ_MARK_MODE.MARK_AS_READ ? "check-box" : "indeterminate-check-box"} size={24} color="white" />
+                    <MaterialIcons name={readMarkMode  === READ_MARK_MODE.MARK_AS_READ ? "check-box" : "indeterminate-check-box"} size={24} color="white" />
                   </View> 
-                  
                   <Text className="text-white ml-2 font-pregular text-xs text-left">
-                    {readMarkModeRef.current === READ_MARK_MODE.MARK_AS_READ ? "Mark as read" : "Mark as unread"}
+                    {readMarkMode === READ_MARK_MODE.MARK_AS_READ ? "Mark as read" : "Mark as unread"}
                     </Text>
                 </TouchableOpacity>
 

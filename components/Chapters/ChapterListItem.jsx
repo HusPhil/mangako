@@ -12,8 +12,7 @@ const ChapterListItem = ({
   listMode, isSelected
  }) => {
   const [currentPage, setCurrentPage] = useState(0);
-  // const [isSelected, setIsSelected] = useState(false)
-  
+    
   // Function to fetch current page and reading status •
   const getChapterCurrentPageList = useCallback(async () => {
     try {

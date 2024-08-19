@@ -81,7 +81,6 @@ const MangaReaderScreen = () => {
 
             const mangaInfo = await getMangaInfo(mangaUrl, signal, isListedRef.current)
             if(mangaInfo.error) throw mangaInfo.error
-            console.log(mangaInfo)
             chapterListref.current = mangaInfo.data.chapterList
 
             dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_SUCCESS, payload: fetchedChapterPages.data})
