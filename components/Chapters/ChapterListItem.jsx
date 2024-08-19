@@ -4,11 +4,6 @@ import { useFocusEffect } from 'expo-router';
 
 import { readMangaConfigData } from '../../services/Global';
 
-const CHAPTER_LIST_MODE = Object.freeze({
-  SELECT_MODE: "SELECT_MODE",
-  MULTI_SELECT_MODE: "MULTI_SELECT_MODE",
-})
-
 const ChapterListItem = ({ 
   chapterTitle, currentManga, 
   publishedDate, finished, 

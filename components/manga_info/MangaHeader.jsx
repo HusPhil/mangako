@@ -19,8 +19,7 @@ const MangaHeader = ({
     mangaCover, mangaId, 
     mangaTitle, mangaUrl,
     isLoading, tabsListed,
-    details, listMode,
-    onMarkAsRead,
+    details
 }) => {
   const [showModal, setShowModal] = useState(false)
   const [tabs, setTabs] = useState([])
@@ -122,10 +121,6 @@ const MangaHeader = ({
       ))
     }
   }, [selectedTabs])
-
-  const handleMarkAsRead = useCallback(() => {
-    onMarkAsRead()
-  }, [])
 
   const renderItem = ({item, index}) => {
     return (

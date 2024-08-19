@@ -8,6 +8,11 @@ export const CHAPTER_LIST_MODE = Object.freeze({
   MULTI_SELECT_MODE: "MULTI_SELECT_MODE",
 })
 
+export const READ_MARK_MODE = Object.freeze({
+  MARK_AS_READ: "MARK_AS_READ",
+  MARK_AS_UNREAD: "MARK_AS_UNREAD",
+})
+
 export const fetchData = async (mangaUrl, abortSignal, isListed) => {
   try {
       const cachedMangaInfoDir =  isListed ? 

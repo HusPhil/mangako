@@ -18,8 +18,6 @@ const MangaInfoScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [tabsListed, setTabsListed] = useState([])
   const [errorData, setErrorData] = useState(null);
-  const [listMode, setListMode] = useState(backend.CHAPTER_LIST_MODE.SELECT_MODE)
-
 
   const controllerRef = useRef(null);
   const isMounted = useRef(true);
@@ -114,22 +112,6 @@ const MangaInfoScreen = () => {
       }
     };
   }, [mangaUrl]);
-  
-
-  const handleListModeChange = useCallback((currentListMode) => {
-    setListMode(currentListMode)
-  }, [])
-
-  const handleMarkAsRead = useCallback(() => {
-    console.log("the chapters to be selected as read:\n", selectedChapters.current)
-  }, [])
-
-  const handleChapterSelect = useCallback((currentSelectedChapters) => {
-    selectedChapters.current = currentSelectedChapters;
-  }, [])
-
-  
-
 
   return (
     <View className="h-full w-full bg-primary">
@@ -144,8 +126,6 @@ const MangaInfoScreen = () => {
           details={mangaInfo ? mangaInfo.mangaDetails : null}
           isLoading={isLoading}
           tabsListed={tabsListed}
-          listMode={listMode}
-          onMarkAsRead={handleMarkAsRead}
         />
         
         {isLoading ? (
@@ -161,8 +141,6 @@ const MangaInfoScreen = () => {
               listStyles={{paddingBottom: 8, paddingHorizontal: 8}}
               onRefresh={handleRefresh}
               isListed={tabsListed?.length > 0}
-              onListModeChange={handleListModeChange}
-              onChapterSelect={handleChapterSelect}
               headerComponent={
                 <View>
                   

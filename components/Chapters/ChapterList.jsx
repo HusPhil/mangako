@@ -1,4 +1,4 @@
-import { View, Text, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, RefreshControl, TouchableOpacity, Vibration } from 'react-native';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import { router, useFocusEffect } from 'expo-router';
@@ -6,8 +6,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
 
 import ChapterListItem from './ChapterListItem';
-import { readMangaConfigData, CONFIG_READ_WRITE_MODE } from '../../services/Global';
-import { CHAPTER_LIST_MODE } from '../../app/screens/_manga_info';
+import { readMangaConfigData, CONFIG_READ_WRITE_MODE, saveMangaConfigData } from '../../services/Global';
+import { CHAPTER_LIST_MODE, READ_MARK_MODE } from '../../app/screens/_manga_info';
+import colors from '../../constants/colors';
+import HorizontalRule from '../HorizontalRule';
 
 const ChapterList = ({ 
   mangaUrl, chaptersData, 
@@ -22,6 +24,7 @@ const ChapterList = ({
   const flashListref = useRef(null)
   const previousScrollY = useRef(0);
   const listModeRef = useRef(CHAPTER_LIST_MODE.SELECT_MODE)
+  const readMarkModeRef = useRef(READ_MARK_MODE.MARK_AS_READ)
   const selectedChapters = useRef([])
 
   const handleScrollToTop = () => {
@@ -53,18 +56,15 @@ const ChapterList = ({
       return
     }
 
-    console.log(`${chapterData.chTitle} was selected!`)
-
     //indicate that the item was selected or deselected
-    setChapterList(prev => prev.map((item, index) => {
-      if (index === chapterData.index) {
-        return {
-          ...item,
-          isSelected: item.isSelected ? !item.isSelected : true 
-        }
+    setChapterList(prev => {
+      const newChapterList = [...prev]
+      newChapterList[chapterData.index] = {
+        ...newChapterList[chapterData.index],
+        isSelected: newChapterList[chapterData.index].isSelected ? !newChapterList[chapterData.index].isSelected : true 
       }
-      return item
-    }))
+      return newChapterList
+    })
 
     // add or remove (if already selected)
     const chapterUrlToDataMap = new Map()
@@ -83,37 +83,33 @@ const ChapterList = ({
       selectedChapters.current.push(chapterData)
     }
 
-    onChapterSelect(selectedChapters.current)
-
     if(selectedChapters.current.length < 1) {
-      console.log("wala nang ")
-  
-        listModeRef.current = CHAPTER_LIST_MODE.SELECT_MODE
-        onListModeChange(CHAPTER_LIST_MODE.SELECT_MODE)
-      }
-    else {
-      onListModeChange(CHAPTER_LIST_MODE.MULTI_SELECT_MODE)
+      listModeRef.current = CHAPTER_LIST_MODE.SELECT_MODE
     }
     
     
-    console.log(selectedChapters.current)
-
   }, [])
 
   const handleLongPress = useCallback((chapterData) => {
-    console.log("long press called in chapter list")
+    console.log("long press called in chapter list bago")
+
+    console.log(chapterList[chapterData.index])
+
+    readMarkModeRef.current = chapterList[chapterData.index]?.finished ?
+      READ_MARK_MODE.MARK_AS_UNREAD : READ_MARK_MODE.MARK_AS_READ
+
     listModeRef.current = CHAPTER_LIST_MODE.MULTI_SELECT_MODE
+    Vibration.vibrate(100)
 
     //indicate that the item was selected or deselected
-    setChapterList(prev => prev.map((item, index) => {
-      if (index === chapterData.index) {
-        return {
-          ...item,
-          isSelected: item.isSelected ? !item.isSelected : true 
-        }
+    setChapterList(prev => {
+      const newChapterList = [...prev]
+      newChapterList[chapterData.index] = {
+        ...newChapterList[chapterData.index],
+        isSelected: newChapterList[chapterData.index].isSelected ? !newChapterList[chapterData.index].isSelected : true 
       }
-      return item
-    }))
+      return newChapterList
+    })
 
     // add or remove (if already selected)
     const chapterUrlToDataMap = new Map()
@@ -129,24 +125,13 @@ const ChapterList = ({
     }
     else {
       selectedChapters.current.push(chapterData)
-    }
-
-    onChapterSelect(selectedChapters.current)
-
-    console.log(selectedChapters.current)
-    
+    }    
 
     if(selectedChapters.current.length < 1) {
-    console.log("wala nang ")
-
       listModeRef.current = CHAPTER_LIST_MODE.SELECT_MODE
-      onListModeChange(CHAPTER_LIST_MODE.SELECT_MODE)
-    }
-    else {
-      onListModeChange(CHAPTER_LIST_MODE.MULTI_SELECT_MODE)
     }
 
-  }, [chaptersData, mangaUrl, ])
+  }, [chaptersData, mangaUrl, chapterList])
 
   const handleScroll = (event) => {
     const {
@@ -225,9 +210,71 @@ const ChapterList = ({
     }, [])
   );
 
-  const handleMarkAsRead = useCallback(() => {
-    console.log("the chapters to be selected as read:\n", selectedChapters.current)
+  const switchToSelectMode = useCallback(() => {
+    listModeRef.current = CHAPTER_LIST_MODE.SELECT_MODE;
+    setChapterList(prev => prev.map((item) => {
+      if (item.isSelected) {
+        return {
+          ...item,
+          isSelected: false 
+        }
+      }
+      return item
+    }))
   }, [])
+
+  const multiSelectModeClose = useCallback(() => {
+     switchToSelectMode()
+     selectedChapters.current = []
+  }, [])
+
+  const handleMarkAsRead = useCallback(async () => {
+    switchToSelectMode()
+
+    if(selectedChapters.current.length < 1) return
+
+    const savedMangaConfigData = await readMangaConfigData(
+      mangaUrl,
+      CONFIG_READ_WRITE_MODE.MANGA_ONLY,
+      isListed
+    );
+    
+    let newReadingStats = {};
+
+    if (savedMangaConfigData?.manga?.readingStats) {
+      newReadingStats = savedMangaConfigData.manga.readingStats;
+    }
+
+    const chapterUrlToDataMap = new Map()
+    
+    selectedChapters.current.forEach(item => {
+      newReadingStats[item.chapterUrl] = {
+        finished: readMarkModeRef.current === READ_MARK_MODE.MARK_AS_READ
+      }
+      chapterUrlToDataMap.set(item.chapterUrl, item)
+    })
+
+    setChapterList(prev => prev.map(item => {
+      if(chapterUrlToDataMap.has(item.chapterUrl)) {
+        return {
+          ...item,
+          finished: readMarkModeRef.current === READ_MARK_MODE.MARK_AS_READ
+        }
+      }
+      return item;
+    }))
+
+    await saveMangaConfigData(
+      mangaUrl, 
+      'N/A', 
+      {readingStats: newReadingStats}, 
+      isListed,
+      CONFIG_READ_WRITE_MODE.MANGA_ONLY
+    )
+
+    selectedChapters.current = [];
+
+  }, [chaptersData, mangaUrl, listModeRef.current])
   
   const renderItem = useCallback(({ item, index }) => (
     <View className="w-full px-2">
@@ -291,22 +338,46 @@ const ChapterList = ({
         </TouchableOpacity>
       )}
       {listModeRef.current === CHAPTER_LIST_MODE.MULTI_SELECT_MODE && (
-          <View className="bg-primary flex-row p-3 justify-around absolute top-0">
-              <TouchableOpacity className="flex-row justify-center items-center flex-1"
-                onPress={handleMarkAsRead}>
-                <View>
-                  <MaterialIcons name="add-circle-outline" size={30} color="white" />
-                </View> 
-                <Text className="text-white ml-2 font-pregular text-xs text-left">Mark as read</Text>
-              </TouchableOpacity>
+          <View className="bg-primary w-full py-1 px-1 justify-between absolute top-0"
+            key={listModeRef.current}>
+              <View className=" flex-row justify-start items-center my-2">
+                <TouchableOpacity className="px-2 flex-row justify-center items-center" onPress={multiSelectModeClose}>
+                    <View>
+                      <MaterialIcons name="close" size={18} color={colors.accent.DEFAULT} />
+                    </View> 
+                    <Text className="text-white ml-2 font-pregular text-xs text-left">Close</Text>
+                </TouchableOpacity>
+                <TouchableOpacity className="px-2 flex-row justify-center items-center"
+                    >
+                    <View>
+                      <MaterialIcons name="select-all" size={18} color={colors.accent.DEFAULT} />
+                    </View> 
+                    <Text className="text-white ml-2 font-pregular text-xs text-left">Select all</Text>
+                </TouchableOpacity>
+              </View>
 
-              <TouchableOpacity className="flex-row justify-center items-center flex-1"
-                >
-                <View>
-                  <MaterialIcons name="add-circle-outline" size={30} color="white" />
-                </View> 
-                <Text className="text-white ml-2 font-pregular text-xs text-left">Download</Text>
-              </TouchableOpacity>
+              <HorizontalRule otherStyles={"mx-2"}/>
+
+              <View className="flex-row flex-1 my-3">
+                <TouchableOpacity className="flex-row justify-center items-center flex-1"
+                  onPress={handleMarkAsRead} key={readMarkModeRef.current}>
+                  <View>
+                    <MaterialIcons name={readMarkModeRef.current  === READ_MARK_MODE.MARK_AS_READ ? "check-box" : "indeterminate-check-box"} size={24} color="white" />
+                  </View> 
+                  <Text className="text-white ml-2 font-pregular text-xs text-left">
+                    {readMarkModeRef.current === READ_MARK_MODE.MARK_AS_READ ? "Mark as read" : "Mark as unread"}
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity className="flex-row justify-center items-center flex-1"
+                  >
+                  <View>
+                    <MaterialIcons name="file-download" size={24} color="white" />
+                  </View> 
+                  <Text className="text-white ml-2 font-pregular text-xs text-left">Download</Text>
+                </TouchableOpacity>
+              </View>
+
           </View>
         )}
     </View>
