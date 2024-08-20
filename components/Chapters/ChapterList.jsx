@@ -93,8 +93,6 @@ const ChapterList = ({
   }, [])
 
   const handleLongPress = useCallback((chapterData) => {
-    console.log("long press called in chapter list bago")
-
     console.log(chapterList[chapterData.index])
 
     setReadMarkMode(
@@ -104,16 +102,6 @@ const ChapterList = ({
 
     listModeRef.current = CHAPTER_LIST_MODE.MULTI_SELECT_MODE
     Vibration.vibrate(100)
-
-    //indicate that the item was selected or deselected
-    setChapterList(prev => {
-      const newChapterList = [...prev]
-      newChapterList[chapterData.index] = {
-        ...newChapterList[chapterData.index],
-        isSelected: newChapterList[chapterData.index].isSelected ? !newChapterList[chapterData.index].isSelected : true 
-      }
-      return newChapterList
-    })
 
     // add or remove (if already selected)
     const chapterUrlToDataMap = new Map()
@@ -129,7 +117,51 @@ const ChapterList = ({
     }
     else {
       selectedChapters.current.push(chapterData)
-    }    
+    }  
+
+    //indicate that the item was selected or deselected
+    setChapterList(prev => {
+      const newChapterList = [...prev]
+
+      if(selectedChapters.current.length > 1) {
+
+        let rangeEnd = selectedChapters.current[0].index;
+        let rangeStart = selectedChapters.current[selectedChapters.current.length - 1].index;
+
+        if(
+          selectedChapters.current[0].index >
+          selectedChapters.current[selectedChapters.current.length - 1].index
+        ) {
+          rangeStart = selectedChapters.current[0].index;
+          rangeEnd = selectedChapters.current[selectedChapters.current.length - 1].index
+        }
+
+        console.log("rangeStart", rangeStart)
+        console.log("rangeEnd", rangeEnd)
+
+        
+        for (let index = rangeStart - 1; index >= rangeEnd + 1; index--) {
+          newChapterList[index] = {
+            ...newChapterList[index],
+            isSelected: true,
+          }
+          if(
+            !chapterUrlToDataMap.has(newChapterList[index].chapterUrl) && 
+            index !== rangeStart && index !== rangeEnd
+          ) {
+            selectedChapters.current.push({...newChapterList[index], index})
+          }
+        }
+      }
+      
+        newChapterList[chapterData.index] = {
+          ...newChapterList[chapterData.index],
+          isSelected: newChapterList[chapterData.index].isSelected ? !newChapterList[chapterData.index].isSelected : true 
+        }
+        return newChapterList
+    })
+
+      
 
     if(selectedChapters.current.length < 1) {
       listModeRef.current = CHAPTER_LIST_MODE.SELECT_MODE
@@ -282,10 +314,11 @@ const ChapterList = ({
 
   const handleSelectAll = useCallback(() => {
     //indicate that the item was selected or deselected
-    setChapterList(prev => prev.map(item => (
-      {...item, isSelected: true }
-    )))
-    selectedChapters.current = chapterList
+    setChapterList(prev => prev.map((item, index) => {
+      const newChapterListItem = {...item, isSelected: true, index };
+      selectedChapters.current.push(newChapterListItem);
+      return newChapterListItem;
+    }))
 
   }, [chapterList])
 
@@ -294,14 +327,18 @@ const ChapterList = ({
     
     //indicate that the item was selected or deselected
     selectedChapters.current = []
-    setChapterList(prev => prev.map(item => {
-      if(!item.isSelected) {
-        selectedChapters.current.push(item)
-      }
-      return {
+    setChapterList(prev => prev.map((item, index) => {
+      const newChapterListItem = {
         ...item, 
-        isSelected: item.isSelected ? !item.isSelected : true  
+        isSelected: item.isSelected ? !item.isSelected : true,
+        index
       }
+
+      if(!item.isSelected) {
+        selectedChapters.current.push(newChapterListItem)
+      }
+
+      return newChapterListItem
 
     }))
 

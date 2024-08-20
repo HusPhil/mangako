@@ -51,14 +51,16 @@ const ChapterListItem = ({
 
   return (
     <TouchableOpacity
-      className={`bg-secondary p-2 rounded-md my-1 ${ finished && 'opacity-50'} ${isSelected && 'border border-accent'}`}
+      className={`rounded-md my-1 ${isSelected && 'border border-accent'}`}
       onPress={handlePress}
       onLongPress={handleLongPress}
     >
-      <Text numberOfLines={1} className="font-pregular text-white">
-        {chapterTitle || 'Loading'}{' '}
-      </Text>
-      <Text className="font-pregular text-[10px] text-white opacity-50">{additionalInfo}</Text>
+      <View className={`p-2 rounded-md bg-secondary ${ finished && 'opacity-50'}`}>
+        <Text numberOfLines={1} className="font-pregular text-white">
+          {chapterTitle || 'Loading'}{' '}
+        </Text>
+        <Text className="font-pregular text-[10px] text-white opacity-50">{additionalInfo}</Text>
+      </View>
     </TouchableOpacity>
   );
 };
