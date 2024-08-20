@@ -1,4 +1,4 @@
-import { View, Text, RefreshControl, TouchableOpacity, Vibration, ToastAndroid, Alert, PermissionsAndroid } from 'react-native';
+import { View, Text, RefreshControl, TouchableOpacity, Vibration, ToastAndroid, Linking, Alert, PermissionsAndroid } from 'react-native';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import { router, useFocusEffect } from 'expo-router';
@@ -12,6 +12,8 @@ import { CHAPTER_LIST_MODE, READ_MARK_MODE } from '../../app/screens/_manga_info
 import colors from '../../constants/colors';
 import HorizontalRule from '../HorizontalRule';
 import * as FileSystem from 'expo-file-system';
+import * as MediaLibrary from 'expo-media-library'
+import * as Permissions from 'expo-permissions';
 import shorthash from 'shorthash';
 import { fetchData as fetchChapterPagesData } from '../../app/screens/_manga_reader';
 import { downloadPageToLocal, getFileInfoInLocalStorage } from './_chapters';
@@ -431,11 +433,85 @@ const ChapterList = ({
       );
       
       if(
-        granted[PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE] === PermissionsAndroid.RESULTS.GRANTED &&
-        granted[PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE] === PermissionsAndroid.RESULTS.GRANTED
+        granted[PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE] !== PermissionsAndroid.RESULTS.GRANTED ||
+        granted[PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE] !== PermissionsAndroid.RESULTS.GRANTED
       ) {
-        return true
+        return false
       }
+
+      const downloadFolderInRoot = FileSystem.StorageAccessFramework.getUriForDirectoryInRoot('Documents')
+
+      if(!downloadFolderInRoot) return false
+
+      console.log(downloadFolderInRoot)
+
+      const fileNameForDownloadPath = "downloadPermission.dat"
+      const savedUriForDownloadPath = `${FileSystem.documentDirectory}${fileNameForDownloadPath}`
+
+      try {
+        const downloadFolderContents = await FileSystem.StorageAccessFramework.readDirectoryAsync(downloadFolderInRoot)
+        console.log(downloadFolderContents)
+        const savedDownloadPathInfo = await FileSystem.getInfoAsync(savedUriForDownloadPath)
+        console.log("savedDownloadPathInfo", savedDownloadPathInfo)
+        if(savedDownloadPathInfo.exists) {
+          const mangaKoPath = await FileSystem.readAsStringAsync(savedDownloadPathInfo.uri, {encoding: FileSystem.EncodingType.UTF8})
+          console.log("mangaKoPath", mangaKoPath, typeof(mangaKoPath))
+          const mangaKoPath2 = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync(mangaKoPath)
+          console.log("mangaKoPath2", mangaKoPath2,)
+          const res = await FileSystem.StorageAccessFramework.createFileAsync(mangaKoPath2.directoryUri, "testNama.txt", 'text')
+          console.log("text files", res)
+        }
+          
+      } catch (error) {
+        if(error.message.includes("isn't readable")) {
+          Alert.alert(
+            'Permission required',
+            'Would you like to allow access to your Documents folder?',
+            [
+              {
+                text: 'Yes',
+                onPress: async () => {
+                  const downloadPermissionRequest = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync(downloadFolderInRoot)
+                  downloadPermission = downloadPermissionRequest
+                  // await FileSystem.writeAsStringAsync(`${FileSystem.documentDirectory}${downloadPermissionFilename}`)
+                  if(downloadPermissionRequest.granted) {
+                    const mangaKoPath = await FileSystem.StorageAccessFramework.makeDirectoryAsync(downloadFolderInRoot, "MangaKo")
+                    console.log("mangaKoPath sa modal", mangaKoPath)
+                    await FileSystem.writeAsStringAsync(savedUriForDownloadPath, mangaKoPath, {encoding: FileSystem.EncodingType.UTF8})                      
+                  }
+                  console.log(downloadPermission)
+                  return true
+                },
+                style: 'default'
+              },
+              {
+                text: 'Cancel',
+                // onPress: deleteTabCanceled,
+                style: 'cancel'
+              }
+            ],
+            { cancelable: false }
+          )
+        }
+      }
+
+      
+
+      // const downloadPermissionFilename = "downloadPermission.dat"
+      
+      // const downloadPermissionFileInfo = await FileSystem.getInfoAsync(`${FileSystem.documentDirectory}${downloadPermissionFilename}`)
+      // let downloadPermission;
+
+      // if(downloadPermissionFileInfo.exists) {
+      //   downloadPermission = await FileSystem.readAsStringAsync(downloadPermissionFileInfo.uri)
+      //   console.log(downloadPermission)
+      //   return true
+      // }
+      // else {
+        
+      // }
+
+      // console.log(downloadPermission)
 
       return false
 
@@ -451,71 +527,19 @@ const ChapterList = ({
   const handleDownload = useCallback(async () => {
    try {
      if(selectedChapters.current.length < 1) return
- 
-     const testFileDi = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-     
-     console.log(testFileDi)
- 
      const downloadDirPermissionGranted = await checkDownloadDirPermission()
      if(!downloadDirPermissionGranted) return
- 
-     const fisrtSelected = selectedChapters.current[0]
-     controllerRef.current = new AbortController()
-     const signal = controllerRef.current.signal
- 
-     const fetchedChapterPages = await fetchChapterPagesData(
-       mangaUrl, fisrtSelected.chapterUrl, 
-       signal, isListed
-     );
- 
-     if(fetchedChapterPages.error) {
-         console.log(fetchedChapterPages.error)
-         throw fetchedChapterPages.error
-     }
- 
-     const pageUrl = fetchedChapterPages.data[0]
-     const pageFileName = shorthash.unique(pageUrl)
-     const pageMangaDir = getMangaDirectory(
-       mangaUrl, fisrtSelected.chapterUrl, 
-       "chapterPageImages", pageFileName,
-       downloadDir
+
+
+     //make sure that there is a folder called MangaKo
+     await FileSystem.StorageAccessFramework.makeDirectoryAsync(
+      FileSystem.StorageAccessFramework.getUriForDirectoryInRoot("Download"),
+       "Mangako"
      )
+
+     console.log("Success", FileSystem.StorageAccessFramework.getUriForDirectoryInRoot("MangaKo"))
  
-     const pageMangaDirTest = getMangaDirectory(
-       mangaUrl, fisrtSelected.chapterUrl, 
-       "chapterPageImages", pageFileName,
-       `${FileSystem.documentDirectory}`
-     )
- 
-     const savedataJsonFileName = "-saveData.json"
-     const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
      
-     console.log(
-       mangaUrl, fisrtSelected.chapterUrl, pageUrl,
-       savableDataUri, downloadDir,
-     )
- 
-     console.log("pageMangaDirTest", pageMangaDirTest.cachedFilePath)
- 
- 
- 
-    const base64 = await FileSystem.readAsStringAsync(pageMangaDirTest.cachedFilePath, { encoding: FileSystem.EncodingType.Base64 });
-    // console.log(base64)
-    await FileSystem.StorageAccessFramework.createFileAsync(pageMangaDir.cachedFolderPath, `${pageFileName}.png`, 'png')
-      .then(async (uri) => {
-          await FileSystem.writeAsStringAsync(uri, base64, { encoding: FileSystem.EncodingType.Base64 });
-      })
-      .catch(e => console.error(e));
- 
-     const testFileContent = await getFileInfoInLocalStorage(testFileDi.directoryUri, "kineme.txt")
-     console.log(testFileContent )
-     
-     
-     // const downloadResumable = await downloadPageToLocal(
-     //   mangaUrl, fisrtSelected.chapterUrl, pageUrl,
-     //   savableDataUri, downloadDir, () => {console.log("DOWNLOAD")}, {}
-     // )
- 
    } catch (error) {
     console.error(`An error occured during download of chapter ${error}`)
    }
