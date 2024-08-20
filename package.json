@@ -46,7 +46,8 @@
     "react-native-worklets-core": "^1.3.3",
     "react-native-zoom-toolkit": "^2.0.1",
     "shorthash": "^0.0.2",
-    "@react-native-community/slider": "4.5.2"
+    "@react-native-community/slider": "4.5.2",
+    "expo-media-library": "~16.0.4"
   },
   "devDependencies": {
     "@babel/core": "^7.24.9",

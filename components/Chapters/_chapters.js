@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 import shorthash from 'shorthash';
-import { getChapterPageImage } from '../../services/MangakakalotClient';
+import { getChapterPageImage, getDownloadResumableImage } from '../../services/MangakakalotClient';
 import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
 import { Image } from 'react-native';
 
@@ -51,6 +51,67 @@ export const tryLang = async (mangaUrl) => {
     }
     
 }
+
+export const getFileInfoInLocalStorage = async (folderUri, fileName) => {
+  try {
+    const folderContent = await FileSystem.StorageAccessFramework.readDirectoryAsync(folderUri)
+
+    let fileContent;
+
+    for (const file of folderContent) {
+      if(file.includes(fileName)) {
+        fileContent = await FileSystem.StorageAccessFramework.readAsStringAsync(file)
+        return {fileContent, exists: true}
+      }
+    }
+
+    return {fileContent, exists: false}
+  } catch (error) {
+    if (error.message.includes('ENOENT')) {
+      console.log('File does not exist');
+    } else {
+      console.error('Error accessing the file:', error);
+    }
+    return {exists: false};
+  }
+}
+
+export const downloadPageToLocal = async (
+  mangaUrl, chapterUrl, pageUrl, 
+  pageSaveableDataFileUri, downloadDir, 
+  callback, otherData
+) => {
+  try {
+      const pageFileName = shorthash.unique(pageUrl)
+      const cachedChapterPageImagesDir =  getMangaDirectory(
+          mangaUrl, chapterUrl, 
+          "chapterPageImages", pageFileName,
+          downloadDir
+          )
+      
+      const saveableDataFileInfo = await getFileInfoInLocalStorage(pageSaveableDataFileUri)
+      
+      let resumeData;
+
+      if(saveableDataFileInfo.exists) {
+          const parsedSavableData = JSON.parse(saveableDataFileInfo.fileContent)
+          resumeData = parsedSavableData.resumeData
+          console.log("resumeData", resumeData)
+      }
+
+      const downloadResumableImage =  getDownloadResumableImage(
+          pageUrl, cachedChapterPageImagesDir.cachedFilePath, 
+          resumeData, callback, otherData
+      )
+      
+      return downloadResumableImage
+      
+  } catch (error) {
+      console.log("An error occured at download page to local data error:", error);
+      throw error
+      return { data: {}, error };
+  }
+};
 
 export const getImageDimensions = (imageUri) => {
     return new Promise((resolve, reject) => {

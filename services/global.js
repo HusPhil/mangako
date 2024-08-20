@@ -5,6 +5,8 @@ export const CONFIG_READ_WRITE_MODE = {
     MANGA_ONLY: "MANGA_ONLY",
 }
 
+export const downloadDir = "content://com.android.externalstorage.documents/tree/primary%3AMangaKo/"
+
 export const ensureDirectoryExists = async (directory) => {
     try {
         const dirInfo = await FileSystem.getInfoAsync(directory);
@@ -83,7 +85,7 @@ export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject, is
 export const getMangaDirectory = (mangaUrl, chapterUrl, type, filename, directoryOption) => {
     const parentKey = shorthash.unique(mangaUrl)
     const cacheKey = shorthash.unique(chapterUrl);
-     const directory = directoryOption ?? FileSystem.cacheDirectory 
+    const directory = directoryOption ?? FileSystem.cacheDirectory 
 
     const cachedFolderPath = chapterUrl === "N/A" ?  
     `${directory}${parentKey}/${type}` :

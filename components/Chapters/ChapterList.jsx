@@ -1,4 +1,4 @@
-import { View, Text, RefreshControl, TouchableOpacity, Vibration, ToastAndroid } from 'react-native';
+import { View, Text, RefreshControl, TouchableOpacity, Vibration, ToastAndroid, Alert, PermissionsAndroid } from 'react-native';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import { router, useFocusEffect } from 'expo-router';
@@ -7,11 +7,15 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { AntDesign } from '@expo/vector-icons';
 
 import ChapterListItem from './ChapterListItem';
-import { readMangaConfigData, CONFIG_READ_WRITE_MODE, saveMangaConfigData } from '../../services/Global';
+import { readMangaConfigData, CONFIG_READ_WRITE_MODE, saveMangaConfigData, ensureDirectoryExists, downloadDir, getMangaDirectory } from '../../services/Global';
 import { CHAPTER_LIST_MODE, READ_MARK_MODE } from '../../app/screens/_manga_info';
 import colors from '../../constants/colors';
 import HorizontalRule from '../HorizontalRule';
-import { slice } from 'cheerio/lib/api/traversing';
+import * as FileSystem from 'expo-file-system';
+import shorthash from 'shorthash';
+import { fetchData as fetchChapterPagesData } from '../../app/screens/_manga_reader';
+import { downloadPageToLocal, getFileInfoInLocalStorage } from './_chapters';
+
 
 const ChapterList = ({ 
   mangaUrl, chaptersData, 
@@ -26,6 +30,7 @@ const ChapterList = ({
   const flashListref = useRef(null)
   const previousScrollY = useRef(0);
   const listModeRef = useRef(CHAPTER_LIST_MODE.SELECT_MODE)
+  const controllerRef = useRef(null)
   const [readMarkMode, setReadMarkMode] = useState(READ_MARK_MODE.MARK_AS_READ)
   const selectedChapters = useRef([])
 
@@ -246,6 +251,14 @@ const ChapterList = ({
     }, [])
   );
 
+  useEffect(() => {
+    return () => {
+      if(controllerRef.current) {
+        controllerRef.current.abort()
+      }
+    }
+  }, [])
+
   const switchToSelectMode = useCallback(() => {
     listModeRef.current = CHAPTER_LIST_MODE.SELECT_MODE;
     setChapterList(prev => prev.map((item) => {
@@ -355,12 +368,158 @@ const ChapterList = ({
 
   }, [chapterList, readMarkMode])
 
-  const handleDownload = useCallback(() => {
-    ToastAndroid.show(
-      "Coming soon",
-      ToastAndroid.LONG
+  const createPageDownloadResumable = useCallback(async (pageNum) => {
+    //make sure to only create a download if it is within the range of the chapter pages
+    if(pageNum < 0 && pageNum >= chapterPages.length) return null
+    
+    const pageUrl = chapterPages[pageNum]
+    const pageFileName = shorthash.unique(pageUrl)
+    const pageMangaDir = getMangaDirectory(
+      currentManga.manga, currentManga.chapter, 
+      "chapterPageImages", pageFileName,
+      `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+      )
+    const savedataJsonFileName = "-saveData.json"
+    const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
+
+    await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
+    
+    //add this page to the loaded page images but do not indicate that is is already loaded (might need to be removed)
+    loadedPageImagesMap.current[pageNum] = {uri: pageMangaDir.cachedFilePath}
+    
+    //use the download verification method to know if this page has been SUCCESSFULLY downloaded
+    const downloadCompleted = await handleDownloadVerification(pageNum);
+
+    if(downloadCompleted) {
+      return {
+        uri: pageMangaDir.cachedFilePath, pageNum, 
+        fileExist: true, savableDataUri
+      }
+    }
+
+    //if not create a download resumable from a util func named downloadPageData which handles 
+    //all the complexity of creating a download resumable with an existing save data
+    const pageDownloadResumable = await downloadPageData(
+      currentManga.manga, 
+      currentManga.chapter, 
+      pageUrl,
+      savableDataUri,
+      isListed,
+      handleDownloadResumableCallback,
+      { pageNum }
     )
+
+    return {downloadResumable: pageDownloadResumable, pageNum, uri: pageMangaDir.cachedFilePath, savableDataUri}
+
   }, [])
+
+  const checkDownloadDirPermission = useCallback(async () => {
+    try {
+      // await ensureDirectoryExists(downloadDir)
+      const granted = await PermissionsAndroid.requestMultiple(
+        [
+          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        ],
+        {
+          title: 'External Storage Access Permission',
+          message: 'App needs access to your storage to read and write files',
+          buttonNeutral: 'Ask Me Later',
+          buttonNegative: 'Cancel',
+          buttonPositive: 'OK',
+        }
+      );
+      
+      if(
+        granted[PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE] === PermissionsAndroid.RESULTS.GRANTED &&
+        granted[PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE] === PermissionsAndroid.RESULTS.GRANTED
+      ) {
+        return true
+      }
+
+      return false
+
+    } catch (error) {
+      console.error(`An error occured when checking download permission: ${error}`)
+      if(error.message.includes("isn't readable")) {
+        return false
+      }
+      
+    }
+  }, [])
+
+  const handleDownload = useCallback(async () => {
+   try {
+     if(selectedChapters.current.length < 1) return
+ 
+     const testFileDi = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+     
+     console.log(testFileDi)
+ 
+     const downloadDirPermissionGranted = await checkDownloadDirPermission()
+     if(!downloadDirPermissionGranted) return
+ 
+     const fisrtSelected = selectedChapters.current[0]
+     controllerRef.current = new AbortController()
+     const signal = controllerRef.current.signal
+ 
+     const fetchedChapterPages = await fetchChapterPagesData(
+       mangaUrl, fisrtSelected.chapterUrl, 
+       signal, isListed
+     );
+ 
+     if(fetchedChapterPages.error) {
+         console.log(fetchedChapterPages.error)
+         throw fetchedChapterPages.error
+     }
+ 
+     const pageUrl = fetchedChapterPages.data[0]
+     const pageFileName = shorthash.unique(pageUrl)
+     const pageMangaDir = getMangaDirectory(
+       mangaUrl, fisrtSelected.chapterUrl, 
+       "chapterPageImages", pageFileName,
+       downloadDir
+     )
+ 
+     const pageMangaDirTest = getMangaDirectory(
+       mangaUrl, fisrtSelected.chapterUrl, 
+       "chapterPageImages", pageFileName,
+       `${FileSystem.documentDirectory}`
+     )
+ 
+     const savedataJsonFileName = "-saveData.json"
+     const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
+     
+     console.log(
+       mangaUrl, fisrtSelected.chapterUrl, pageUrl,
+       savableDataUri, downloadDir,
+     )
+ 
+     console.log("pageMangaDirTest", pageMangaDirTest.cachedFilePath)
+ 
+ 
+ 
+    const base64 = await FileSystem.readAsStringAsync(pageMangaDirTest.cachedFilePath, { encoding: FileSystem.EncodingType.Base64 });
+    // console.log(base64)
+    await FileSystem.StorageAccessFramework.createFileAsync(pageMangaDir.cachedFolderPath, `${pageFileName}.png`, 'png')
+      .then(async (uri) => {
+          await FileSystem.writeAsStringAsync(uri, base64, { encoding: FileSystem.EncodingType.Base64 });
+      })
+      .catch(e => console.error(e));
+ 
+     const testFileContent = await getFileInfoInLocalStorage(testFileDi.directoryUri, "kineme.txt")
+     console.log(testFileContent )
+     
+     
+     // const downloadResumable = await downloadPageToLocal(
+     //   mangaUrl, fisrtSelected.chapterUrl, pageUrl,
+     //   savableDataUri, downloadDir, () => {console.log("DOWNLOAD")}, {}
+     // )
+ 
+   } catch (error) {
+    console.error(`An error occured during download of chapter ${error}`)
+   }
+  }, []);
   
   const renderItem = useCallback(({ item, index }) => (
     <View className="w-full px-2">
