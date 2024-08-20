@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, TouchableWithoutFeedback, Dimensions, PixelRatio, Button } from 'react-native';
+import { View, TouchableOpacity, Dimensions, PixelRatio, Text } from 'react-native';
 import { debounce, isEqual } from 'lodash';
 import shorthash from 'shorthash';
 import { FlashList } from '@shopify/flash-list';
@@ -21,7 +21,9 @@ const MangaReaderComponent = ({
     onTap, onPageChange, onScroll, 
     currentPage, inverted,
     horizontal, vertical,
-    isListed, loadingRange
+    isListed, loadingRange,
+    chapterTitle, onToNextChapter,
+    onToPrevChapter
   }) => {
     
   const [pageImages, setPageImages] = useState(() => 
@@ -732,17 +734,17 @@ const MangaReaderComponent = ({
     return ` ${item?.id}-${index}`;
   }, []);
 
-  const ListFooterComponent = () => {
-    return (
-      <View className="h-full">
-        <Image
-          source={{uri: 'file:///data/user/0/host.exp.exponent/files/Fl6py.jpg'} }
-          style={{height:undefined, width: screenWidth, aspectRatio: 1}}
-        />
-      </View>
-    )
-  }
+  const handleToNextChapter = useCallback(() => {
+    cancelSingleTap.current = true
+    onToNextChapter()
+  }, [onToNextChapter])
 
+  const handleToPrevChapter = useCallback(() => {
+    cancelSingleTap.current = true
+    onToPrevChapter()
+  }, [onToPrevChapter])
+
+  
   const handleOnTouchStart = useCallback(async (gestureEvent) => {
 
     const currentTouchTimeStamp = gestureEvent.nativeEvent.timestamp
@@ -856,6 +858,7 @@ const MangaReaderComponent = ({
           minZoom={1}
           maxZoom={3.5}
           pinchToZoomInSensitivity={1.5}
+          // disablePanOnInitialZoom
           bindToBorders
           contentWidth={screenWidth}
           contentHeight={screenHeight}
@@ -874,7 +877,6 @@ const MangaReaderComponent = ({
             onViewableItemsChanged={handleViewableItemsChanged}
             onEndReached={handleEndReached}
             onEndReachedThreshold={0.5}
-            ListFooterComponent={ListFooterComponent}
             pagingEnabled={horizontal}
             horizontal={horizontal}
             inverted={inverted} 

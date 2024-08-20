@@ -334,6 +334,7 @@ const MangaReaderScreen = () => {
                         {state.readingMode === backend.READER_MODES[0] && (
                             <MangaReaderComponent 
                                 chapterPages={state.chapterPages}
+                                chapterTitle={chapterDataRef.current.chTitle}
                                 loadingRange={state.loadingRange}
                                 currentManga={{
                                     manga: mangaUrl,
@@ -342,6 +343,8 @@ const MangaReaderScreen = () => {
                                 onTap={handleTap}
                                 currentPage={state.currentPage}
                                 onPageChange={handlePageChange}
+                                onToNextChapter={handleToNextChapter}
+                                onToPrevChapter={handleToPrevChapter}
                                 isListed={isListedRef.current}
                                 inverted={false}
                                 horizontal={true}
@@ -351,12 +354,15 @@ const MangaReaderScreen = () => {
                         {state.readingMode === backend.READER_MODES[1] && (
                             <MangaReaderComponent 
                                 chapterPages={state.chapterPages}
+                                chapterTitle={chapterDataRef.current.chTitle}
                                 loadingRange={state.loadingRange}
                                 currentManga={{
                                     manga: mangaUrl,
                                     chapter: chapterDataRef.current.chapterUrl
                                 }}
                                 onPageChange={handlePageChange}
+                                onToNextChapter={handleToNextChapter}
+                                onToPrevChapter={handleToPrevChapter}
                                 isListed={isListedRef.current}
                                 onTap={handleTap}
                                 currentPage={state.currentPage}
@@ -368,12 +374,15 @@ const MangaReaderScreen = () => {
                         {state.readingMode === backend.READER_MODES[2] && (
                             <MangaReaderComponent 
                                 chapterPages={state.chapterPages}
+                                chapterTitle={chapterDataRef.current.chTitle}
                                 loadingRange={state.loadingRange}
                                 currentManga={{
                                     manga: mangaUrl,
                                     chapter: chapterDataRef.current.chapterUrl
                                 }}
                                 onPageChange={handlePageChange}
+                                onToNextChapter={handleToNextChapter}
+                                onToPrevChapter={handleToPrevChapter}
                                 isListed={isListedRef.current}
                                 onTap={handleTap}
                                 currentPage={state.currentPage}
