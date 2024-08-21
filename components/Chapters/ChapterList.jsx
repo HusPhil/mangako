@@ -482,76 +482,6 @@ const ChapterList = ({
     return null
   }, [])
 
-  const handleDownloadResumableCallback = useCallback(() => {
-
-  }, [])
-
-  const handleDownloadVerification = useCallback(async(pageUrl, mangaUrl, chapterUrl) => {
-    const pageFileName = shorthash.unique(pageUrl)
-    const pageMangaDir = getMangaDirectory(
-      mangaUrl, chapterUrl, 
-      "chapterPageImages", pageFileName,
-      `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
-      )
-    const certificateJsonFileName = "-certificate.json"
-    const certificateFileUri = pageMangaDir.cachedFilePath + certificateJsonFileName
-
-    await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
-    
-    const pageFileInfo = await FileSystem.getInfoAsync(pageMangaDir.cachedFilePath)
-    const certificateFileInfo = await FileSystem.getInfoAsync(certificateFileUri)
-    
-    if(!pageFileInfo.exists || !certificateFileInfo.exists) return false;
-
-    const certificate = JSON.parse(await FileSystem.readAsStringAsync(certificateFileUri))
-
-    if(certificate.totalBytesExpectedToWrite === pageFileInfo.size) {
-      return true;
-    }
-
-    return false;
-  }, [])
-
-  const createPageDownloadResumable = useCallback(async (pageNum, pageUrl, mangaUrl, chapterUrl) => {
-    const pageFileName = shorthash.unique(pageUrl)
-    const pageMangaDir = getMangaDirectory(
-      mangaUrl, chapterUrl, 
-      "chapterPageImages", pageFileName,
-      `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
-      )
-    const savedataJsonFileName = "-saveData.json"
-    const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
-
-    await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
-        
-    //use the download verification method to know if this page has been SUCCESSFULLY downloaded
-    const downloadCompleted = await handleDownloadVerification(pageUrl, mangaUrl, chapterUrl);
-
-    if(downloadCompleted) {
-      console.log(pageMangaDir.cachedFilePath)
-      return {
-        uri: pageMangaDir.cachedFilePath, pageNum, 
-        folderUri: pageMangaDir.cachedFolderPath,
-        fileName: pageFileName,
-        fileExist: true, savableDataUri
-      }
-    }
-
-    //if not create a download resumable from a util func named downloadPageData which handles 
-    //all the complexity of creating a download resumable with an existing save data
-    const pageDownloadResumable = await downloadPageData (
-      mangaUrl, 
-      chapterUrl, 
-      pageUrl,
-      savableDataUri,
-      isListed,
-      handleDownloadResumableCallback,
-      { pageNum }
-    )
-
-    return {downloadResumable: pageDownloadResumable, pageNum, uri: pageMangaDir.cachedFilePath, savableDataUri}
-
-  }) 
 
   const getPagesFromChapters = useCallback(async (chapters, signal) => {
     try {
@@ -626,7 +556,9 @@ const ChapterList = ({
     router.push({
       pathname: "(tabs)/download",
       params: {
-        selectedChaptersCacheKey
+        selectedChaptersCacheKey,
+        validMangadownloadDir,
+        mangaUrl, isListed
       }
     });
 

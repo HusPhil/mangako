@@ -1,5 +1,5 @@
 
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {StyleSheet, Text, ToastAndroid, TouchableOpacity, View} from 'react-native';
 import DragList, {DragListRenderItemInfo} from 'react-native-draglist';
 import NumericRange from '../../components/NumericRange';
@@ -10,24 +10,171 @@ import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FlashList } from '@shopify/flash-list';
 
+import { chapterNavigator, fetchData as fetchChapterPages } from '../../app/screens/_manga_reader';
+import shorthash from 'shorthash'
+import { getMangaDirectory } from '../../services/Global';
+import DownloadListItem from '../../components/manga_download/DownloadListItem';
+
+
+
 const download = () => {
   const params = useLocalSearchParams()
   const [downloadQueue, setDownloadQueue] = useState([]);
+  
 
-  const AsyncEffect = useCallback(async () => {
+  const downloadItemsRef = useRef([])
+  const downloadsInProgress = useRef([])
+  const controllerRef = useRef()
+
+  const getPagesFromChapters = useCallback(async (mangaUrl, chapters, isListed, signal) => {
+    try {
+      const fetchPagePromises = chapters.map(async (chapter) => (
+        await fetchChapterPages(
+          mangaUrl, chapter.chapterUrl, 
+          signal, isListed
+        ) 
+      ))
+
+      console.log(fetchPagePromises)
+
+      const fetchPromiseResult = await Promise.allSettled(fetchPagePromises)
+
+      const pagesFromChapters = fetchPromiseResult.map((result, index) => {
+        if(!result?.value?.error && result?.value && result?.value.data) {
+          return {[chapters[index].chapterUrl] : result.value.data}
+        }
+      })
+
+      return pagesFromChapters
+
+    } catch (error) {
+      console.error(`An error occured while getting pages from chapters ${error.message}`)
+      return []
+    }
+  }, [])
+
+  const handleDownloadResumableCallback = useCallback((pageNum) => {
+    console.log(pageNum, "downnloadeing")
+  }, [])
+
+  const handleDownloadVerification = useCallback(async(pageUrl, mangaUrl, chapterUrl) => {
+    const pageFileName = shorthash.unique(pageUrl)
+    const pageMangaDir = getMangaDirectory(
+      mangaUrl, chapterUrl, 
+      "chapterPageImages", pageFileName,
+      `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+      )
+    const certificateJsonFileName = "-certificate.json"
+    const certificateFileUri = pageMangaDir.cachedFilePath + certificateJsonFileName
+
+    await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
+    
+    const pageFileInfo = await FileSystem.getInfoAsync(pageMangaDir.cachedFilePath)
+    const certificateFileInfo = await FileSystem.getInfoAsync(certificateFileUri)
+    
+    if(!pageFileInfo.exists || !certificateFileInfo.exists) return false;
+
+    const certificate = JSON.parse(await FileSystem.readAsStringAsync(certificateFileUri))
+
+    if(certificate.totalBytesExpectedToWrite === pageFileInfo.size) {
+      return true;
+    }
+
+    return false;
+  }, [])
+
+  const createPageDownloadResumable = useCallback(async (pageNum, pageUrl, mangaUrl, chapterUrl) => {
+    const pageFileName = shorthash.unique(pageUrl)
+    const pageMangaDir = getMangaDirectory(
+      mangaUrl, chapterUrl, 
+      "chapterPageImages", pageFileName,
+      `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+      )
+    const savedataJsonFileName = "-saveData.json"
+    const savableDataUri = pageMangaDir.cachedFilePath + savedataJsonFileName;
+
+    await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
+        
+    //use the download verification method to know if this page has been SUCCESSFULLY downloaded
+    const downloadCompleted = await handleDownloadVerification(pageUrl, mangaUrl, chapterUrl);
+
+    if(downloadCompleted) {
+      console.log(pageMangaDir.cachedFilePath)
+      return {
+        uri: pageMangaDir.cachedFilePath, pageNum, 
+        folderUri: pageMangaDir.cachedFolderPath,
+        fileName: pageFileName,
+        fileExist: true, savableDataUri
+      }
+    }
+
+    //if not create a download resumable from a util func named downloadPageData which handles 
+    //all the complexity of creating a download resumable with an existing save data
+    const pageDownloadResumable = await downloadPageData (
+      mangaUrl, 
+      chapterUrl, 
+      pageUrl,
+      savableDataUri,
+      isListed,
+      handleDownloadResumableCallback,
+      { pageNum }
+    )
+
+    return {downloadResumable: pageDownloadResumable, pageNum, uri: pageMangaDir.cachedFilePath, savableDataUri}
+
+  }) 
+
+  const initializePageDownloads = useCallback(async (pagesFromChapters, mangaUrl) => {
+    //for sorting which pages is already downloaded so we don't have to create a download resumable for them
+    const downloadedPagesFileUris = []
+    //for sorting which pages still needs to be downloaded and thus create a download resumable for them
+    const downloadResumablesToCreate = [];
+
+
+    Object.values(pagesFromChapters).forEach(async (chapterUrl) => {
+      console.log("chapterUrl", chapterUrl)
+
+      const chapterPages = pagesFromChapters[chapterUrl]
+      console.log("chapterPages", chapterPages)
+      const chapterDownloadResumables = await Promise.all(
+        chapterPages.map(async (pageUrl, pageNum) => (
+          await createPageDownloadResumable(pageNum, pageUrl, mangaUrl, chapterUrl)
+        ))
+      )
+      console.log("chapterDownloadResumables", chapterDownloadResumables)
+    })
+
+  }, [])
+
+
+  const AsyncEffect = useCallback(async () => { 
     console.log(params)
     if(Object.keys(params).length === 0) {
       ToastAndroid.show(
-        "No selected chapters",
+        "Nothing in queue",
         ToastAndroid.SHORT
       )
       return
     }
 
+    controllerRef.current = new AbortController;
+    const signal = controllerRef.current.signal;
+
     const chaptersToDownloadAsJsonString =  await AsyncStorage.getItem(params.selectedChaptersCacheKey)
     const chaptersToDownload = JSON.parse(chaptersToDownloadAsJsonString)
 
+
+    downloadsInProgress.current = chaptersToDownload.slice(0, 2)
     setDownloadQueue(chaptersToDownload)
+
+    const pagesFromChapters = await getPagesFromChapters(params.mangaUrl, downloadsInProgress.current, params.isListed, signal);
+
+    await initializePageDownloads(pagesFromChapters, params.mangaUrl)
+    // console.log(pagesFromChapters)
+
+    // await Promise.all(downloadsInProgress.current.map(async () => (
+    //   await createPageDownloadResumable()
+    // )))
 
     if(!chaptersToDownload) {
       ToastAndroid.show(
@@ -36,20 +183,28 @@ const download = () => {
       )
     }
 
-    console.log(chaptersToDownload[0])
-
     await AsyncStorage.removeItem(params.selectedChaptersCacheKey)
 
   }, [])
 
   useEffect(() => {
     AsyncEffect()
+
+    return () => {
+      if(controllerRef.current) {
+        controllerRef.current.abort()
+      }
+    }
   }, [])
 
+  
   const renderItem = useCallback(({ item, index }) => {
     if(item) {
       return (
-        <Text className="text-white font-pregular text-xl">{`[${index}] ${item.chapterUrl}`}</Text>
+        <DownloadListItem 
+          ref={(downloadItem) => { downloadItemsRef.current[index] = downloadItem; }} 
+          chapterTitle={item.chTitle} isDeterminate={true} 
+        />
       )
     }
   }, [])
