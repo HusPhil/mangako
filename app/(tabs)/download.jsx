@@ -1,54 +1,68 @@
 
-import React, {useState} from 'react';
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import React, {useCallback, useEffect, useState} from 'react';
+import {StyleSheet, Text, ToastAndroid, TouchableOpacity, View} from 'react-native';
 import DragList, {DragListRenderItemInfo} from 'react-native-draglist';
 import NumericRange from '../../components/NumericRange';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import colors from '../../constants/colors';
-
-const SOUND_OF_SILENCE = ['hello', 'darkness', 'my', 'old', 'friend'];
+import { useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { FlashList } from '@shopify/flash-list';
 
 const download = () => {
-  const [data, setData] = useState(SOUND_OF_SILENCE);
+  const params = useLocalSearchParams()
+  const [downloadQueue, setDownloadQueue] = useState([]);
 
-  function keyExtractor(str) {
-    return str;
-  }
+  const AsyncEffect = useCallback(async () => {
+    console.log(params)
+    if(Object.keys(params).length === 0) {
+      ToastAndroid.show(
+        "No selected chapters",
+        ToastAndroid.SHORT
+      )
+      return
+    }
 
-  function renderItem(info) {
-    const {item, onDragStart, onDragEnd, isActive} = info;
+    const chaptersToDownloadAsJsonString =  await AsyncStorage.getItem(params.selectedChaptersCacheKey)
+    const chaptersToDownload = JSON.parse(chaptersToDownloadAsJsonString)
 
-    return (
-      <TouchableOpacity
-        key={item}
-        onPressIn={onDragStart}
-        onPressOut={onDragEnd}
-        className="p-2">
-        <Text>{item}</Text>
-      </TouchableOpacity>
-    );
-  }
+    setDownloadQueue(chaptersToDownload)
 
-  async function onReordered(fromIndex, toIndex) {
-    const copy = [...data]; // Don't modify react data in-place
-    const removed = copy.splice(fromIndex, 1);
+    if(!chaptersToDownload) {
+      ToastAndroid.show(
+        "No selected chapters",
+        ToastAndroid.SHORT
+      )
+    }
 
-    copy.splice(toIndex, 0, removed[0]); // Now insert at the new pos
-    setData(copy);
-  }
+    console.log(chaptersToDownload[0])
+
+    await AsyncStorage.removeItem(params.selectedChaptersCacheKey)
+
+  }, [])
+
+  useEffect(() => {
+    AsyncEffect()
+  }, [])
+
+  const renderItem = useCallback(({ item, index }) => {
+    if(item) {
+      return (
+        <Text className="text-white font-pregular text-xl">{`[${index}] ${item.chapterUrl}`}</Text>
+      )
+    }
+  }, [])
 
   return (
-    <SafeAreaView className="h-full bg-primary justify-center items-center">
-      {/* <DragList
-        data={data}
-        keyExtractor={keyExtractor}
-        onReordered={onReordered}
-        renderItem={renderItem}
-      /> */}
-      {/* <NumericRange /> */}
-      <MaterialIcons name="construction" size={125} color={colors.accent.DEFAULT} />
-      <Text className="text-white font-pregular text-2xl">Under construction</Text>
+    <SafeAreaView className="flex-1 bg-primary">
+      <View className="flex-1 bg-primary">
+        <FlashList 
+          data={downloadQueue}
+          renderItem={renderItem}
+          estimatedItemSize={500}
+        />
+      </View>
     </SafeAreaView>
   );
 }

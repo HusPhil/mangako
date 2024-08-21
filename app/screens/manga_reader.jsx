@@ -25,7 +25,7 @@ import { getChapterList } from '../../services/MangakakalotClient';
 import { fetchData as getMangaInfo } from './_manga_info';
 
 const MangaReaderScreen = () => {
-    const {mangaUrl, currentChapterData, currentChapterIndex, isListedAsString } = useLocalSearchParams()
+    const { mangaUrl, currentChapterData, currentChapterIndex, isListedAsString } = useLocalSearchParams()
     const parsedCurrentChapterData = JSON.parse(currentChapterData)
     
     const [state, dispatch] = useReducer(readerReducer, INITIAL_STATE)

@@ -6,6 +6,14 @@ export const CONFIG_READ_WRITE_MODE = {
 }
 
 export const downloadDir = "content://com.android.externalstorage.documents/tree/primary%3AMangaKo/"
+export const downloadFolderNameInRoot = 'Download'
+
+export const getMangaDownloadPermissionDir = (mangaUrl) => {
+  const downloadPermissionFileName  = `downloadPermission-${shorthash.unique(mangaUrl)}.mngko`
+  const downloadPermissionFilePath = `${FileSystem.documentDirectory}${downloadPermissionFileName}`
+
+  return {downloadPermissionFileName, downloadPermissionFilePath}
+}
 
 export const ensureDirectoryExists = async (directory) => {
     try {
