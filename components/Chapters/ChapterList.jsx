@@ -203,6 +203,7 @@ const ChapterList = ({
     previousScrollY.current = y;
   };
 
+
   const getChapterCurrentPageList = useCallback(async () => {
     try {
       const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY, isListed);
@@ -212,6 +213,8 @@ const ChapterList = ({
       if (savedMangaConfigData?.manga?.readingStats) {
         retrievedReadingStatusList = savedMangaConfigData.manga.readingStats;
       }
+
+      console.log("retrievedReadingStatusList", retrievedReadingStatusList)
 
       setChapterList(prev => prev.map(item => {
         if(retrievedReadingStatusList[item.chapterUrl]) {

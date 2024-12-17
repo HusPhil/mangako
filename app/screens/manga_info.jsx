@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import shorthash from 'shorthash';
 import * as FileSystem from 'expo-file-system';
 
-import ChapterList from '../../components/chapters/ChapterList';
+import ChapterList from '../../components/Chapters/ChapterList';
 import MangaHeader from '../../components/manga_info/MangaHeader';
 import Accordion from '../../components/Accordion';
 import HorizontalRule from '../../components/HorizontalRule';

@@ -326,7 +326,7 @@ const MangaReaderScreen = () => {
                 </View>
             
           </ModalPopup>
-        <View className="h-full bg-primary">
+        <View className="flex-1 bg-primary">
             
             {!state.isLoading ? (
                 !state.errorData ? (

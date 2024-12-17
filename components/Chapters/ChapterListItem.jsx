@@ -5,37 +5,25 @@ import { useFocusEffect } from 'expo-router';
 import { readMangaConfigData } from '../../services/Global';
 
 const ChapterListItem = ({ 
-  chapterTitle, currentManga, 
+  chapterTitle, currentPage, 
   publishedDate, finished, 
   onPress, onLongPress, 
   isListed, chapterData, 
   listMode, isSelected
  }) => {
-  const [currentPage, setCurrentPage] = useState(0);
+  // const [currentPage, setCurrentPage] = useState(0);
     
-  // Function to fetch current page and reading status •
-  const getChapterCurrentPageList = useCallback(async () => {
-    try {
-      const savedMangaConfigData = await readMangaConfigData(currentManga.manga, currentManga.chapter, isListed);
+  // // Function to fetch current page and reading status •
+ 
 
-      if (savedMangaConfigData?.chapter?.currentPage) { 
-        const retrievedCurrentPage = savedMangaConfigData.chapter.currentPage;
-        setCurrentPage(retrievedCurrentPage);
-      }
+  // // Refresh data on focus
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     // Reset states to default before fetching
+  //     getChapterCurrentPageList();
 
-    } catch (error) {
-      console.error('Error fetching chapter current page list:', error);
-    }
-  }, [currentManga]);
-
-  // Refresh data on focus
-  useFocusEffect(
-    useCallback(() => {
-      // Reset states to default before fetching
-      getChapterCurrentPageList();
-
-    }, [getChapterCurrentPageList, finished])
-  );
+  //   }, [getChapterCurrentPageList, finished])
+  // );
 
   const additionalInfo = (currentPage > 0 && !finished) 
     ? publishedDate + ` • Page ${currentPage + 1}` 
