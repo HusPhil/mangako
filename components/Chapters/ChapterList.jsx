@@ -203,28 +203,45 @@ const ChapterList = ({
     previousScrollY.current = y;
   };
 
-
   const getChapterCurrentPageList = useCallback(async () => {
     try {
       const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY, isListed);
-
+      // console.log("savedMangaConfigData", savedMangaConfigData)
       let retrievedReadingStatusList = {};
+      let retrievedLastPageReadList = {};
+      
 
       if (savedMangaConfigData?.manga?.readingStats) {
         retrievedReadingStatusList = savedMangaConfigData.manga.readingStats;
       }
 
-      console.log("retrievedReadingStatusList", retrievedReadingStatusList)
+      if (savedMangaConfigData?.manga?.lastPageReadList) {
+        retrievedLastPageReadList = savedMangaConfigData.manga.lastPageReadList;
+      }
 
-      setChapterList(prev => prev.map(item => {
-        if(retrievedReadingStatusList[item.chapterUrl]) {
-          return {
-            ...item,
-            ...retrievedReadingStatusList[item.chapterUrl]
+    
+      setChapterList(prev => {
+        const newChapterList = prev.map(item => {
+          const newChapterInfo = {...item}
+          
+          if(retrievedReadingStatusList) {
+            if(retrievedReadingStatusList[item.chapterUrl]) {
+              // console.log(retrievedReadingStatusList[item.chapterUrl])
+              newChapterInfo["finished"] = retrievedReadingStatusList[item.chapterUrl].finished
+            }
           }
-        }
-        return item
-      }))
+
+          if(retrievedLastPageReadList) {
+            if(retrievedLastPageReadList[item.chapterUrl]) {
+              newChapterInfo["lastPageRead"] = retrievedLastPageReadList[item.chapterUrl]
+            }
+          }
+          
+          console.log("newChapterInfo", newChapterInfo)
+          return newChapterInfo
+        })
+        return newChapterList
+      })
       
     } catch (error) {
       console.error("Error fetching chapter current page list:", error);
@@ -606,7 +623,7 @@ const ChapterList = ({
         onLongPress={handleLongPress}
         finished={item.finished}
         onFetchReadingStatus={handleFetchReadingStatus}
-        currentPage={index}
+        currentPage={item.lastPageRead || 0}
         isListed={isListed}
         isSelected={item.isSelected}
         listMode={item.listMode}

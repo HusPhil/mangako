@@ -48,9 +48,8 @@ const MangaReaderScreen = () => {
 
         const savedConfig = await readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, (listItemConfig?.length > 0))
 
-        
         if(savedConfig) dispatch({type: READER_ACTIONS.LOAD_CONFIG, payload: {
-            currentPage: savedConfig?.chapter?.currentPage || 0,
+            currentPage: savedConfig?.manga?.lastPageReadList[chapterDataRef.current.chapterUrl] || 0,
             readingModeIndex: savedConfig?.manga?.readingModeIndex || 0,
             scrollOffSetY: savedConfig?.chapter?.scrollOffSetY || 0,
             finished: savedConfig?.chapter?.finished,
@@ -99,7 +98,10 @@ const MangaReaderScreen = () => {
     }, [])
 
     const saveLastViewedChapterPage = debounce(async (pageToSave) => {
-        await saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {"currentPage": pageToSave}, isListedRef.current)
+        const chapterToPageMap = {}
+        chapterToPageMap[chapterDataRef.current.chapterUrl] = pageToSave
+        console.log("chapterToPageMap:", chapterToPageMap)
+        await saveMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY, {"lastPageReadList": chapterToPageMap}, isListedRef.current, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
       }, 500)
 
     useEffect(() => {

@@ -38,10 +38,14 @@ export const saveMangaConfigData = async (mangaUrl, chapterUrl, configObject, is
       const cachedFile = "/config.json";
   
       const existingConfig = await readMangaConfigData(mangaUrl, chapterUrl, isListed);
-  
+      
+
+
       const configToSave = mangaOnly ? 
           { ...existingConfig?.manga, ...configObject } : 
           { ...existingConfig?.chapter, ...configObject };
+
+      console.log("configToSave", configToSave)
   
       await ensureDirectoryExists(cachedConfigFilePath);
   
