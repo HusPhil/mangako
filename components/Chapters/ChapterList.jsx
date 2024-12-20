@@ -22,6 +22,7 @@ const ChapterList = ({
   mangaUrl, chaptersData, 
   headerComponent, listStyles, 
   onRefresh, isListed,
+  onChapterReadStatusChange,
   onListModeChange, onChapterSelect
 }) => {
   const [showBtnToBottom, setShowBtnToBottom] = useState(false)
@@ -139,8 +140,6 @@ const ChapterList = ({
           rangeEnd = selectedChapters.current[selectedChapters.current.length - 1].index
         }
 
-        console.log("rangeStart", rangeStart)
-        console.log("rangeEnd", rangeEnd)
 
         
         for (let index = rangeStart - 1; index >= rangeEnd + 1; index--) {
@@ -219,14 +218,17 @@ const ChapterList = ({
         retrievedLastPageReadList = savedMangaConfigData.manga.lastPageReadList;
       }
 
-    
+      let lastReadChapterIndex = 0;
+      let numberOfReadChapters = 0;
+      
       setChapterList(prev => {
-        const newChapterList = prev.map(item => {
+        const newChapterList = prev.map((item, index) => {
           const newChapterInfo = {...item}
           
           if(retrievedReadingStatusList) {
             if(retrievedReadingStatusList[item.chapterUrl]) {
-              // console.log(retrievedReadingStatusList[item.chapterUrl])
+              
+
               newChapterInfo["finished"] = retrievedReadingStatusList[item.chapterUrl].finished
             }
           }
@@ -237,12 +239,26 @@ const ChapterList = ({
             }
           }
           
-          console.log("newChapterInfo", newChapterInfo)
+          const currReadStatus = newChapterInfo.finished
+              
+          if(!currReadStatus) {
+            // ToastAndroid.show("Chapter not read yet: " + index, ToastAndroid.SHORT)
+            lastReadChapterIndex = index
+            onChapterReadStatusChange(lastReadChapterIndex, numberOfReadChapters)
+          }
+          else {
+            numberOfReadChapters += 1
+            onChapterReadStatusChange(lastReadChapterIndex, numberOfReadChapters)
+            
+            // ToastAndroid.show("Chapter read: " + index, ToastAndroid.SHORT)
+
+          }
+          
           return newChapterInfo
         })
         return newChapterList
       })
-      
+
     } catch (error) {
       console.error("Error fetching chapter current page list:", error);
     }
@@ -264,7 +280,6 @@ const ChapterList = ({
   
   useFocusEffect(
     useCallback(() => {
-      console.log("isListed", isListed)
       getChapterCurrentPageList()
     }, [])
   );
@@ -331,6 +346,9 @@ const ChapterList = ({
       return item;
     }))
 
+
+    
+
     await saveMangaConfigData(
       mangaUrl, 
       'N/A', 
@@ -338,6 +356,8 @@ const ChapterList = ({
       isListed,
       CONFIG_READ_WRITE_MODE.MANGA_ONLY
     )
+
+    await getChapterCurrentPageList()
 
     selectedChapters.current = [];
 
@@ -355,7 +375,6 @@ const ChapterList = ({
   }, [chapterList])
 
   const handleSelectInverse = useCallback(() => {
-    console.log("read", readMarkMode)
     
     //indicate that the item was selected or deselected
     selectedChapters.current = []
@@ -377,7 +396,6 @@ const ChapterList = ({
   }, [chapterList])
 
   const handleSwitchReadMode = useCallback(() => {
-    console.log("read", readMarkMode)
     if(readMarkMode === READ_MARK_MODE.MARK_AS_READ) {
       setReadMarkMode(READ_MARK_MODE.MARK_AS_UNREAD)
     }
@@ -393,7 +411,6 @@ const ChapterList = ({
     
     // Perform the match
     const match = documentUri.match(regex);
-    console.log(match)
     if (match) {
       // Extract the tree part and document path
       const treePart = match[1]; // primary%3ADocuments
@@ -471,14 +488,12 @@ const ChapterList = ({
   }, [])
 
   const getValidMangaDownloadDir = useCallback(async () => {
-    console.log("HELLO WORLD")
     const { downloadPermissionFileName, downloadPermissionFilePath } = getMangaDownloadPermissionDir(mangaUrl)
     const downloadPermissionFileInfo = await FileSystem.getInfoAsync(downloadPermissionFilePath)
 
     if(downloadPermissionFileInfo.exists) {
       //do things
       const downloadFolderPath = await FileSystem.readAsStringAsync(downloadPermissionFilePath)
-      console.log("downloadFolderPath", downloadFolderPath)
       return downloadFolderPath
     }
 
@@ -537,6 +552,11 @@ const ChapterList = ({
   }, [])
 
   const handleDownload = useCallback(async () => {
+    ToastAndroid.show(
+      "Coming soon!", 
+      ToastAndroid.SHORT
+    )
+    return
    try {
     if(selectedChapters.current.length < 1) return
     const downloadDirPermissionGranted = await checkDownloadDirPermission()

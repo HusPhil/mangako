@@ -210,14 +210,17 @@ const download = () => {
   }, [])
 
   return (
-    <SafeAreaView className="flex-1 bg-primary">
-      <View className="flex-1 bg-primary">
+    <SafeAreaView className="flex-1 bg-primary justify-center items-center">
+      {/* <View className="flex-1 bg-primary">
         <FlashList 
           data={downloadQueue}
           renderItem={renderItem}
           estimatedItemSize={500}
         />
-      </View>
+      </View> */}
+      <MaterialIcons name="construction" size={125} color={colors.accent.DEFAULT} />
+      <Text className="text-white font-pregular text-2xl">Under construction</Text>
+    
     </SafeAreaView>
   );
 }
