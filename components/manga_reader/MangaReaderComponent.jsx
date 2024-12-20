@@ -175,7 +175,7 @@ const MangaReaderComponent = ({
     const downloadCompleted = await handleDownloadVerification(pageNum);
 
     if(downloadCompleted) {
-      console.log(pageMangaDir.cachedFilePath)
+      console.log("DOWNLOADED ALREADY:", pageMangaDir.cachedFilePath)
       return {
         uri: pageMangaDir.cachedFilePath, pageNum, 
         fileExist: true, savableDataUri

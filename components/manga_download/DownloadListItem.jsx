@@ -1,5 +1,5 @@
 import { View, Text } from 'react-native';
-import React, { forwardRef, useImperativeHandle } from 'react';
+import React, { forwardRef, useImperativeHandle, useState } from 'react';
 import { ProgressBar, Colors } from 'react-native-paper';
 import colors from '../../constants/colors';
 
@@ -7,8 +7,12 @@ import colors from '../../constants/colors';
 const DownloadListItem = forwardRef(({ chapterTitle, isDeterminate }, ref) => {
     useImperativeHandle(ref, () => ({
         getChapterTitle: () => chapterTitle,
-        
+        updateDownloadProgress: (progress) => {
+            setDownloadProgress(progress)
+        }
     }));
+
+    const [downloadProgress, setDownloadProgress] = useState(0.0)
 
     return (
         <View ref={ref} className="py-2 px-3 bg-secondary rounded-md my-2 mx-3">
@@ -16,7 +20,7 @@ const DownloadListItem = forwardRef(({ chapterTitle, isDeterminate }, ref) => {
                 {chapterTitle}
             </Text>
             <ProgressBar 
-                progress={0.9}indeterminate={isDeterminate} 
+                progress={downloadProgress} indeterminate={isDeterminate} 
                 className="my-1 rounded-md" 
                 fillStyle={{backgroundColor: `${colors.accent.DEFAULT}`}}
             />

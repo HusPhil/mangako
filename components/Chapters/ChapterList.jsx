@@ -552,28 +552,10 @@ const ChapterList = ({
   }, [])
 
   const handleDownload = useCallback(async () => {
-    ToastAndroid.show(
-      "Coming soon!", 
-      ToastAndroid.SHORT
-    )
-    return
+      
    try {
     if(selectedChapters.current.length < 1) return
-    const downloadDirPermissionGranted = await checkDownloadDirPermission()
-    if(!downloadDirPermissionGranted) return
-
-    const validMangadownloadDir = await getValidMangaDownloadDir()
-    console.log("validMangadownloadDisr", validMangadownloadDir);
-
-    if(!validMangadownloadDir) {
-      ToastAndroid.show(
-        "Download location unknown.",
-        ToastAndroid.SHORT
-      )
-      return
-    }
-
-
+    
     controllerRef.current = new AbortController()
     const signal = controllerRef.current.signal
 
@@ -597,7 +579,6 @@ const ChapterList = ({
       pathname: "(tabs)/download",
       params: {
         selectedChaptersCacheKey,
-        validMangadownloadDir,
         mangaUrl, isListed
       }
     });
