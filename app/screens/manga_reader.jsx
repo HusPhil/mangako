@@ -40,23 +40,29 @@ const MangaReaderScreen = () => {
     const controllerRef = useRef(null)
 
     const AsyncEffect = useCallback(async () => {
+        
+        
         dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
         
         const listItemConfig = await readMangaListItemConfig(mangaUrl);
         dispatch({type: READER_ACTIONS.SET_IS_LISTED, payload: listItemConfig?.length > 0})
         isListedRef.current = listItemConfig?.length > 0
 
+        console.log("WHUTs")
         const savedConfig = await readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, (listItemConfig?.length > 0))
-
-        
-        if(savedConfig) dispatch({type: READER_ACTIONS.LOAD_CONFIG, payload: {
-            currentPage: savedConfig?.chapter?.currentPage || 0,
-            readingModeIndex: savedConfig?.manga?.readingModeIndex || 0,
-            scrollOffSetY: savedConfig?.chapter?.scrollOffSetY || 0,
-            finished: savedConfig?.chapter?.finished,
-            loadingRange: savedConfig?.manga?.loadingRange || 1,
-        }})
-
+        if (savedConfig) {
+            dispatch({
+                type: READER_ACTIONS.LOAD_CONFIG,
+                payload: {
+                    currentPage: savedConfig?.manga?.lastPageReadList?.[chapterDataRef.current.chapterUrl] ?? 0,
+                    readingModeIndex: savedConfig?.manga?.readingModeIndex ?? 0,
+                    scrollOffSetY: savedConfig?.chapter?.scrollOffSetY ?? 0,
+                    finished: savedConfig?.chapter?.finished,
+                    loadingRange: savedConfig?.manga?.loadingRange ?? 1,
+                }
+            });
+        }
+        console.log("WHUcT")
         if(savedConfig?.manga?.readingStats) {
             const currentChapterReadingStatus = savedConfig.manga.readingStats[chapterDataRef.current.chapterUrl]; 
             dispatch({
@@ -68,6 +74,7 @@ const MangaReaderScreen = () => {
         
         controllerRef.current = new AbortController();
         const signal = controllerRef.current.signal;
+        
 
         try {
             const fetchedChapterPages = await backend.fetchData(
@@ -99,14 +106,17 @@ const MangaReaderScreen = () => {
     }, [])
 
     const saveLastViewedChapterPage = debounce(async (pageToSave) => {
-        await saveMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, {"currentPage": pageToSave}, isListedRef.current)
+        const chapterToPageMap = {}
+        chapterToPageMap[chapterDataRef.current.chapterUrl] = pageToSave
+        console.log("chapterToPageMap:", chapterToPageMap)
+        await saveMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY, {"lastPageReadList": chapterToPageMap}, isListedRef.current, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
       }, 500)
 
     useEffect(() => {
         AsyncEffect()
         return () => {
             isMounted.current = false
-            controllerRef.current.abort()
+            if(controllerRef.current) controllerRef.current.abort()
             dispatch({type: READER_ACTIONS.EFFECT_CLEAN_UP})
         }
     }, [])
@@ -326,7 +336,7 @@ const MangaReaderScreen = () => {
                 </View>
             
           </ModalPopup>
-        <View className="h-full bg-primary">
+        <View className="flex-1 bg-primary">
             
             {!state.isLoading ? (
                 !state.errorData ? (

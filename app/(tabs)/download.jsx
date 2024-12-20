@@ -1,4 +1,3 @@
-
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {StyleSheet, Text, ToastAndroid, TouchableOpacity, View} from 'react-native';
 import DragList, {DragListRenderItemInfo} from 'react-native-draglist';
@@ -10,54 +9,30 @@ import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FlashList } from '@shopify/flash-list';
 
+import * as FileSystem from 'expo-file-system';
+
 import { chapterNavigator, fetchData as fetchChapterPages } from '../../app/screens/_manga_reader';
 import shorthash from 'shorthash'
-import { getMangaDirectory } from '../../services/Global';
+import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
 import DownloadListItem from '../../components/manga_download/DownloadListItem';
+import { downloadPageData } from '../../components/manga_reader/_reader';
+import HorizontalRule from '../../components/HorizontalRule';
 
 
 
 const download = () => {
   const params = useLocalSearchParams()
+  const isListed = params.isListed
   const [downloadQueue, setDownloadQueue] = useState([]);
-  
+  const controllerRef = useRef(null);
+  const downloadItemsRef = useRef([]);
 
-  const downloadItemsRef = useRef([])
-  const downloadsInProgress = useRef([])
-  const controllerRef = useRef()
+  const handleDownloadResumableCallback = (pageNum, imgUrl, progress) => {
+    // console.log("pageUrl", pageUrl, "mangaUrl", mangaUrl, "chapterUrl", chapterUrl)
+    console.log("DOWNLOAD REFS", downloadItemsRef.current)
+  }
 
-  const getPagesFromChapters = useCallback(async (mangaUrl, chapters, isListed, signal) => {
-    try {
-      const fetchPagePromises = chapters.map(async (chapter) => (
-        await fetchChapterPages(
-          mangaUrl, chapter.chapterUrl, 
-          signal, isListed
-        ) 
-      ))
-
-      console.log(fetchPagePromises)
-
-      const fetchPromiseResult = await Promise.allSettled(fetchPagePromises)
-
-      const pagesFromChapters = fetchPromiseResult.map((result, index) => {
-        if(!result?.value?.error && result?.value && result?.value.data) {
-          return {[chapters[index].chapterUrl] : result.value.data}
-        }
-      })
-
-      return pagesFromChapters
-
-    } catch (error) {
-      console.error(`An error occured while getting pages from chapters ${error.message}`)
-      return []
-    }
-  }, [])
-
-  const handleDownloadResumableCallback = useCallback((pageNum) => {
-    console.log(pageNum, "downnloadeing")
-  }, [])
-
-  const handleDownloadVerification = useCallback(async(pageUrl, mangaUrl, chapterUrl) => {
+  const handleDownloadVerification = async(pageUrl, mangaUrl, chapterUrl) => {
     const pageFileName = shorthash.unique(pageUrl)
     const pageMangaDir = getMangaDirectory(
       mangaUrl, chapterUrl, 
@@ -81,9 +56,9 @@ const download = () => {
     }
 
     return false;
-  }, [])
+  }
 
-  const createPageDownloadResumable = useCallback(async (pageNum, pageUrl, mangaUrl, chapterUrl) => {
+  const createPageDownloadResumable = async (pageNum, pageUrl, mangaUrl, chapterUrl) => {
     const pageFileName = shorthash.unique(pageUrl)
     const pageMangaDir = getMangaDirectory(
       mangaUrl, chapterUrl, 
@@ -122,33 +97,71 @@ const download = () => {
 
     return {downloadResumable: pageDownloadResumable, pageNum, uri: pageMangaDir.cachedFilePath, savableDataUri}
 
-  }) 
+  }
 
-  const initializePageDownloads = useCallback(async (pagesFromChapters, mangaUrl) => {
-    //for sorting which pages is already downloaded so we don't have to create a download resumable for them
-    const downloadedPagesFileUris = []
-    //for sorting which pages still needs to be downloaded and thus create a download resumable for them
-    const downloadResumablesToCreate = [];
+  const processDownload = async () => {
+    // get the first downloadItem from the download queue
+    const firstDownloadItem = downloadQueue[0]
+    const mangaUrl = params.mangaUrl
+    const chapterUrl = firstDownloadItem.chapterUrl
 
-
-    Object.values(pagesFromChapters).forEach(async (chapterUrl) => {
-      console.log("chapterUrl", chapterUrl)
-
-      const chapterPages = pagesFromChapters[chapterUrl]
-      console.log("chapterPages", chapterPages)
-      const chapterDownloadResumables = await Promise.all(
-        chapterPages.map(async (pageUrl, pageNum) => (
-          await createPageDownloadResumable(pageNum, pageUrl, mangaUrl, chapterUrl)
-        ))
+    const chapterPagesToDownloadResponse = await fetchChapterPages(
+      mangaUrl, chapterUrl, 
+      controllerRef.current.signal, params.isListed
+    )
+    
+    if (chapterPagesToDownloadResponse.error != null) {
+      ToastAndroid.show(
+        "Failed to fetch download pages",
+        ToastAndroid.SHORT
       )
-      console.log("chapterDownloadResumables", chapterDownloadResumables)
-    })
+      return
+    }
 
-  }, [])
+    const chapterPagesToDownload = chapterPagesToDownloadResponse.data
 
+    const chapterDownloadResumables = await Promise.all(
+        chapterPagesToDownload.map(async (pageUrl, pageNum) => (
+            await createPageDownloadResumable(pageNum, pageUrl, mangaUrl, chapterUrl)
+        ))
+    )
+
+    const chapterDownloadResumablesResults = await Promise.all(
+        chapterDownloadResumables.map(async (downloadResumable) => {
+            if (downloadResumable.fileExist) {
+                return { success: true };
+            }
+            try {
+                const result = await downloadResumable.downloadResumable.downloadAsync();
+                return { success: true, result };
+            } catch (error) {
+                return { success: false, error };
+            }
+        })
+    )
+
+    const chapterSuccessfullyDownloaded = chapterDownloadResumablesResults.every(result => result.success);
+
+    if (chapterSuccessfullyDownloaded) {
+        ToastAndroid.show(
+            `Successfully downloaded ${firstDownloadItem.chTitle}`,
+            ToastAndroid.SHORT
+        );
+        // Remove the downloaded chapter from the queue
+
+        setDownloadQueue(prev => prev.slice(1));
+    } else {
+        ToastAndroid.show(
+            `Failed to download some pages from ${firstDownloadItem.chTitle}`,
+            ToastAndroid.SHORT
+        );
+    }
+    
+    console.log("chapterDownloadResumablesResults", chapterDownloadResumablesResults, "isListed", isListed)
+
+  } 
 
   const AsyncEffect = useCallback(async () => { 
-    console.log(params)
     if(Object.keys(params).length === 0) {
       ToastAndroid.show(
         "Nothing in queue",
@@ -163,25 +176,7 @@ const download = () => {
     const chaptersToDownloadAsJsonString =  await AsyncStorage.getItem(params.selectedChaptersCacheKey)
     const chaptersToDownload = JSON.parse(chaptersToDownloadAsJsonString)
 
-
-    downloadsInProgress.current = chaptersToDownload.slice(0, 2)
     setDownloadQueue(chaptersToDownload)
-
-    const pagesFromChapters = await getPagesFromChapters(params.mangaUrl, downloadsInProgress.current, params.isListed, signal);
-
-    await initializePageDownloads(pagesFromChapters, params.mangaUrl)
-    // console.log(pagesFromChapters)
-
-    // await Promise.all(downloadsInProgress.current.map(async () => (
-    //   await createPageDownloadResumable()
-    // )))
-
-    if(!chaptersToDownload) {
-      ToastAndroid.show(
-        "No selected chapters",
-        ToastAndroid.SHORT
-      )
-    }
 
     await AsyncStorage.removeItem(params.selectedChaptersCacheKey)
 
@@ -197,6 +192,12 @@ const download = () => {
     }
   }, [])
 
+  useEffect(() => {
+    if (downloadQueue.length > 0) {
+      processDownload();
+    }
+  }, [downloadQueue]);
+
   
   const renderItem = useCallback(({ item, index }) => {
     if(item) {
@@ -209,15 +210,42 @@ const download = () => {
     }
   }, [])
 
+  const EmptyQueueMessage = () => (
+    <View className="flex-1 justify-center items-center p-4">
+      <Text className="text-white text-center">No chapters in download queue</Text>
+    </View>
+  );
+
+  const EmptyCompletedMessage = () => (
+    <View className="flex-1 justify-center items-center p-4">
+      <Text className="text-white text-center">No completed downloads yet</Text>
+    </View>
+  );
+
   return (
-    <SafeAreaView className="flex-1 bg-primary">
-      <View className="flex-1 bg-primary">
+    <SafeAreaView className="flex-1 bg-primary justify-center items-center">
+      <HorizontalRule displayText={"Download Queue"} otherStyles={'m-4'}/>
+      <View className="flex-1 bg-primary  w-full h-full">
         <FlashList 
           data={downloadQueue}
           renderItem={renderItem}
           estimatedItemSize={500}
+          ListEmptyComponent={EmptyQueueMessage}
         />
       </View>
+      
+      <HorizontalRule displayText={"Completed Downloads"} otherStyles={'m-4'}/>
+      <View className="flex-1 bg-primary  w-full h-full">
+        <FlashList 
+          data={downloadQueue}
+          renderItem={renderItem}
+          estimatedItemSize={500}
+          ListEmptyComponent={EmptyCompletedMessage}
+        />
+      </View>
+      {/* <MaterialIcons name="construction" size={125} color={colors.accent.DEFAULT} />
+      <Text className="text-white font-pregular text-2xl">Under construction</Text> */}
+    
     </SafeAreaView>
   );
 }

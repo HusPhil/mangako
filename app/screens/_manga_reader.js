@@ -34,6 +34,7 @@ export const loadingRangeDesc = "Range to load from the current page. Higher val
 
 export const fetchData = async (mangaUrl, chapterUrl, abortSignal, isListed) => {
     try {
+
         const cachedChapterPagesDir =  getMangaDirectory(
           mangaUrl, chapterUrl, 
           "chapterPages", "pages.json", 

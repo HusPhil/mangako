@@ -4,7 +4,7 @@ import { debounce, isEqual } from 'lodash';
 import shorthash from 'shorthash';
 import { FlashList } from '@shopify/flash-list';
 import { ToastAndroid } from 'react-native';
-import ChapterPage from '../chapters/ChapterPage';
+import ChapterPage from '../Chapters/ChapterPage';
 import * as FileSystem from 'expo-file-system';
 import { getImageDimensions, downloadPageData } from './_reader';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
@@ -175,7 +175,7 @@ const MangaReaderComponent = ({
     const downloadCompleted = await handleDownloadVerification(pageNum);
 
     if(downloadCompleted) {
-      console.log(pageMangaDir.cachedFilePath)
+      console.log("DOWNLOADED ALREADY:", pageMangaDir.cachedFilePath)
       return {
         uri: pageMangaDir.cachedFilePath, pageNum, 
         fileExist: true, savableDataUri
@@ -859,29 +859,30 @@ const MangaReaderComponent = ({
           minZoom={1}
           maxZoom={3.5}
           pinchToZoomInSensitivity={1.5}
-          // disablePanOnInitialZoom
           bindToBorders
           contentWidth={screenWidth}
           contentHeight={screenHeight}
           onTransform={handleOnTransform}
           onDoubleTapAfter={handleOnDoubleTapAfter} 
-          onShiftingEnd={handleOnShiftingEnd}
+          onShiftingEnd={handleOnShiftingEnd} 
         >
-          <FlashList
-            pointerEvents={panEnabled ? 'none' : 'auto'}
-            ref={flashListRef}
-            data={pageImages}
-            initialScrollIndex={currentPage}
-            renderItem={renderItem}
-            keyExtractor={keyExtractor}
-            estimatedItemSize={horizontal ? screenWidth : screenHeight}
-            onViewableItemsChanged={handleViewableItemsChanged}
-            onEndReached={handleEndReached}
-            onEndReachedThreshold={0.5}
-            pagingEnabled={horizontal}
-            horizontal={horizontal}
-            inverted={inverted} 
-          />
+          <View className="w-full h-full" >
+            <FlashList
+              pointerEvents={panEnabled ? 'none' : 'auto'}
+              ref={flashListRef}
+              data={pageImages}
+              initialScrollIndex={currentPage}
+              renderItem={renderItem}
+              keyExtractor={keyExtractor}
+              estimatedItemSize={horizontal ? screenWidth : screenHeight}
+              onViewableItemsChanged={handleViewableItemsChanged}
+              onEndReached={handleEndReached}
+              onEndReachedThreshold={0.5}
+              pagingEnabled={horizontal}
+              horizontal={horizontal}
+              inverted={inverted} 
+            />
+          </View>
          </ReactNativeZoomableView>
     </View>
   );
