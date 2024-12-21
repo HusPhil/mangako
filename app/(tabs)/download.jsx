@@ -13,7 +13,7 @@ import * as FileSystem from 'expo-file-system';
 
 import { chapterNavigator, fetchData as fetchChapterPages } from '../../app/screens/_manga_reader';
 import shorthash from 'shorthash'
-import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
+import { CONFIG_READ_WRITE_MODE, DOWNLOAD_STAT, DOWNLOAD_STATUS, ensureDirectoryExists, getMangaDirectory, readMangaConfigData, saveMangaConfigData } from '../../services/Global';
 import DownloadListItem from '../../components/manga_download/DownloadListItem';
 import { downloadPageData } from '../../components/manga_reader/_reader';
 import HorizontalRule from '../../components/HorizontalRule';
@@ -32,7 +32,9 @@ const download = () => {
   const downloadResumablesRef = useRef(new Map());
   const downloadCancelPressedRef = useRef(false);
 
-  const handleDownloadResumableCallback = (chapterUrl, pageNum, imgUrl, progress) => {
+  
+
+  const handleDownloadResumableCallback = async (chapterUrl, pageNum, pageUrl, progress) => {
     // console.log("pageUrl", pageUrl, "mangaUrl", mangaUrl, "chapterUrl", chapterUrl)
     // console.log("DOWNLOAD REFS", downloadItemsRef.current[0])
     // console.log("CHAPTERURL:", chapterUrl, downloadItemsRef.current.get(chapterUrl))
@@ -41,9 +43,29 @@ const download = () => {
     if(progress.totalBytesWritten/progress.totalBytesExpectedToWrite === 1) {
       const downloadItem = downloadItemsRef.current.get(chapterUrl)
       const downloadItemsLength = downloadItemsLengthRef.current.get(chapterUrl) 
+      const mangaUrl = params.mangaUrl
 
       downloadItem.updateDownloadedPages(downloadItemsLength)
       // console.log("chapterDownloadProgress", chapterDownloadProgress)
+      const pageFileName = shorthash.unique(pageUrl)
+      const pageMangaDir = getMangaDirectory(
+        mangaUrl, chapterUrl, 
+        "chapterPageImages", pageFileName,
+        `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+        )
+      
+      //create completion certificate which can be used for download verification
+      const certificateJsonFileName = "-certificate.json"
+      const certificateFileUri = pageMangaDir.cachedFilePath + certificateJsonFileName
+      
+      await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
+
+      //save the certification as a json file
+      await FileSystem.writeAsStringAsync(
+        certificateFileUri,
+        JSON.stringify(progress),
+        {encoding: FileSystem.EncodingType.UTF8}
+      );
 
     }
     // console.log("PROGRESS", progress.totalBytesWritten, progress.totalBytesExpectedToWrite)
@@ -91,7 +113,7 @@ const download = () => {
     const downloadCompleted = await handleDownloadVerification(pageUrl, mangaUrl, chapterUrl);
 
     if(downloadCompleted) {
-      console.log(pageMangaDir.cachedFilePath)
+      console.log("CHAPTER PAGE ALREADY DOWNLOADED", pageMangaDir.cachedFilePath)
       return {
         uri: pageMangaDir.cachedFilePath, pageNum, 
         folderUri: pageMangaDir.cachedFolderPath,
@@ -208,6 +230,41 @@ const download = () => {
                 setCompletedDownloads(prev => [...prev, completedDownload]);
                 return newDownloadQueue;
             });
+
+            const mangaRetrievedConfigData = await readMangaConfigData(
+              mangaUrl, 
+              CONFIG_READ_WRITE_MODE.MANGA_ONLY, 
+              isListed
+            )
+
+            let downloadedChaptersToSave = {}
+
+            if(mangaRetrievedConfigData?.manga?.downloadedChapters) {
+          
+              console.log("mangaRetrievedConfigData?.manga?.downloadedChapters", mangaRetrievedConfigData?.manga?.downloadedChapters)
+              downloadedChaptersToSave = {...mangaRetrievedConfigData?.manga?.downloadedChapters, [chapterUrl]: {"downloadStatus" : DOWNLOAD_STATUS.DOWNLOADED}}
+            }
+            else {
+              downloadedChaptersToSave = {[chapterUrl]: {"downloadStatus" : DOWNLOAD_STATUS.DOWNLOADED}}
+              console.log("no downloaded chapters found")
+            }
+            console.log("downloadedChaptersToSave", downloadedChaptersToSave)
+
+            await saveMangaConfigData(
+              mangaUrl, 
+              CONFIG_READ_WRITE_MODE.MANGA_ONLY, 
+              {"downloadedChapters": downloadedChaptersToSave},
+              isListed,
+              CONFIG_READ_WRITE_MODE.MANGA_ONLY
+            )
+
+            // await saveMangaConfigData(
+            //     mangaUrl, 
+            //     CONFIG_READ_WRITE_MODE.MANGA_ONLY, 
+            //     {"downloadedChapters": appendThisChapterToDownloadedChapters},
+            //     isListed,
+            //     CONFIG_READ_WRITE_MODE.MANGA_ONLY,
+            // )
 
         } else {
             ToastAndroid.show(

@@ -206,8 +206,10 @@ const ChapterList = ({
     try {
       const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY, isListed);
       // console.log("savedMangaConfigData", savedMangaConfigData)
+
       let retrievedReadingStatusList = {};
       let retrievedLastPageReadList = {};
+      let retrievedDownloadedChaptersList = {};
       
 
       if (savedMangaConfigData?.manga?.readingStats) {
@@ -218,6 +220,12 @@ const ChapterList = ({
         retrievedLastPageReadList = savedMangaConfigData.manga.lastPageReadList;
       }
 
+      if (savedMangaConfigData?.manga?.downloadedChapters) {
+        retrievedDownloadedChaptersList = savedMangaConfigData.manga.downloadedChapters;
+      }
+
+      console.log("retrievedDownloadedChaptersList", retrievedDownloadedChaptersList)
+
       let lastReadChapterIndex = 0;
       let numberOfReadChapters = 0;
       
@@ -227,9 +235,13 @@ const ChapterList = ({
           
           if(retrievedReadingStatusList) {
             if(retrievedReadingStatusList[item.chapterUrl]) {
-              
-
               newChapterInfo["finished"] = retrievedReadingStatusList[item.chapterUrl].finished
+            }
+          }
+
+          if(retrievedDownloadedChaptersList) {
+            if(retrievedDownloadedChaptersList[item.chapterUrl]) {
+              newChapterInfo["isDownloaded"] = retrievedDownloadedChaptersList[item.chapterUrl]
             }
           }
 
@@ -626,6 +638,7 @@ const ChapterList = ({
         onFetchReadingStatus={handleFetchReadingStatus}
         currentPage={item.lastPageRead || 0}
         isListed={isListed}
+        isDownloaded={item.isDownloaded}
         isSelected={item.isSelected}
         listMode={item.listMode}
       />
