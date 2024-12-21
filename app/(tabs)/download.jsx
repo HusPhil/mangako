@@ -30,6 +30,7 @@ const download = () => {
   const downloadItemsLengthRef = useRef(new Map());
   const downloadItemsPagesRef = useRef(new Map());
   const downloadResumablesRef = useRef(new Map());
+  const downloadCancelPressedRef = useRef(false);
 
   const handleDownloadResumableCallback = (chapterUrl, pageNum, imgUrl, progress) => {
     // console.log("pageUrl", pageUrl, "mangaUrl", mangaUrl, "chapterUrl", chapterUrl)
@@ -118,100 +119,152 @@ const download = () => {
   const processDownload = async () => {
     // get the first downloadItem from the download queue
     const firstDownloadItem = downloadQueue[0]
+    if (!firstDownloadItem) return; // Exit if no download item
+
     const mangaUrl = params.mangaUrl
     const chapterUrl = firstDownloadItem.chapterUrl
 
-    const chapterPagesToDownloadResponse = await fetchChapterPages(
-      mangaUrl, chapterUrl, 
-      controllerRef.current.signal, params.isListed
-    )
-    
-    if (chapterPagesToDownloadResponse.error != null) {
-      ToastAndroid.show(
-        "Failed to fetch download pages",
-        ToastAndroid.SHORT
-      )
-      return
-    }
-
-    const chapterPagesToDownload = chapterPagesToDownloadResponse.data
-    downloadItemsLengthRef.current.set(chapterUrl, chapterPagesToDownload.length)
-
-    const chapterDownloadResumables = await Promise.all(
-        chapterPagesToDownload.map(async (pageUrl, pageNum) => (
-            await createPageDownloadResumable(pageNum, pageUrl, mangaUrl, chapterUrl)
-        ))
-    )
-
-    // Store the download resumables for potential cancellation
-    downloadResumablesRef.current.set(chapterUrl, chapterDownloadResumables);
-
-    const chapterDownloadResumablesResults = await Promise.all(
-        chapterDownloadResumables.map(async (downloadResumable) => {
-            if (downloadResumable.fileExist) {
-                return { success: true };
-            }
-            try {
-                const result = await downloadResumable.downloadResumable.downloadAsync();
-                return { success: true, result };
-            } catch (error) {
-                return { success: false, error };
-            }
-        })
-    )
-
-    const chapterSuccessfullyDownloaded = chapterDownloadResumablesResults.every(result => result.success);
-
-    if (chapterSuccessfullyDownloaded) {
-        ToastAndroid.show(
-            `Successfully downloaded ${firstDownloadItem.chTitle}`,
-            ToastAndroid.SHORT
-        );
-        // Remove the downloaded chapter from the queue
-
-        setDownloadQueue(prev => {
-          const newDownloadQueue = [...prev];
-          const completedDownload = newDownloadQueue.shift(); // Get the completed download
-          setCompletedDownloads(prev => [...prev, completedDownload]); // Create a new array with the completed download
-          return newDownloadQueue; // Return the updated queue
-      });
-
-    } else {
-        ToastAndroid.show(
-            `Failed to download some pages from ${firstDownloadItem.chTitle}`,
-            ToastAndroid.SHORT
-        );
-    }
-    
-    console.log("chapterDownloadResumablesResults", chapterDownloadResumablesResults, "isListed", isListed)
-
-  } 
-
-  const handleCancelDownload = useCallback((chapterUrl) => {
-    // Cancel all download resumables for this chapter
-    const chapterResumables = downloadResumablesRef.current.get(chapterUrl);
-    if (chapterResumables) {
-      chapterResumables.forEach(resumable => {
-        if (resumable && resumable.downloadResumable) {
-          resumable.downloadResumable.pauseAsync();
+    try {
+        const chapterPagesToDownloadResponse = await fetchChapterPages(
+            mangaUrl, chapterUrl, 
+            controllerRef.current.signal, params.isListed
+        )
+        
+        if (chapterPagesToDownloadResponse.error != null) {
+            ToastAndroid.show(
+                "Failed to fetch download pages",
+                ToastAndroid.SHORT
+            )
+            return;
         }
-      });
-      // downloadResumablesRef.current.delete(chapterUrl);
+
+        const chapterPagesToDownload = chapterPagesToDownloadResponse.data
+        downloadItemsLengthRef.current.set(chapterUrl, chapterPagesToDownload.length)
+
+        // Check if download was cancelled before creating resumables
+        if (!downloadQueue.some(item => item.chapterUrl === chapterUrl)) {
+            return;
+        }
+
+        const chapterDownloadResumables = await Promise.all(
+            chapterPagesToDownload.map(async (pageUrl, pageNum) => (
+                await createPageDownloadResumable(pageNum, pageUrl, mangaUrl, chapterUrl)
+            ))
+        )
+
+        // Store the download resumables for potential cancellation
+        downloadResumablesRef.current.set(chapterUrl, chapterDownloadResumables);
+
+        // Check again if download was cancelled before starting downloads
+        if (!downloadQueue.some(item => item.chapterUrl === chapterUrl)) {
+            return;
+        }
+
+        const chapterDownloadResumablesResults = await Promise.all(
+            chapterDownloadResumables.map(async (downloadResumable) => {
+                if (downloadResumable.fileExist) {
+                    return { success: true };
+                }
+                try {
+                    const result = await downloadResumable.downloadResumable.downloadAsync();
+                    return { success: result != null};
+                } catch (error) {
+                    // Check if this was a cancellation
+                    if (!downloadQueue.some(item => item.chapterUrl === chapterUrl)) {
+                        throw new Error('Download cancelled');
+                    }
+                    return { success: false, error };
+                }
+            })
+        )
+
+        chapterDownloadResumablesResults.forEach((resultItem, index) => {
+            console.log("SUCCESS:", resultItem.success)
+            if (resultItem.result != null) {
+              console.log("SUCCESSFULL DOWNLOAD")
+            }
+            else {
+              console.log("RESULT:", resultItem.result)
+            }
+        });
+
+
+        // Clean up download resumables as they're no longer needed
+        downloadResumablesRef.current.delete(chapterUrl);
+
+        const chapterSuccessfullyDownloaded = chapterDownloadResumablesResults.every(resultItem => resultItem.success);
+
+        console.log("chapterSuccessfullyDownloaded", chapterSuccessfullyDownloaded)
+
+        if (chapterSuccessfullyDownloaded) {
+            ToastAndroid.show(
+                `Successfully downloaded ${firstDownloadItem.chTitle}`,
+                ToastAndroid.SHORT
+            );
+
+            setDownloadQueue(prev => {
+                const newDownloadQueue = [...prev];
+                const completedDownload = newDownloadQueue.shift();
+                setCompletedDownloads(prev => [...prev, completedDownload]);
+                return newDownloadQueue;
+            });
+
+        } else {
+            ToastAndroid.show(
+                `Failed to download some pages from ${firstDownloadItem.chTitle}`,
+                ToastAndroid.SHORT
+            );
+            // Remove failed download from queue
+            setDownloadQueue(prev => prev.filter(item => item.chapterUrl !== chapterUrl));
+        }
+    } catch (error) {
+        if (error.message === 'Download cancelled') {
+            // Download was cancelled, just return
+            return;
+        }
+        console.error('Download error:', error);
+        ToastAndroid.show(
+            `Error downloading ${firstDownloadItem.chTitle}`,
+            ToastAndroid.SHORT
+        );
+        // Remove failed download from queue
+        setDownloadQueue(prev => prev.filter(item => item.chapterUrl !== chapterUrl));
     }
+}
 
-    // Remove from queue
-    setDownloadQueue(prev => prev.filter(item => item.chapterUrl !== chapterUrl));
+  const handleCancelDownload = useCallback(async (chapterUrl) => {
+    // Cancel all download resumables for this chapter
+          downloadCancelPressedRef.current = true
     
-    // Clean up refs
-    // downloadItemsRef.current.delete(chapterUrl);
-    // downloadItemsLengthRef.current.delete(chapterUrl);
-    // downloadItemsPagesRef.current.delete(chapterUrl);
-
-    ToastAndroid.show(
-      "Download cancelled",
-      ToastAndroid.SHORT
-    );
-  }, []);
+    const downloadToCancel = downloadResumablesRef.current.get(chapterUrl);
+    
+    try {
+        // If there are downloads to cancel, pause them
+        if (downloadToCancel) {
+            await Promise.all(downloadToCancel.map(async (resumable) => {
+                if (resumable && resumable.downloadResumable) {
+                    await resumable.downloadResumable.pauseAsync();
+                }
+            }));
+        }
+        else {
+        }
+        
+        // Always update the queue, whether there were downloads to cancel or not
+        setDownloadQueue(prev => prev.filter(item => item.chapterUrl !== chapterUrl));
+        
+        ToastAndroid.show(
+            "Download cancelled",
+            ToastAndroid.SHORT
+        );
+    } catch (error) {
+        console.error("Error cancelling downloads:", error);
+        ToastAndroid.show(
+            "Error while cancelling",
+            ToastAndroid.SHORT
+        );
+    }
+}, []);
 
   const AsyncEffect = useCallback(async () => { 
     if(Object.keys(params).length === 0) {
@@ -245,9 +298,17 @@ const download = () => {
   }, [])
 
   useEffect(() => {
-    if (downloadQueue.length > 0) {
+    console.log("DOWNLOAD QUEUE CHANGED")
+
+    if (downloadQueue.length > 0 && !downloadCancelPressedRef.current) {
+      console.log("Process the download queue")
       processDownload();
     }
+
+    if(downloadCancelPressedRef.current === true) {
+      downloadCancelPressedRef.current = false
+    }
+
   }, [downloadQueue]);
 
   

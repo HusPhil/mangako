@@ -11,8 +11,8 @@ const DownloadListItem = forwardRef(({ chapterTitle, isIndeterminate, isComplete
         updateDownloadedPages: (totalPagesExpectedToDownload) => {
             setDownloadedPages(prev => prev + 1);
             setTotalPagesExpectedToDownload(totalPagesExpectedToDownload);
-            console.log("Total pages expected to download: ", totalPagesExpectedToDownload)
-            console.log("Total pages downloaded: ", downloadedPages)
+            // console.log("Total pages expected to download: ", totalPagesExpectedToDownload)
+            // console.log("Total pages downloaded: ", downloadedPages)
         }
     }));
 
@@ -22,7 +22,7 @@ const DownloadListItem = forwardRef(({ chapterTitle, isIndeterminate, isComplete
     const [downloadIsIndeterminate, setDownloadIsIndeterminate] = useState(isIndeterminate)
 
     useEffect(() => {
-        console.log("UPDATING THE UI", downloadedPages, totalPagesExpectedToDownload)
+        // console.log("UPDATING THE UI", downloadedPages, totalPagesExpectedToDownload)
 
         if (downloadedPages > 0 && totalPagesExpectedToDownload > 0) {
             setDownloadProgress(downloadedPages / totalPagesExpectedToDownload)
@@ -45,7 +45,11 @@ const DownloadListItem = forwardRef(({ chapterTitle, isIndeterminate, isComplete
             return `Loading..`
         }
 
-        if (downloadedPages >= totalPagesExpectedToDownload) {
+        if (downloadedPages > totalPagesExpectedToDownload) {
+            return `Putting it all together..`
+        }  
+
+        if (downloadedPages === totalPagesExpectedToDownload) {
             return `Completed • ${totalPagesExpectedToDownload}/${totalPagesExpectedToDownload}`
         }  
 
