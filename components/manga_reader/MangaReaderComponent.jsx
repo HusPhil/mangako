@@ -74,7 +74,7 @@ const MangaReaderComponent = ({
 
   }, []);
 
-  const handleDownloadResumableCallback = useCallback(async (pageNum, pageUrl, progress) => {
+  const handleDownloadResumableCallback = useCallback(async (chapterUrl, pageNum, pageUrl, progress) => {
     if(pagesRef.current[pageNum]) {
       // show the download progress of each page
       pagesRef.current[pageNum].toggleDownloadProgress(progress)

@@ -5,6 +5,11 @@ export const CONFIG_READ_WRITE_MODE = {
     MANGA_ONLY: "MANGA_ONLY",
 }
 
+export const DOWNLOAD_STATUS  = {
+  DOWNLOADED: "DOWNLOADED",
+  DOWNLOADING: "DOWNLOADING",
+}
+
 export const downloadDir = "content://com.android.externalstorage.documents/tree/primary%3AMangaKo/"
 export const downloadFolderNameInRoot = 'Download'
 
