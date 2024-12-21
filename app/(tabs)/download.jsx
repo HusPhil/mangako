@@ -40,7 +40,7 @@ const download = () => {
     
     if(progress.totalBytesWritten/progress.totalBytesExpectedToWrite === 1) {
       const downloadItem = downloadItemsRef.current.get(chapterUrl)
-      const downloadItemsLength = downloadItemsLengthRef.current.get(chapterUrl)
+      const downloadItemsLength = downloadItemsLengthRef.current.get(chapterUrl) 
 
       downloadItem.updateDownloadedPages(downloadItemsLength)
       // console.log("chapterDownloadProgress", chapterDownloadProgress)
