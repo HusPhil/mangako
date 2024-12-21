@@ -75,7 +75,7 @@ const ChapterPage = forwardRef(({
                 position: 'relative'
               }}
               recyclingKey={id}
-              cachePolicy='none'
+              cachePolicy='none' 
               allowDownscaling={false}
               contentFit='cover'
               placeholder={"loading the image yet"}

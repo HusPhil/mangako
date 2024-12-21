@@ -22,7 +22,7 @@ import HorizontalRule from '../../components/HorizontalRule';
 
 const download = () => {
   const params = useLocalSearchParams()
-  const isListed = params.isListed
+  const isListed = params.isListed === "true"
   const [downloadQueue, setDownloadQueue] = useState([]);
   const [completedDownloads, setCompletedDownloads] = useState([]);
   const controllerRef = useRef(null);
