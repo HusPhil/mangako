@@ -24,12 +24,28 @@ const download = () => {
   const params = useLocalSearchParams()
   const isListed = params.isListed
   const [downloadQueue, setDownloadQueue] = useState([]);
+  const [completedDownloads, setCompletedDownloads] = useState([]);
   const controllerRef = useRef(null);
-  const downloadItemsRef = useRef([]);
+  const downloadItemsRef = useRef(new Map());
+  const downloadItemsLengthRef = useRef(new Map());
+  const downloadItemsPagesRef = useRef(new Map());
+  const downloadResumablesRef = useRef(new Map());
 
-  const handleDownloadResumableCallback = (pageNum, imgUrl, progress) => {
+  const handleDownloadResumableCallback = (chapterUrl, pageNum, imgUrl, progress) => {
     // console.log("pageUrl", pageUrl, "mangaUrl", mangaUrl, "chapterUrl", chapterUrl)
-    console.log("DOWNLOAD REFS", downloadItemsRef.current)
+    // console.log("DOWNLOAD REFS", downloadItemsRef.current[0])
+    // console.log("CHAPTERURL:", chapterUrl, downloadItemsRef.current.get(chapterUrl))
+
+    
+    if(progress.totalBytesWritten/progress.totalBytesExpectedToWrite === 1) {
+      const downloadItem = downloadItemsRef.current.get(chapterUrl)
+      const downloadItemsLength = downloadItemsLengthRef.current.get(chapterUrl)
+
+      downloadItem.updateDownloadedPages(downloadItemsLength)
+      // console.log("chapterDownloadProgress", chapterDownloadProgress)
+
+    }
+    // console.log("PROGRESS", progress.totalBytesWritten, progress.totalBytesExpectedToWrite)
   }
 
   const handleDownloadVerification = async(pageUrl, mangaUrl, chapterUrl) => {
@@ -92,7 +108,7 @@ const download = () => {
       savableDataUri,
       isListed,
       handleDownloadResumableCallback,
-      { pageNum }
+      { pageNum, chapterUrl }
     )
 
     return {downloadResumable: pageDownloadResumable, pageNum, uri: pageMangaDir.cachedFilePath, savableDataUri}
@@ -119,12 +135,16 @@ const download = () => {
     }
 
     const chapterPagesToDownload = chapterPagesToDownloadResponse.data
+    downloadItemsLengthRef.current.set(chapterUrl, chapterPagesToDownload.length)
 
     const chapterDownloadResumables = await Promise.all(
         chapterPagesToDownload.map(async (pageUrl, pageNum) => (
             await createPageDownloadResumable(pageNum, pageUrl, mangaUrl, chapterUrl)
         ))
     )
+
+    // Store the download resumables for potential cancellation
+    downloadResumablesRef.current.set(chapterUrl, chapterDownloadResumables);
 
     const chapterDownloadResumablesResults = await Promise.all(
         chapterDownloadResumables.map(async (downloadResumable) => {
@@ -149,7 +169,13 @@ const download = () => {
         );
         // Remove the downloaded chapter from the queue
 
-        setDownloadQueue(prev => prev.slice(1));
+        setDownloadQueue(prev => {
+          const newDownloadQueue = [...prev];
+          const completedDownload = newDownloadQueue.shift(); // Get the completed download
+          setCompletedDownloads(prev => [...prev, completedDownload]); // Create a new array with the completed download
+          return newDownloadQueue; // Return the updated queue
+      });
+
     } else {
         ToastAndroid.show(
             `Failed to download some pages from ${firstDownloadItem.chTitle}`,
@@ -160,6 +186,32 @@ const download = () => {
     console.log("chapterDownloadResumablesResults", chapterDownloadResumablesResults, "isListed", isListed)
 
   } 
+
+  const handleCancelDownload = useCallback((chapterUrl) => {
+    // Cancel all download resumables for this chapter
+    const chapterResumables = downloadResumablesRef.current.get(chapterUrl);
+    if (chapterResumables) {
+      chapterResumables.forEach(resumable => {
+        if (resumable && resumable.downloadResumable) {
+          resumable.downloadResumable.pauseAsync();
+        }
+      });
+      // downloadResumablesRef.current.delete(chapterUrl);
+    }
+
+    // Remove from queue
+    setDownloadQueue(prev => prev.filter(item => item.chapterUrl !== chapterUrl));
+    
+    // Clean up refs
+    // downloadItemsRef.current.delete(chapterUrl);
+    // downloadItemsLengthRef.current.delete(chapterUrl);
+    // downloadItemsPagesRef.current.delete(chapterUrl);
+
+    ToastAndroid.show(
+      "Download cancelled",
+      ToastAndroid.SHORT
+    );
+  }, []);
 
   const AsyncEffect = useCallback(async () => { 
     if(Object.keys(params).length === 0) {
@@ -203,8 +255,23 @@ const download = () => {
     if(item) {
       return (
         <DownloadListItem 
-          ref={(downloadItem) => { downloadItemsRef.current[index] = downloadItem; }} 
-          chapterTitle={item.chTitle} isDeterminate={true} 
+          ref={(downloadItem) => { downloadItemsRef.current.set(item.chapterUrl, downloadItem); }} 
+          key={item.chapterUrl}
+          chapterTitle={item.chTitle} 
+          isIndeterminate={true}
+          onCancelPress={() => handleCancelDownload(item.chapterUrl)}
+        />
+      )
+    }
+  }, [handleCancelDownload])
+
+  const renderDownloadedItem = useCallback(({ item, index }) => {
+    if(item) {
+      return (
+        <DownloadListItem 
+          key={item.chapterUrl}
+          chapterTitle={item.chTitle} isIndeterminate={false} 
+          isCompleted = {true}
         />
       )
     }
@@ -237,8 +304,8 @@ const download = () => {
       <HorizontalRule displayText={"Completed Downloads"} otherStyles={'m-4'}/>
       <View className="flex-1 bg-primary  w-full h-full">
         <FlashList 
-          data={downloadQueue}
-          renderItem={renderItem}
+          data={completedDownloads}
+          renderItem={renderDownloadedItem}
           estimatedItemSize={500}
           ListEmptyComponent={EmptyCompletedMessage}
         />

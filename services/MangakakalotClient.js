@@ -331,7 +331,7 @@ export const getDownloadResumableImage = (
   callback, otherData,
   ) => {
   try {
-    const { pageNum } = otherData;
+    const { pageNum, chapterUrl } = otherData;
     const downloadResumable = FileSystem.createDownloadResumable(
       imgUrl,
       imgFileUri,
@@ -339,7 +339,7 @@ export const getDownloadResumableImage = (
         headers,
       },
       (progress) => {
-        callback(pageNum, imgUrl, progress)
+        callback(chapterUrl, pageNum, imgUrl, progress)
       },
       imgResumableData
     );
