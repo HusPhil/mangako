@@ -19,7 +19,8 @@ import DownloadListItem from '../../components/manga_download/DownloadListItem';
 import { downloadPageData } from '../../components/manga_reader/_reader';
 import HorizontalRule from '../../components/HorizontalRule';
 
-const MAX_CONCURRENT_DOWNLOADS = 3; // Limit concurrent downloads to prevent memory issues
+import pLimit from 'p-limit';
+import { debounce } from 'lodash';
 
 const download = () => {
   const params = useLocalSearchParams()
@@ -31,23 +32,28 @@ const download = () => {
   const downloadItemsLengthRef = useRef(new Map());
   const downloadItemsPagesRef = useRef(new Map());
   const downloadResumablesRef = useRef(new Map());
-  const updateProgressTimeoutRef = useRef(null);
   const downloadCancelPressedRef = useRef(false);
   const isFocused = useIsFocused();
+  const downloadLimitRef = useRef(pLimit(3)); // Create a persistent pLimit instance
+
+  // Debounced update function to reduce UI updates
+  const debouncedProgressUpdate = useCallback(
+    debounce((chapterUrl, pageNum, totalPages) => {
+      const downloadItem = downloadItemsRef.current.get(chapterUrl);
+      if (downloadItem) {
+        downloadItem.updateDownloadedPages(pageNum, totalPages);
+      }
+    }, 100),
+    []
+  );
 
   const handleDownloadResumableCallback = async (chapterUrl, pageNum, pageUrl, progress) => {
-    // console.log("pageUrl", pageUrl, "mangaUrl", mangaUrl, "chapterUrl", chapterUrl)
-    // console.log("DOWNLOAD REFS", downloadItemsRef.current[0])
-    // console.log("CHAPTERURL:", chapterUrl, downloadItemsRef.current.get(chapterUrl))
-
-    
     if(progress.totalBytesWritten/progress.totalBytesExpectedToWrite === 1 && isFocused) {
-      const downloadItem = downloadItemsRef.current.get(chapterUrl)
       const downloadItemsLength = downloadItemsLengthRef.current.get(chapterUrl) 
       const mangaUrl = params.mangaUrl
-      downloadItem.updateDownloadedPages(pageNum, downloadItemsLength) 
+      // Use debounced update for progress
+      debouncedProgressUpdate(chapterUrl, pageNum, downloadItemsLength);
 
-      // console.log("chapterDownloadProgress", chapterDownloadProgress)
       const pageFileName = shorthash.unique(pageUrl)
       const pageMangaDir = getMangaDirectory(
         mangaUrl, chapterUrl, 
@@ -55,21 +61,17 @@ const download = () => {
         `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
         )
       
-      //create completion certificate which can be used for download verification
       const certificateJsonFileName = "-certificate.json"
       const certificateFileUri = pageMangaDir.cachedFilePath + certificateJsonFileName
       
       await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
 
-      //save the certification as a json file
       await FileSystem.writeAsStringAsync(
         certificateFileUri,
         JSON.stringify(progress),
         {encoding: FileSystem.EncodingType.UTF8}
       );
-
     }
-    // console.log("PROGRESS", progress.totalBytesWritten, progress.totalBytesExpectedToWrite)
   }
 
   const handleDownloadVerification = async(pageUrl, mangaUrl, chapterUrl) => {
@@ -110,10 +112,12 @@ const download = () => {
 
     await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
         
-    //use the download verification method to know if this page has been SUCCESSFULLY downloaded
     const downloadCompleted = await handleDownloadVerification(pageUrl, mangaUrl, chapterUrl);
 
     if(downloadCompleted) {
+      const downloadItem = downloadItemsRef.current.get(chapterUrl)
+      const downloadItemsLength = downloadItemsLengthRef.current.get(chapterUrl) 
+      downloadItem.updateDownloadedPages(pageNum, downloadItemsLength) 
       return {
         uri: pageMangaDir.cachedFilePath, pageNum, 
         folderUri: pageMangaDir.cachedFolderPath,
@@ -122,8 +126,6 @@ const download = () => {
       }
     }
 
-    //if not create a download resumable from a util func named downloadPageData which handles 
-    //all the complexity of creating a download resumable with an existing save data
     const pageDownloadResumable = await downloadPageData (
       mangaUrl, 
       chapterUrl, 
@@ -139,9 +141,8 @@ const download = () => {
   }
 
   const processDownload = async () => {
-    // get the first downloadItem from the download queue
     const firstDownloadItem = downloadQueue[0]
-    if (!firstDownloadItem) return; // Exit if no download item
+    if (!firstDownloadItem) return;
 
     const mangaUrl = params.mangaUrl
     const chapterUrl = firstDownloadItem.chapterUrl
@@ -153,81 +154,54 @@ const download = () => {
         )
         
         if (chapterPagesToDownloadResponse.error != null) {
-            ToastAndroid.show(
-                "Failed to fetch download pages",
-                ToastAndroid.SHORT
-            )
+            ToastAndroid.show("Failed to fetch download pages", ToastAndroid.SHORT);
             return;
         }
 
-        const chapterPagesToDownload = chapterPagesToDownloadResponse.data
-        downloadItemsLengthRef.current.set(chapterUrl, chapterPagesToDownload.length)
+        const chapterPagesToDownload = chapterPagesToDownloadResponse.data;
+        downloadItemsLengthRef.current.set(chapterUrl, chapterPagesToDownload.length);
 
-        // Check if download was cancelled before creating resumables
         if (!downloadQueue.some(item => item.chapterUrl === chapterUrl)) {
             return;
         }
 
+        // Create all download resumables first
         const chapterDownloadResumables = await Promise.all(
-            chapterPagesToDownload.map(async (pageUrl, pageNum) => (
-                await createPageDownloadResumable(pageNum, pageUrl, mangaUrl, chapterUrl)
-            ))
-        )
+            chapterPagesToDownload.map(async (pageUrl, pageNum) => {
+                const resumable = await createPageDownloadResumable(pageNum, pageUrl, mangaUrl, chapterUrl);
+                return { ...resumable, chapterUrl }; 
+            })
+        );
 
         downloadResumablesRef.current.set(chapterUrl, chapterDownloadResumables);
-        // Store the download resumables for potential cancellation
 
-        // Check again if download was cancelled before starting downloads
         if (!downloadQueue.some(item => item.chapterUrl === chapterUrl)) {
             return;
         }
 
-        // Initialize results array and queue
-        const results = [];
-        const queue = chapterDownloadResumables.slice();
-        
-        const downloadItem = async (downloadResumable) => {
-            if (downloadResumable.fileExist) {
-                return { success: true };
-            }
-            try {
-                const result = await downloadResumable.downloadResumable.downloadAsync();
-                return { success: result != null };
-            } catch (error) {
-                if (!downloadQueue.some(item => item.chapterUrl === chapterUrl)) {
+        // Process downloads using pLimit for better concurrency control
+        const results = await Promise.all(
+            chapterDownloadResumables.map(downloadResumable =>
+              downloadLimitRef.current(async () => {
+                if (downloadResumable.fileExist) {
+                  return { success: true };
+                }
+                try {
+                  const result = await downloadResumable.downloadResumable.downloadAsync();
+                  return { success: result != null };
+                } catch (error) {
+                  if (!downloadQueue.some(item => item.chapterUrl === chapterUrl)) {
                     throw new Error('Download cancelled');
+                  }
+                  return { success: false, error };
                 }
-                return { success: false, error };
-            }
-        };
+              })
+            )
+        );
 
-        // Process downloads in batches
-        const processQueue = async () => {
-            const workers = Array(MAX_CONCURRENT_DOWNLOADS).fill(null).map(async () => {
-                while (queue.length > 0) {
-                    const downloadResumable = queue.shift();
-                    if (downloadResumable) {
-                        const result = await downloadItem(downloadResumable);
-                        results.push(result);
-                        
-                        // Small delay between downloads to keep UI responsive
-                        await new Promise(resolve => setTimeout(resolve, 50));
-                    }
-                }
-            });
-
-            await Promise.all(workers);
-        };
-
-        await processQueue();
-        const chapterDownloadResumablesResults = results;
-
-        // Clean up download resumables
         downloadResumablesRef.current.delete(chapterUrl);
 
-        const chapterSuccessfullyDownloaded = chapterDownloadResumablesResults.every(resultItem => resultItem.success);
-
-        console.log("chapterSuccessfullyDownloaded", chapterSuccessfullyDownloaded)
+        const chapterSuccessfullyDownloaded = results.every(resultItem => resultItem.success);
 
         if (chapterSuccessfullyDownloaded) {
             ToastAndroid.show(
@@ -243,92 +217,57 @@ const download = () => {
             });
 
             const mangaRetrievedConfigData = await readMangaConfigData(
-              mangaUrl, 
-              CONFIG_READ_WRITE_MODE.MANGA_ONLY, 
-              isListed
-            )
+                mangaUrl, 
+                CONFIG_READ_WRITE_MODE.MANGA_ONLY, 
+                isListed
+            );
 
-            let downloadedChaptersToSave = {}
-
-            if(mangaRetrievedConfigData?.manga?.downloadedChapters) {
-          
-              console.log("mangaRetrievedConfigData?.manga?.downloadedChapters", mangaRetrievedConfigData?.manga?.downloadedChapters)
-              downloadedChaptersToSave = {...mangaRetrievedConfigData?.manga?.downloadedChapters, [chapterUrl]: {"downloadStatus" : DOWNLOAD_STATUS.DOWNLOADED}}
-            }
-            else {
-              downloadedChaptersToSave = {[chapterUrl]: {"downloadStatus" : DOWNLOAD_STATUS.DOWNLOADED}}
-              console.log("no downloaded chapters found")
-            }
-            console.log("downloadedChaptersToSave", downloadedChaptersToSave)
+            const downloadedChaptersToSave = mangaRetrievedConfigData?.manga?.downloadedChapters
+                ? {...mangaRetrievedConfigData.manga.downloadedChapters, [chapterUrl]: {"downloadStatus" : DOWNLOAD_STATUS.DOWNLOADED}}
+                : {[chapterUrl]: {"downloadStatus" : DOWNLOAD_STATUS.DOWNLOADED}};
 
             await saveMangaConfigData(
-              mangaUrl, 
-              CONFIG_READ_WRITE_MODE.MANGA_ONLY, 
-              {"downloadedChapters": downloadedChaptersToSave},
-              isListed,
-              CONFIG_READ_WRITE_MODE.MANGA_ONLY
-            )
-
+                mangaUrl, 
+                CONFIG_READ_WRITE_MODE.MANGA_ONLY, 
+                {"downloadedChapters": downloadedChaptersToSave},
+                isListed,
+                CONFIG_READ_WRITE_MODE.MANGA_ONLY
+            );
         } else {
             ToastAndroid.show(
                 `Failed to download some pages from ${firstDownloadItem.chTitle}`,
                 ToastAndroid.SHORT
             );
-            // Remove failed download from queue
             setDownloadQueue(prev => prev.filter(item => item.chapterUrl !== chapterUrl));
         }
     } catch (error) {
-        if (error.message === 'Download cancelled') {
-            // Download was cancelled, just return
-            return;
-        }
+        if (error.message === 'Download cancelled') return;
+        
         console.error('Download error:', error);
         ToastAndroid.show(
             `Error downloading ${firstDownloadItem.chTitle}`,
             ToastAndroid.SHORT
         );
-        // Remove failed download from queue
         setDownloadQueue(prev => prev.filter(item => item.chapterUrl !== chapterUrl));
     }
-}
+};
 
   const handleCancelDownload = useCallback(async (chapterUrl) => {
-    // Cancel all download resumables for this chapter
-    downloadCancelPressedRef.current = true;
+    downloadCancelPressedRef.current = true
     
     const downloadToCancel = downloadResumablesRef.current.get(chapterUrl);
     
     try {
-        // If there are downloads to cancel, pause them and cleanup
         if (downloadToCancel) {
             await Promise.all(downloadToCancel.map(async (resumable) => {
                 if (resumable && resumable.downloadResumable) {
-                    try {
-                        await resumable.downloadResumable.pauseAsync();
-                        // Delete the partially downloaded file if it exists
-                        if (resumable.fileUri) {
-                            await FileSystem.deleteAsync(resumable.fileUri, { idempotent: true });
-                        }
-                    } catch (err) {
-                        console.warn("Error cleaning up download:", err);
-                    }
+                    await resumable.downloadResumable.pauseAsync();
                 }
             }));
-
-            // Clear the resumables for this chapter
-            downloadResumablesRef.current.delete(chapterUrl);
         }
         
-        // Update the queue and reset download state
         setDownloadQueue(prev => prev.filter(item => item.chapterUrl !== chapterUrl));
         
-        // Update the download progress ref to remove this chapter
-        if (downloadProgressRef.current) {
-            const newProgress = { ...downloadProgressRef.current };
-            delete newProgress[chapterUrl];
-            downloadProgressRef.current = newProgress;
-        }
-
         ToastAndroid.show(
             "Download cancelled",
             ToastAndroid.SHORT
@@ -339,9 +278,6 @@ const download = () => {
             "Error while cancelling",
             ToastAndroid.SHORT
         );
-    } finally {
-        // Reset the cancel flag
-        downloadCancelPressedRef.current = false;
     }
 }, []);
 
@@ -377,23 +313,17 @@ const download = () => {
   }, [])
 
   useEffect(() => {
+    console.log("DOWNLOAD QUEUE CHANGED")
+
     if (downloadQueue.length > 0 && !downloadCancelPressedRef.current) {
-      // Add slight delay before processing next download
-      setTimeout(() => {
-        processDownload();
-      }, 100);
+      console.log("Process the download queue")
+      processDownload();
     }
 
     if(downloadCancelPressedRef.current === true) {
       downloadCancelPressedRef.current = false
     }
 
-    return () => {
-      // Clean up timeouts
-      if (updateProgressTimeoutRef.current) {
-        clearTimeout(updateProgressTimeoutRef.current);
-      }
-    };
   }, [downloadQueue]);
 
   
