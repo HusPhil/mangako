@@ -313,7 +313,7 @@ const MangaInfoScreen = () => {
                     )}
                   </View>
                   
-                  <HorizontalRule displayText="Chapter list" otherStyles={"mx-4 sticky"} />
+                  <HorizontalRule displayText="Chapter list" otherStyles={"mx-4 sticky my-2"} />
                 </View>
               }
           />

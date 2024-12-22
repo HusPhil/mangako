@@ -224,8 +224,6 @@ const ChapterList = ({
         retrievedDownloadedChaptersList = savedMangaConfigData.manga.downloadedChapters;
       }
 
-      console.log("retrievedDownloadedChaptersList", retrievedDownloadedChaptersList)
-
       let lastReadChapterIndex = 0;
       let numberOfReadChapters = 0;
       
@@ -252,7 +250,7 @@ const ChapterList = ({
           }
           
           const currReadStatus = newChapterInfo.finished
-              
+　　 　 　 　
           if(!currReadStatus) {
             // ToastAndroid.show("Chapter not read yet: " + index, ToastAndroid.SHORT)
             lastReadChapterIndex = index
@@ -587,7 +585,7 @@ const ChapterList = ({
 
     await AsyncStorage.setItem(selectedChaptersCacheKey, selectedChaptersAsJsonString)
 
-    router.push({
+    router.navigate({
       pathname: "(tabs)/download",
       params: {
         selectedChaptersCacheKey,
@@ -602,6 +600,83 @@ const ChapterList = ({
     console.error(`An error occured during download of chapter ${error}`)
    }
   }, []);
+
+  const handleDeleteDownload = useCallback(async () => {
+    if (selectedChapters.current.length === 0) {
+      ToastAndroid.show("No chapters selected", ToastAndroid.SHORT);
+      return;
+    }
+
+    try {
+      // First, get the current manga config
+      const mangaRetrievedConfigData = await readMangaConfigData(
+        mangaUrl,
+        CONFIG_READ_WRITE_MODE.MANGA_ONLY,
+        isListed
+      );
+
+      let downloadedChapters = mangaRetrievedConfigData?.manga?.downloadedChapters || {};
+      
+      // Delete physical files and update config
+      await Promise.all(selectedChapters.current.map(async (chapterData) => {
+        const chapterKey = shorthash.unique(chapterData.chapterUrl);
+        const parentKey = shorthash.unique(mangaUrl);
+        const chapterDir = `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}${parentKey}/${chapterKey}`;
+        
+        try {
+          // Delete the physical files
+          const dirInfo = await FileSystem.getInfoAsync(chapterDir);
+          if (dirInfo.exists) {
+            await FileSystem.deleteAsync(chapterDir, { idempotent: true });
+          }
+          
+          // Remove from downloadedChapters in config
+          if (downloadedChapters[chapterData.chapterUrl]) {
+            delete downloadedChapters[chapterData.chapterUrl];
+          }
+        } catch (err) {
+          console.warn(`Error deleting chapter ${chapterData.chapterTitle}:`, err);
+        }
+      }));
+
+      // Save the updated config
+      await saveMangaConfigData(
+        mangaUrl,
+        CONFIG_READ_WRITE_MODE.MANGA_ONLY,
+        { downloadedChapters },
+        isListed,
+        CONFIG_READ_WRITE_MODE.MANGA_ONLY
+      );
+
+      // Reset UI state
+      setChapterList(prev => {
+        const newChapterList = [...prev];
+        // Update download status for deleted chapters
+        selectedChapters.current.forEach(chapter => {
+          if (newChapterList[chapter.index]) {
+            newChapterList[chapter.index] = {
+              ...newChapterList[chapter.index],
+              isSelected: false,
+              isDownloaded: false // Reset download status
+            };
+          }
+        });
+        return newChapterList;
+      });
+      
+      selectedChapters.current = [];
+      listModeRef.current = CHAPTER_LIST_MODE.SELECT_MODE;
+      ToastAndroid.show("Selected downloads deleted", ToastAndroid.SHORT);
+    } catch (error) {
+      console.error("Error deleting downloads:", error);
+      ToastAndroid.show("Error deleting downloads", ToastAndroid.SHORT);
+    }
+
+    setChapterList(prev => {
+      const newChapterList = [...prev];
+      return newChapterList;
+    });
+  }, [mangaUrl, isListed]);
 
   const handleDownloadLongPress = useCallback(async () => {
     const { downloadPermissionFileName, downloadPermissionFilePath } = getMangaDownloadPermissionDir(mangaUrl)
@@ -713,22 +788,28 @@ const ChapterList = ({
 
               <HorizontalRule otherStyles={"mx-2"}/>
 
-              <View className="flex-row flex-1 my-3" >
-                <TouchableOpacity className="flex-row justify-center items-center flex-1"
+              <View className="flex-row flex-1 mt-4 mb-2 mx-2 justify-around" >
+                <TouchableOpacity className="flex-row justify-center items-center"
                   onPress={handleMarkAsRead} onLongPress={handleSwitchReadMode} key={readMarkMode}>
                   <View>
-                    <MaterialIcons name={readMarkMode  === READ_MARK_MODE.MARK_AS_READ ? "check-box" : "indeterminate-check-box"} size={24} color="white" />
+                    <MaterialIcons name={readMarkMode  === READ_MARK_MODE.MARK_AS_READ ? "check-box" : "indeterminate-check-box"} size={20} color="white" />
                   </View> 
                   <Text className="text-white ml-2 font-pregular text-xs text-left">
                     {readMarkMode === READ_MARK_MODE.MARK_AS_READ ? "Mark as read" : "Mark as unread"}
                     </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity className="flex-row justify-center items-center flex-1" onPress={handleDownload} onLongPress={handleDownloadLongPress}>
+                <TouchableOpacity className="flex-row justify-center items-center" onPress={handleDownload} onLongPress={handleDownloadLongPress}>
                   <View>
-                    <MaterialIcons name="file-download" size={24} color="white" />
+                    <MaterialIcons name="file-download" size={20} color="white" />
                   </View> 
                   <Text className="text-white ml-2 font-pregular text-xs text-left">Download</Text>
+                </TouchableOpacity>
+                <TouchableOpacity className="flex-row justify-center items-center" onPress={handleDeleteDownload}>
+                  <View>
+                    <MaterialIcons name="file-download-off" size={20} color="white" />
+                  </View> 
+                  <Text className="text-white ml-2 font-pregular text-xs text-left">Delete</Text>
                 </TouchableOpacity>
               </View>
 

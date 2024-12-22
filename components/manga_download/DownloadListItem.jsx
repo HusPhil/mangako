@@ -9,7 +9,6 @@ const DownloadListItem = forwardRef(({ chapterTitle, isIndeterminate, isComplete
     useImperativeHandle(ref, () => ({
         getChapterTitle: () => chapterTitle,
         updateDownloadedPages: (downloadedPageNum, totalPagesExpectedToDownload) => {
-            console.log("downloadedPageNum", downloadedPageNum)
             setDownloadedPages(prev => {
                 const newDownloadedPages = new Set([...prev]);
                 newDownloadedPages.add(downloadedPageNum);

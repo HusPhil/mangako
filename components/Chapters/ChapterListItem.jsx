@@ -56,13 +56,13 @@ const ChapterListItem = ({
       onLongPress={handleLongPress}
     >
       <View className={`p-2 rounded-md bg-secondary ${ finished && 'opacity-50'} flex-row justify-between items-center`}>
-        <View>
+        <View className="flex-1 ml-2">
         <Text numberOfLines={1} className="font-pregular text-white">
           {chapterTitle || 'Loading'}{' '}
         </Text>
         <Text className="font-pregular text-[10px] text-white opacity-50">{additionalInfo}</Text>
         </View>
-        <View className="pr-2">
+        <View className="mx-2">
           <MaterialIcons name={isDownloaded ? "file-download-done" : "file-download"} size={24} color="white" />
         </View>
         {/* { && (

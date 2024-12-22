@@ -25,6 +25,7 @@ const download = () => {
   const params = useLocalSearchParams()
   const isListed = params.isListed === "true"
   const [downloadQueue, setDownloadQueue] = useState([]);
+  const downloadQueueRef = useRef();
   const [completedDownloads, setCompletedDownloads] = useState([]);
   const controllerRef = useRef(null);
   const downloadItemsRef = useRef(new Map());
@@ -227,7 +228,7 @@ const download = () => {
 
         const chapterSuccessfullyDownloaded = chapterDownloadResumablesResults.every(resultItem => resultItem.success);
 
-        console.log("chapterSuccessfullyDownloaded", chapterSuccessfullyDownloaded)
+        // console.log("chapterSuccessfullyDownloaded", chapterSuccessfullyDownloaded)
 
         if (chapterSuccessfullyDownloaded) {
             ToastAndroid.show(
@@ -252,14 +253,14 @@ const download = () => {
 
             if(mangaRetrievedConfigData?.manga?.downloadedChapters) {
           
-              console.log("mangaRetrievedConfigData?.manga?.downloadedChapters", mangaRetrievedConfigData?.manga?.downloadedChapters)
+              // console.log("mangaRetrievedConfigData?.manga?.downloadedChapters", mangaRetrievedConfigData?.manga?.downloadedChapters)
               downloadedChaptersToSave = {...mangaRetrievedConfigData?.manga?.downloadedChapters, [chapterUrl]: {"downloadStatus" : DOWNLOAD_STATUS.DOWNLOADED}}
             }
             else {
               downloadedChaptersToSave = {[chapterUrl]: {"downloadStatus" : DOWNLOAD_STATUS.DOWNLOADED}}
               console.log("no downloaded chapters found")
             }
-            console.log("downloadedChaptersToSave", downloadedChaptersToSave)
+            // console.log("downloadedChaptersToSave", downloadedChaptersToSave)
 
             await saveMangaConfigData(
               mangaUrl, 
@@ -335,68 +336,97 @@ const download = () => {
         );
     } catch (error) {
         console.error("Error cancelling downloads:", error);
-        ToastAndroid.show(
-            "Error while cancelling",
-            ToastAndroid.SHORT
-        );
+        // ToastAndroid.show(
+        //     "Error while cancelling",
+        //     ToastAndroid.SHORT
+        // );
     } finally {
         // Reset the cancel flag
         downloadCancelPressedRef.current = false;
     }
 }, []);
 
-  const AsyncEffect = useCallback(async () => { 
-    if(Object.keys(params).length === 0) {
-      ToastAndroid.show(
-        "Nothing in queue",
-        ToastAndroid.SHORT
-      )
-      return
-    }
+const AsyncEffect = useCallback(async () => {
+  
+    console.log("downloadQueueREF", downloadQueueRef.current)
+    if (!params.selectedChaptersCacheKey) return;
 
-    controllerRef.current = new AbortController;
+    controllerRef.current = new AbortController();
     const signal = controllerRef.current.signal;
 
-    const chaptersToDownloadAsJsonString =  await AsyncStorage.getItem(params.selectedChaptersCacheKey)
-    const chaptersToDownload = JSON.parse(chaptersToDownloadAsJsonString)
+    try {
+      // First get the current manga config to check downloaded chapters
+      const mangaRetrievedConfigData = await readMangaConfigData(
+        params.mangaUrl,
+        CONFIG_READ_WRITE_MODE.MANGA_ONLY,
+        isListed
+      );
 
-    setDownloadQueue(chaptersToDownload)
+      const downloadedChapters = mangaRetrievedConfigData?.manga?.downloadedChapters || {};
 
-    await AsyncStorage.removeItem(params.selectedChaptersCacheKey)
+      const chaptersToDownloadAsJsonString = await AsyncStorage.getItem(params.selectedChaptersCacheKey);
+      if (!chaptersToDownloadAsJsonString) return;
 
-  }, [])
+      const newChaptersToDownload = JSON.parse(chaptersToDownloadAsJsonString);
 
-  useEffect(() => {
-    AsyncEffect()
+      // Check for already downloaded chapters
+      const alreadyDownloadedChapters = newChaptersToDownload.filter(chapter => 
+        downloadedChapters[chapter.chapterUrl] && 
+        downloadedChapters[chapter.chapterUrl].downloadStatus === DOWNLOAD_STATUS.DOWNLOADED
+      );
 
-    return () => {
-      if(controllerRef.current) {
-        controllerRef.current.abort()
+      if (alreadyDownloadedChapters.length > 0) {
+        ToastAndroid.show(
+          `${alreadyDownloadedChapters.length} chapter(s) already downloaded`,
+          ToastAndroid.SHORT
+        ); 
       }
-    }
-  }, [])
 
+      // Safely update the download queue by merging with existing state
+      setDownloadQueue(prevQueue => {
+        const existingChapterUrls = new Set(prevQueue.map(item => item.chapterUrl));
+        console.log("existingChapterUrls", existingChapterUrls)
+        
+        // Filter out chapters that are already downloaded or in queue
+        const uniqueNewChapters = newChaptersToDownload.filter(chapter => 
+          !existingChapterUrls.has(chapter.chapterUrl) && 
+          (!downloadedChapters[chapter.chapterUrl] || 
+           downloadedChapters[chapter.chapterUrl].downloadStatus !== DOWNLOAD_STATUS.DOWNLOADED)
+        );
+
+        downloadQueueRef.current = [...prevQueue, ...uniqueNewChapters];
+        return [...prevQueue, ...uniqueNewChapters];
+      });
+
+      await AsyncStorage.removeItem(params.selectedChaptersCacheKey);
+    } catch (error) {
+      console.error("Error processing download queue:", error);
+    }
+  }, [params.selectedChaptersCacheKey, downloadQueueRef.current, params.mangaUrl, isListed]);
+
+  // Handle initial load and cache key changes
+  useFocusEffect(
+    useCallback(() => {
+      AsyncEffect();
+      // if (params.selectedChaptersCacheKey) {
+      // }
+    }, [params.selectedChaptersCacheKey, AsyncEffect, downloadQueueRef.current])
+  );
+
+  // Handle download processing
   useEffect(() => {
     if (downloadQueue.length > 0 && !downloadCancelPressedRef.current) {
-      // Add slight delay before processing next download
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         processDownload();
       }, 100);
+      return () => clearTimeout(timeoutId);
     }
 
     if(downloadCancelPressedRef.current === true) {
-      downloadCancelPressedRef.current = false
+      downloadCancelPressedRef.current = false;
     }
+  }, [downloadQueue]); // Remove AsyncEffect from dependencies
 
-    return () => {
-      // Clean up timeouts
-      if (updateProgressTimeoutRef.current) {
-        clearTimeout(updateProgressTimeoutRef.current);
-      }
-    };
-  }, [downloadQueue]);
-
-  
   const renderItem = useCallback(({ item, index }) => {
     if(item) {
       return (
