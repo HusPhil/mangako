@@ -8,15 +8,15 @@ import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global'
 
 export const READER_MODES = [
     {
-      label: "Horizontal", value: "hor",
-      desc: "Standard left-to-right viewing mode. Most commonly used for reading manhuas."
-    },
-    {
-      label: "Horizontal (inverted)", value: "hor-inv",
+      label: "Right-to-left", value: "hor-inv",
       desc: "Reading direction is right-to-left. Most commonly used for reading mangas."
     },
     {
-      label: "Vertical", value: "ver",
+      label: "Left-to-right", value: "hor",
+      desc: "Standard left-to-right viewing mode. Most commonly used for reading manhuas."
+    },
+    {
+      label: "Top-to-bottom", value: "ver",
       desc: "Vertical top-to-bottom viewing mode. Perfect fit for reading manhwas."
     },
   ]
@@ -27,7 +27,7 @@ export const CHAPTER_NAVIGATION = {
     JUMP: "JUMP",
 }
 
-export const loadingRangeDesc = "Range to load from the current page. Higher values improve reading smoothness but increase processing power usage."
+export const loadingRangeDesc = "Enhances reading smoothness but increases memory usage."
 
 // --------------------------------------- VARIABLES ONLY ---------------------------------------*/}
 

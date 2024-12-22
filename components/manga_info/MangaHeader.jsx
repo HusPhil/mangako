@@ -13,6 +13,7 @@ import * as FileSystem from 'expo-file-system';
 import colors from '../../constants/colors';
 import shorthash from 'shorthash';
 import { CHAPTER_LIST_MODE } from '../../app/screens/_manga_info';
+import { router } from 'expo-router';
 
 
 const MangaHeader = ({
@@ -103,6 +104,7 @@ const MangaHeader = ({
     await saveMangaListItemConfig(mangaUrl, listItemConfigToSave)
     
     handleShowModal()
+    router.replace('/(tabs)')
     
   }, [selectedTabs])
 

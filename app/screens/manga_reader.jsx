@@ -48,7 +48,6 @@ const MangaReaderScreen = () => {
         dispatch({type: READER_ACTIONS.SET_IS_LISTED, payload: listItemConfig?.length > 0})
         isListedRef.current = listItemConfig?.length > 0
 
-        console.log("WHUTs")
         const savedConfig = await readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, (listItemConfig?.length > 0))
         if (savedConfig) {
             dispatch({
@@ -62,7 +61,6 @@ const MangaReaderScreen = () => {
                 }
             });
         }
-        console.log("WHUcT")
         if(savedConfig?.manga?.readingStats) {
             const currentChapterReadingStatus = savedConfig.manga.readingStats[chapterDataRef.current.chapterUrl]; 
             dispatch({
@@ -137,7 +135,28 @@ const MangaReaderScreen = () => {
     
         console.log("pageMangaDir.cachedFolderPath:", pageMangaDir.cachedFolderPath)
     
+        // Delete the chapter files
         await FileSystem.deleteAsync(pageMangaDir.cachedFolderPath)
+
+        // Remove chapter from downloadedChapters in manga config
+        const mangaRetrievedConfigData = await readMangaConfigData(
+          mangaUrl,
+          CONFIG_READ_WRITE_MODE.MANGA_ONLY,
+          isListedRef.current
+        );
+
+        if (mangaRetrievedConfigData?.manga?.downloadedChapters) {
+          const updatedDownloadedChapters = { ...mangaRetrievedConfigData.manga.downloadedChapters };
+          delete updatedDownloadedChapters[chapterDataRef.current.chapterUrl];
+
+          await saveMangaConfigData(
+            mangaUrl,
+            CONFIG_READ_WRITE_MODE.MANGA_ONLY,
+            { "downloadedChapters": updatedDownloadedChapters },
+            isListedRef.current,
+            CONFIG_READ_WRITE_MODE.MANGA_ONLY
+          );
+        }
 
         router.back()
 
@@ -146,7 +165,7 @@ const MangaReaderScreen = () => {
             ToastAndroid.SHORT
         )
     
-      })
+      }, [mangaUrl])
 
     const handlePageChange = useCallback(async (currentPage, readingStatus) => {
         dispatch({ type: READER_ACTIONS.SET_CURRENT_PAGE, payload: currentPage });
@@ -178,7 +197,7 @@ const MangaReaderScreen = () => {
 
 
             if(targetIndex > chapterListref.current.length - 1 || targetIndex < 0) {
-                const alertMessage = navigationMode === backend.CHAPTER_NAVIGATION.NEXT ? "Next chapter no found." : "Previous chapter not found." 
+                const alertMessage = navigationMode === backend.CHAPTER_NAVIGATION.NEXT ? "Next chapter not found" : "Previous chapter not found" 
                 Toast.show(
                     alertMessage,
                     Toast.LONG,
@@ -243,6 +262,13 @@ const MangaReaderScreen = () => {
 
     }
 
+    const handleTitleLongPress = useCallback(async () => {
+        ToastAndroid.show(
+            chapterDataRef.current.chTitle,
+            ToastAndroid.SHORT
+        )
+    }, [chapterDataRef.current])
+
     const handleDropDownValueChange = useCallback(async (data) => {
         dispatch({type: READER_ACTIONS.SHOW_MODAL})
 
@@ -279,8 +305,8 @@ const MangaReaderScreen = () => {
             >
                 <View className="h-full w-full justify-end items-center bg-transparent">
                     <View className="bg-secondary justify-end rounded-md p-1 px-2">
-                        <TouchableOpacity onPress={handleReadFinish}>
-                            <View className="justify-center items-center w-full flex-row ">
+                        <TouchableOpacity onPress={handleReadFinish} onLongPress={handleTitleLongPress}>
+                            <View className="justify-center items-center w-full flex-row px-3">
                                 <Text numberOfLines={1} className="text-white font-pregular text-base text-center pr-1 py-3 flex-1 ">{chapterDataRef.current.chTitle}</Text>
                                 {state.finished && <Feather name="check-circle" size={24} color="red" />}
                             </View>
@@ -299,7 +325,7 @@ const MangaReaderScreen = () => {
                         </View>  
 
                         <View>
-                            <View className="flex-row pl-4 items-center justify-between pt-2 ">
+                            <View className="flex-row pl-4 items-center justify-between pt-2 mt-2">
                                 <Text className="font-pregular text-white text">Loading range:</Text>
                                 <Slider
                                     style={{flex: 1}}
@@ -314,7 +340,7 @@ const MangaReaderScreen = () => {
                                     />  
                                 <Text className="text-white font-pregular text-xs pr-4">{state.loadingRange}</Text>
                             </View>     
-                            <Text className="text-white font-pregular text-xs mt-2 px-4">{"• " + backend.loadingRangeDesc}</Text>
+                            <Text className="text-white font-pregular text-xs mt-1 px-4">{"• " + backend.loadingRangeDesc}</Text>
                         </View>       
                     
                         <View className="flex-row justify-between m-2 my-3">
@@ -343,6 +369,26 @@ const MangaReaderScreen = () => {
                     <View key={state.loadingRange} className="flex-1">
                         {state.readingMode === backend.READER_MODES[0] && (
                             <MangaReaderComponent 
+                            chapterPages={state.chapterPages}
+                            chapterTitle={chapterDataRef.current.chTitle}
+                            loadingRange={state.loadingRange}
+                            currentManga={{
+                                manga: mangaUrl,
+                                chapter: chapterDataRef.current.chapterUrl
+                            }}
+                            onPageChange={handlePageChange}
+                            onToNextChapter={handleToNextChapter}
+                            onToPrevChapter={handleToPrevChapter}
+                            isListed={isListedRef.current}
+                            onTap={handleTap}
+                            currentPage={state.currentPage}
+                            inverted={true}
+                            horizontal={true}
+                        />
+                        )}
+
+                        {state.readingMode === backend.READER_MODES[1] && (
+                            <MangaReaderComponent 
                                 chapterPages={state.chapterPages}
                                 chapterTitle={chapterDataRef.current.chTitle}
                                 loadingRange={state.loadingRange}
@@ -357,26 +403,6 @@ const MangaReaderScreen = () => {
                                 onToPrevChapter={handleToPrevChapter}
                                 isListed={isListedRef.current}
                                 inverted={false}
-                                horizontal={true}
-                            />
-                        )}
-
-                        {state.readingMode === backend.READER_MODES[1] && (
-                            <MangaReaderComponent 
-                                chapterPages={state.chapterPages}
-                                chapterTitle={chapterDataRef.current.chTitle}
-                                loadingRange={state.loadingRange}
-                                currentManga={{
-                                    manga: mangaUrl,
-                                    chapter: chapterDataRef.current.chapterUrl
-                                }}
-                                onPageChange={handlePageChange}
-                                onToNextChapter={handleToNextChapter}
-                                onToPrevChapter={handleToPrevChapter}
-                                isListed={isListedRef.current}
-                                onTap={handleTap}
-                                currentPage={state.currentPage}
-                                inverted={true}
                                 horizontal={true}
                             />
                         )}

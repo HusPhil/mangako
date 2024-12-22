@@ -1,10 +1,10 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {StyleSheet, Text, ToastAndroid, TouchableOpacity, View} from 'react-native';
 import DragList, {DragListRenderItemInfo} from 'react-native-draglist';
-import NumericRange from '../../components/NumericRange';
+import NumericRange from './components/NumericRange';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import colors from '../../constants/colors';
+import colors from './constants/colors';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FlashList } from '@shopify/flash-list';
@@ -12,12 +12,12 @@ import { useIsFocused } from '@react-navigation/native';
 
 import * as FileSystem from 'expo-file-system';
 
-import { chapterNavigator, fetchData as fetchChapterPages } from '../../app/screens/_manga_reader';
+import { chapterNavigator, fetchData as fetchChapterPages } from './app/screens/_manga_reader';
 import shorthash from 'shorthash'
-import { CONFIG_READ_WRITE_MODE, DOWNLOAD_STAT, DOWNLOAD_STATUS, ensureDirectoryExists, getMangaDirectory, readMangaConfigData, saveMangaConfigData } from '../../services/Global';
-import DownloadListItem from '../../components/manga_download/DownloadListItem';
-import { downloadPageData } from '../../components/manga_reader/_reader';
-import HorizontalRule from '../../components/HorizontalRule';
+import { CONFIG_READ_WRITE_MODE, DOWNLOAD_STAT, DOWNLOAD_STATUS, ensureDirectoryExists, getMangaDirectory, readMangaConfigData, saveMangaConfigData } from './services/Global';
+import DownloadListItem from './components/manga_download/DownloadListItem';
+import { downloadPageData } from './components/manga_reader/_reader';
+import HorizontalRule from './components/HorizontalRule';
 
 import pLimit from 'p-limit';
 import { debounce } from 'lodash';
