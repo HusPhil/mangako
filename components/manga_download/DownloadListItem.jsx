@@ -8,32 +8,29 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 const DownloadListItem = forwardRef(({ chapterTitle, isIndeterminate, isCompleted, onCancelPress }, ref) => {
     useImperativeHandle(ref, () => ({
         getChapterTitle: () => chapterTitle,
-        updateDownloadedPages: (totalPagesExpectedToDownload) => {
-            setDownloadedPages(prev => prev + 1);
+        updateDownloadedPages: (downloadedPageNum, totalPagesExpectedToDownload) => {
+            setDownloadedPages(prev => {
+                const newDownloadedPages = new Set([...prev]);
+                newDownloadedPages.add(downloadedPageNum);
+                return newDownloadedPages;
+            });
             setTotalPagesExpectedToDownload(totalPagesExpectedToDownload);
-            // console.log("Total pages expected to download: ", totalPagesExpectedToDownload)
-            // console.log("Total pages downloaded: ", downloadedPages)
         }
     }));
 
     const [downloadProgress, setDownloadProgress] = useState(0.0)
-    const [downloadedPages, setDownloadedPages] = useState(0)
+    const [downloadedPages, setDownloadedPages] = useState(new Set())
     const [totalPagesExpectedToDownload, setTotalPagesExpectedToDownload] = useState(0)
     const [downloadIsIndeterminate, setDownloadIsIndeterminate] = useState(isIndeterminate)
 
     useEffect(() => {
-        // console.log("UPDATING THE UI", downloadedPages, totalPagesExpectedToDownload)
-
-        if (downloadedPages > 0 && totalPagesExpectedToDownload > 0) {
-            setDownloadProgress(downloadedPages / totalPagesExpectedToDownload)
+        
+        if (downloadedPages.size > 0 && totalPagesExpectedToDownload > 0) {
+            // console.log("UPDATING THE UI", downloadedPages, totalPagesExpectedToDownload)
+            setDownloadProgress(downloadedPages.size / totalPagesExpectedToDownload)
             setDownloadIsIndeterminate(false)
         }
 
-        // return () => {
-        //     setDownloadProgress(0.0)
-        //     setDownloadedPages(0)
-        //     setTotalPagesExpectedToDownload(0)
-        // }
     }, [downloadedPages, totalPagesExpectedToDownload])
 
     const downloadTextInfo = () => {
@@ -41,19 +38,19 @@ const DownloadListItem = forwardRef(({ chapterTitle, isIndeterminate, isComplete
             return `Successfully downloaded`
         }
 
-        if(downloadedPages === 0 || totalPagesExpectedToDownload === 0) {
+        if(downloadedPages.size === 0 || totalPagesExpectedToDownload === 0) {
             return `Loading..`
         }
 
-        if (downloadedPages > totalPagesExpectedToDownload) {
+        if (downloadedPages.size > totalPagesExpectedToDownload) {
             return `Putting it all together..`
         }  
 
-        if (downloadedPages === totalPagesExpectedToDownload) {
+        if (downloadedPages.size === totalPagesExpectedToDownload) {
             return `Completed • ${totalPagesExpectedToDownload}/${totalPagesExpectedToDownload}`
         }  
 
-        return `Downloading • ${downloadedPages}/${totalPagesExpectedToDownload}`
+        return `Downloading • ${downloadedPages.size}/${totalPagesExpectedToDownload}`
     }
 
 

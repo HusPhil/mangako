@@ -19,7 +19,6 @@ import { downloadPageData } from '../../components/manga_reader/_reader';
 import HorizontalRule from '../../components/HorizontalRule';
 
 
-
 const download = () => {
   const params = useLocalSearchParams()
   const isListed = params.isListed === "true"
@@ -32,7 +31,6 @@ const download = () => {
   const downloadResumablesRef = useRef(new Map());
   const downloadCancelPressedRef = useRef(false);
 
-  
 
   const handleDownloadResumableCallback = async (chapterUrl, pageNum, pageUrl, progress) => {
     // console.log("pageUrl", pageUrl, "mangaUrl", mangaUrl, "chapterUrl", chapterUrl)
@@ -44,8 +42,8 @@ const download = () => {
       const downloadItem = downloadItemsRef.current.get(chapterUrl)
       const downloadItemsLength = downloadItemsLengthRef.current.get(chapterUrl) 
       const mangaUrl = params.mangaUrl
+      downloadItem.updateDownloadedPages(pageNum, downloadItemsLength) 
 
-      downloadItem.updateDownloadedPages(downloadItemsLength)
       // console.log("chapterDownloadProgress", chapterDownloadProgress)
       const pageFileName = shorthash.unique(pageUrl)
       const pageMangaDir = getMangaDirectory(
@@ -114,6 +112,10 @@ const download = () => {
 
     if(downloadCompleted) {
       console.log("CHAPTER PAGE ALREADY DOWNLOADED", pageMangaDir.cachedFilePath)
+      
+      const downloadItem = downloadItemsRef.current.get(chapterUrl)
+      const downloadItemsLength = downloadItemsLengthRef.current.get(chapterUrl) 
+      downloadItem.updateDownloadedPages(pageNum, downloadItemsLength) 
       return {
         uri: pageMangaDir.cachedFilePath, pageNum, 
         folderUri: pageMangaDir.cachedFolderPath,
@@ -174,31 +176,30 @@ const download = () => {
             ))
         )
 
-        // Store the download resumables for potential cancellation
         downloadResumablesRef.current.set(chapterUrl, chapterDownloadResumables);
+        // Store the download resumables for potential cancellation
 
         // Check again if download was cancelled before starting downloads
         if (!downloadQueue.some(item => item.chapterUrl === chapterUrl)) {
             return;
         }
 
-        const chapterDownloadResumablesResults = await Promise.all(
-            chapterDownloadResumables.map(async (downloadResumable) => {
-                if (downloadResumable.fileExist) {
-                    return { success: true };
+        const chapterDownloadResumablesResults = [];
+        for (const downloadResumable of chapterDownloadResumables) {
+            if (downloadResumable.fileExist) {
+                continue;
+            }
+            try {
+                const result = await downloadResumable.downloadResumable.downloadAsync();
+                chapterDownloadResumablesResults.push({ success: result != null });
+            } catch (error) {
+                // Check if this was a cancellation
+                if (!downloadQueue.some(item => item.chapterUrl === chapterUrl)) {
+                    throw new Error('Download cancelled');
                 }
-                try {
-                    const result = await downloadResumable.downloadResumable.downloadAsync();
-                    return { success: result != null};
-                } catch (error) {
-                    // Check if this was a cancellation
-                    if (!downloadQueue.some(item => item.chapterUrl === chapterUrl)) {
-                        throw new Error('Download cancelled');
-                    }
-                    return { success: false, error };
-                }
-            })
-        )
+                chapterDownloadResumablesResults.push({ success: false, error });
+            }
+        }
 
         chapterDownloadResumablesResults.forEach((resultItem, index) => {
             console.log("SUCCESS:", resultItem.success)
