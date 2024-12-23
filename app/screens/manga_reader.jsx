@@ -448,7 +448,9 @@ const MangaReaderScreen = () => {
                 </View>
 
                 <Portal>
-                    <Modal visible={state.showModal} onDismiss={handleTap} contentContainerStyle={{backgroundColor: "transparent"}} style={{backgroundColor: "transparent"}} dismissable>
+                    <Modal visible={state.showModal} onDismiss={handleTap} 
+                    contentContainerStyle={{backgroundColor: "transparent", paddingHorizontal: 7}} 
+                    style={{backgroundColor: "transparent"}} dismissable>
                         <View className="h-full w-full justify-end items-center bg-transparent">
                             
                         {/* <Text numberOfLines={1} className="text-white font-pregular text-base text-center pr-1 py-3 flex-1 ">{isDownloadedAsString}</Text> */}
