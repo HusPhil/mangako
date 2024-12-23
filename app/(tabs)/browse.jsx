@@ -109,9 +109,9 @@ const BrowseTab = () => {
         </View>
         {!errorData ? (
           <>
-            <Text className="font-pregular text-white text-xl mx-4 py-2">New release..</Text>
+            <Text className="font-pregular text-white text-xl mx-4 py-2">Most popular..</Text>
             <MangaSlide
-                mangaData={isLoading ? null : newestManga}
+                mangaData={isLoading ? null : popularManga}
                 limit={100}
                 numColumns={3}
                 isLoading={isLoading}
@@ -122,11 +122,11 @@ const BrowseTab = () => {
                     <Text className="text-white font-pregular mt-2 text-center">Pull down to refresh.</Text>
                   </View>
                 } 
-                onEndReached={()=>{getMoreManga('newest')}}
+                onEndReached={()=>{getMoreManga('popular')}}
             />
-            <Text className="font-pregular text-white text-xl mx-4 py-2">Most popular..</Text>
+            <Text className="font-pregular text-white text-xl mx-4 py-2">New release..</Text>
             <MangaGrid
-                mangaData={isLoading ? null : popularManga}
+                mangaData={isLoading ? null : newestManga}
                 numColumns={3}
                 isLoading={isLoading}
                 listEmptyComponent={
@@ -136,7 +136,7 @@ const BrowseTab = () => {
                     <Text className="text-white font-pregular mt-2 text-center">Pull down to refresh.</Text>
                   </View>
                 } 
-                onEndReached={()=>{getMoreManga('popular')}}
+                onEndReached={()=>{getMoreManga('newest')}}
             />
           </>
         ) : (
