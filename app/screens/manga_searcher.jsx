@@ -105,7 +105,7 @@ const mangaSearcher = () => {
 
            (!isLoading && fetchedMangaData && !firstTimeQuery) ? (
             <View 
-            className="h-full w-full mb-2"
+            className="flex-1 mb-2"
             showsVerticalScrollIndicator={false}
             showsHorizontalScrollIndicator={false}
             >
