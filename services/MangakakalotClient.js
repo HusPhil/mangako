@@ -131,32 +131,56 @@ export const getMangaDetails = async (mangaUrl) => {
 export const getChapterPageUrls = async (mangaUrl, abortSignal) => {
     try {
         const targetUrl = mangaUrl;
-        const response = await axios.get(targetUrl, { headers, signal: abortSignal });
+        const response = await axios.get(targetUrl, { 
+            headers, 
+            signal: abortSignal,
+            timeout: 10000, // 10 second timeout
+            validateStatus: function (status) {
+                return status >= 200 && status < 300 || status === 429; // Allow rate limit status
+            }
+        });
     
-        if (response.status === 200) {
-          const html = response.data;
-          const $ = cheerio.load(html);
-  
-          const chapterImageUrls = [];
-  
-          const imgElements = $('div.container-chapter-reader > img');
-
-          for (let i = 0; i < imgElements.length; i++) {
-            const imgUrl = $(imgElements[i]).attr('src');
-            chapterImageUrls.push(imgUrl);
-          }
-
-
-
-          return chapterImageUrls;
-        } else {
-          console.log(`Failed to scrape data. Status code: ${response.status}`);
-          return null;
+        if (response.status === 429) {
+            // Rate limited - wait and retry
+            const retryAfter = response.headers['retry-after'] || 5;
+            await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+            return getChapterPageUrls(mangaUrl, abortSignal); // Retry the request
         }
-      } catch (error) {
-        console.log(`Error: ${error.message}`);
-        return null;
-      }
+
+        if (response.status === 200) {
+            const html = response.data;
+            const $ = cheerio.load(html);
+
+            const chapterImageUrls = [];
+            const imgElements = $('div.container-chapter-reader > img');
+
+            for (let i = 0; i < imgElements.length; i++) {
+                const imgUrl = $(imgElements[i]).attr('src');
+                if (imgUrl) {
+                    chapterImageUrls.push(imgUrl);
+                }
+            }
+
+            if (chapterImageUrls.length === 0) {
+                throw new Error('No images found in chapter');
+            }
+
+            return chapterImageUrls;
+        } else {
+            throw new Error(`Failed to load chapter: ${response.status}`);
+        }
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            if (error.code === 'ECONNABORTED') {
+                throw new Error('Request timed out. Please try again.');
+            }
+            if (error.response) {
+                throw new Error(`Server error: ${error.response.status}`);
+            }
+            throw new Error(`Network error: ${error.message}`);
+        }
+        throw error;
+    }
 };
 
 export const getChapterList = async (mangaUrl, abortSignal) => {
