@@ -5,7 +5,7 @@
     "scheme": "MangaKo",
     "version": "1.1.0",
     "orientation": "portrait",
-    "icon": "./assets/ramen_icon.svg",
+    "icon": "./assets/ramen_icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/ramen_splash.png",
