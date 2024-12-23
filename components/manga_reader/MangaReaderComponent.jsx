@@ -62,7 +62,7 @@ const MangaReaderComponent = ({
     // print the previous page where the user left off
     if(currentPage > 0) {
       ToastAndroid.show(
-        `Previuos page: ${currentPage + 1}`,
+        `Previous page: ${currentPage + 1}`,
         ToastAndroid.SHORT
       )
     }

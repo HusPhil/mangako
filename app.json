@@ -3,9 +3,9 @@
     "name": "MangaKo",
     "slug": "MangaKo",
     "scheme": "MangaKo",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "orientation": "portrait",
-    "icon": "./assets/ramen_icon.png",
+    "icon": "./assets/ramen_icon.svg",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/ramen_splash.png",
