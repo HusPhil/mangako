@@ -1,5 +1,5 @@
 import { View, Text, ActivityIndicator, TouchableOpacity, ToastAndroid } from 'react-native'
-import React, {useRef, useEffect, useReducer, useCallback } from 'react'
+import React, {useRef, useEffect, useReducer, useCallback, useMemo } from 'react'
 import { router, useLocalSearchParams } from 'expo-router';
 import Toast from 'react-native-simple-toast';
 import { Feather } from '@expo/vector-icons';
@@ -41,6 +41,11 @@ const MangaReaderScreen = () => {
 
     const AsyncEffect = useCallback(async () => {
         
+        // setTimeout(() => {
+        //     if(isMounted.current) {
+        //         dispatch({type: READER_ACTIONS.SHOW_MODAL})
+        //     }
+        // }, 500)
         
         dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
         
@@ -106,7 +111,7 @@ const MangaReaderScreen = () => {
     const saveLastViewedChapterPage = debounce(async (pageToSave) => {
         const chapterToPageMap = {}
         chapterToPageMap[chapterDataRef.current.chapterUrl] = pageToSave
-        console.log("chapterToPageMap:", chapterToPageMap)
+        // console.log("chapterToPageMap:", chapterToPageMap)
         await saveMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY, {"lastPageReadList": chapterToPageMap}, isListedRef.current, CONFIG_READ_WRITE_MODE.MANGA_ONLY)
       }, 500)
 
@@ -298,97 +303,13 @@ const MangaReaderScreen = () => {
     }, [500]), [state.loadingRange, isListedRef.current])
 
     return (
-        <>
-        <ModalPopup 
-                visible={state.showModal} otherStyles={{backgroundColor: 'transparent',}}
-                handleClose={handleTap}
-            >
-                <View className="h-full w-full justify-end items-center bg-transparent">
-                    <View className="bg-secondary justify-end rounded-md p-1 px-2">
-                        <TouchableOpacity onPress={handleReadFinish} onLongPress={handleTitleLongPress}>
-                            <View className="justify-center items-center w-full flex-row px-3">
-                                <Text numberOfLines={1} className="text-white font-pregular text-base text-center pr-1 py-3 flex-1 ">{chapterDataRef.current.chTitle}</Text>
-                                {state.finished && <Feather name="check-circle" size={24} color="red" />}
-                            </View>
-                        </TouchableOpacity>
-
-                        <HorizontalRule />
-                    
-                        <View className="w-full">
-                            <DropDownList
-                                title={"Reading mode:"}
-                                otherContainerStyles={'rounded-md p-2 px-4  z-50 '}
-                                listItems={backend.READER_MODES}
-                                onValueChange={handleDropDownValueChange}
-                                selectedIndex={backend.READER_MODES.indexOf(state.readingMode)}
-                            />
-                        </View>  
-
-                        <View>
-                            <View className="flex-row pl-4 items-center justify-between pt-2 mt-2">
-                                <Text className="font-pregular text-white text">Loading range:</Text>
-                                <Slider
-                                    style={{flex: 1}}
-                                    value={state.loadingRange}
-                                    minimumValue={1}
-                                    maximumValue={10}
-                                    step={1}
-                                    thumbTintColor={colors.accent.DEFAULT}
-                                    minimumTrackTintColor={colors.accent.DEFAULT}
-                                    maximumTrackTintColor={colors.primary.DEFAULT}
-                                    onValueChange={handleSliderValueChange}
-                                    />  
-                                <Text className="text-white font-pregular text-xs pr-4">{state.loadingRange}</Text>
-                            </View>     
-                            <Text className="text-white font-pregular text-xs mt-1 px-4">{"• " + backend.loadingRangeDesc}</Text>
-                        </View>       
-                    
-                        <View className="flex-row justify-between m-2 my-3">
-                            <View className="flex-row justify-between">
-                                <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md " onPress={handleToPrevChapter}>
-                                    <AntDesign name="stepbackward" size={12} color="white" />
-                                </TouchableOpacity>
-                                
-                                <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md ml-2" onPress={handleToNextChapter}>
-                                    <AntDesign name="stepforward" size={12} color="white" />
-                                </TouchableOpacity> 
-                            </View>
-
-                            <TouchableOpacity className="py-1 px-3 bg-accent rounded-md flex-1 ml-4 " onPress={handleClearCache}>
-                                <Text className="text-white font-pregular text-center">Clear cache</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            
-          </ModalPopup>
-        <View className="flex-1 bg-primary">
-            
-            {!state.isLoading ? (
-                !state.errorData ? (
-                    <View key={state.loadingRange} className="flex-1">
-                        {state.readingMode === backend.READER_MODES[0] && (
-                            <MangaReaderComponent 
-                            chapterPages={state.chapterPages}
-                            chapterTitle={chapterDataRef.current.chTitle}
-                            loadingRange={state.loadingRange}
-                            currentManga={{
-                                manga: mangaUrl,
-                                chapter: chapterDataRef.current.chapterUrl
-                            }}
-                            onPageChange={handlePageChange}
-                            onToNextChapter={handleToNextChapter}
-                            onToPrevChapter={handleToPrevChapter}
-                            isListed={isListedRef.current}
-                            onTap={handleTap}
-                            currentPage={state.currentPage}
-                            inverted={true}
-                            horizontal={true}
-                        />
-                        )}
-
-                        {state.readingMode === backend.READER_MODES[1] && (
-                            <MangaReaderComponent 
+        <View className="h-full w-full bg-primary">
+            <View className="h-full w-full bg-primary">
+                {!state.isLoading ? (
+                    !state.errorData ? (
+                        <View key={state.loadingRange} className="h-full w-full">
+                            {state.readingMode === backend.READER_MODES[0] && (
+                                <MangaReaderComponent 
                                 chapterPages={state.chapterPages}
                                 chapterTitle={chapterDataRef.current.chTitle}
                                 loadingRange={state.loadingRange}
@@ -396,59 +317,80 @@ const MangaReaderScreen = () => {
                                     manga: mangaUrl,
                                     chapter: chapterDataRef.current.chapterUrl
                                 }}
-                                onTap={handleTap}
-                                currentPage={state.currentPage}
                                 onPageChange={handlePageChange}
                                 onToNextChapter={handleToNextChapter}
                                 onToPrevChapter={handleToPrevChapter}
                                 isListed={isListedRef.current}
-                                inverted={false}
+                                onTap={handleTap}
+                                currentPage={state.currentPage}
+                                inverted={true}
                                 horizontal={true}
                             />
-                        )}
+                            )}
 
-                        {state.readingMode === backend.READER_MODES[2] && (
-                            <MangaReaderComponent 
-                                chapterPages={state.chapterPages}
-                                chapterTitle={chapterDataRef.current.chTitle}
-                                loadingRange={state.loadingRange}
-                                currentManga={{
-                                    manga: mangaUrl,
-                                    chapter: chapterDataRef.current.chapterUrl
-                                }}
-                                onPageChange={handlePageChange}
-                                onToNextChapter={handleToNextChapter}
-                                onToPrevChapter={handleToPrevChapter}
-                                isListed={isListedRef.current}
-                                onTap={handleTap}
-                                currentPage={state.currentPage}
-                                inverted={false}
-                                horizontal={false}
-                            />
-                        )}
-                        <View pointerEvents='none' className="bg-transparent absolute bottom-2 items-center w-full">
-                            <Text className="font-pregular text-white text-xs"
-                                style={{textShadowColor: "#000", textShadowRadius: 5,}}
-                            >
-                                {state.currentPage + 1}/{state.chapterPages.length}
-                            </Text>
+                            {state.readingMode === backend.READER_MODES[1] && (
+                                <MangaReaderComponent 
+                                    chapterPages={state.chapterPages}
+                                    chapterTitle={chapterDataRef.current.chTitle}
+                                    loadingRange={state.loadingRange}
+                                    currentManga={{
+                                        manga: mangaUrl,
+                                        chapter: chapterDataRef.current.chapterUrl
+                                    }}
+                                    onTap={handleTap}
+                                    currentPage={state.currentPage}
+                                    onPageChange={handlePageChange}
+                                    onToNextChapter={handleToNextChapter}
+                                    onToPrevChapter={handleToPrevChapter}
+                                    isListed={isListedRef.current}
+                                    inverted={false}
+                                    horizontal={true}
+                                />
+                            )}
+
+                            {state.readingMode === backend.READER_MODES[2] && (
+                                <MangaReaderComponent 
+                                    chapterPages={state.chapterPages}
+                                    chapterTitle={chapterDataRef.current.chTitle}
+                                    loadingRange={state.loadingRange}
+                                    currentManga={{
+                                        manga: mangaUrl,
+                                        chapter: chapterDataRef.current.chapterUrl
+                                    }}
+                                    onPageChange={handlePageChange}
+                                    onToNextChapter={handleToNextChapter}
+                                    onToPrevChapter={handleToPrevChapter}
+                                    isListed={isListedRef.current}
+                                    onTap={handleTap}
+                                    currentPage={state.currentPage}
+                                    inverted={false}
+                                    horizontal={false}
+                                />
+                            )}
+                            <View pointerEvents='none' className="bg-transparent absolute bottom-2 items-center w-full">
+                                <Text className="font-pregular text-white text-xs"
+                                    style={{textShadowColor: "#000", textShadowRadius: 5,}}
+                                >
+                                    {state.currentPage + 1}/{state.chapterPages.length}
+                                </Text>
+                            </View>
                         </View>
-                    </View>
+                        ) : (
+                            <View className="h-full justify-center items-center">
+                                <Text className="font-pregular text-white text-base textShadowColor texts">Something went wrong</Text>
+                                <Text className="font-pregular text-white text-base">while loading the pages</Text>
+                                <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Exit and try again</Text>
+                            </View>
+                        )
                     ) : (
-                        <View className="h-full justify-center items-center">
-                            <Text className="font-pregular text-white text-base textShadowColor texts">Something went wrong</Text>
-                            <Text className="font-pregular text-white text-base">while loading the pages</Text>
-                            <Text className="font-pregular text-white bg-accent rounded-md px-2 py-1 mt-5">Exit and try again</Text>
+                        <View className="h-full justify-center">
+                            <ActivityIndicator color={`white`} size='large' />
                         </View>
-                    )
-            ) : (
-                <View className="h-full justify-center">
-                    <ActivityIndicator color={`white`} size='large' />
+                    )}
                 </View>
-            )}
+            
 
         </View>
-        </>
     )
 }
 

@@ -10,6 +10,7 @@ import { getImageDimensions, downloadPageData } from './_reader';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import { ensureDirectoryExists, getMangaDirectory } from '../../services/Global';
 import { Image } from 'expo-image';
+import { isSearchBarAvailableForCurrentPlatform } from 'react-native-screens';
 
 const allowedStatusCode = Object.freeze({
   200 : "SUCCESS",
@@ -175,7 +176,6 @@ const MangaReaderComponent = ({
     const downloadCompleted = await handleDownloadVerification(pageNum);
 
     if(downloadCompleted) {
-      console.log("DOWNLOADED ALREADY:", pageMangaDir.cachedFilePath)
       return {
         uri: pageMangaDir.cachedFilePath, pageNum, 
         fileExist: true, savableDataUri
@@ -664,7 +664,18 @@ const MangaReaderComponent = ({
       const currentPageNum = horizontal ? viewableItems[0].index : viewableItems.splice(-1)[0].index;
       readerCurrentPage.current = currentPageNum;
       // call the callback func to update the ui back in the parent component
-      onPageChange(currentPageNum)
+      const endingPageNum = chapterPages.length - 1  
+      // ToastAndroid.show(
+      //   "STATS:" + `${currentPageNum}/${endingPageNum}`,
+      //   ToastAndroid.SHORT
+      // )
+      if (currentPageNum === endingPageNum) {
+        onPageChange(currentPageNum, {finished: true})
+      }
+      else {
+        onPageChange(currentPageNum)
+      }
+
       await debouncedLoadPageImages(currentPageNum)
 
     }
@@ -704,12 +715,20 @@ const MangaReaderComponent = ({
   }, [])
 
   const handleEndReached = useCallback(() => {
-    onPageChange(chapterPages.length - 1, {finished: true})
-  }, [])
+    ToastAndroid.show(
+      "currentPageRef " + readerCurrentPage.current,
+      ToastAndroid.SHORT
+    )
+
+    const realCurrentPage = chapterPages.length - 1  
+    console.log("realCurrentPage", realCurrentPage, "readerCurrentPage", readerCurrentPage.current)
+    if (readerCurrentPage.current != realCurrentPage) return
+  }, [readerCurrentPage.current, chapterPages]);
   
   const renderItem = useCallback(({ item, index }) => {
     return (
       <View
+      key={item.id}
         className=" h-full justify-center items-center"
         onStartShouldSetResponder={() => {
           return currentZoomLevel.current <= 1
@@ -847,9 +866,10 @@ const MangaReaderComponent = ({
     handleReaderNavigation({mode: inverted ? 'next' : 'prev'})
 
   }, [])
+
  
   return (
-    <View className="flex-1"
+    <View className="h-full w-full"
       onTouchStart={handleOnTouchStart}
       onTouchEnd={handleOnTouchEnd}
     >
@@ -876,7 +896,8 @@ const MangaReaderComponent = ({
               keyExtractor={keyExtractor}
               estimatedItemSize={horizontal ? screenWidth : screenHeight}
               onViewableItemsChanged={handleViewableItemsChanged}
-              onEndReached={handleEndReached}
+              // onEndReached={handleEndReached}
+              // maintainVisibleContentPosition={true}
               onEndReachedThreshold={0.5}
               pagingEnabled={horizontal}
               horizontal={horizontal}

@@ -55,25 +55,27 @@ const DownloadListItem = forwardRef(({ chapterTitle, isIndeterminate, isComplete
 
 
     return (
-        <View ref={ref} className="py-2 px-3 bg-secondary rounded-md my-2 mx-3">
-            <View className="flex-row justify-between items-center">
-                <Text className="text-white font-pregular flex-1" numberOfLines={1}>
-                    {chapterTitle}
+        <View ref={ref} className="py-2 px-3 bg-secondary rounded-md my-2 mx-3 flex-row justify-between items-center">
+            <View className="flex-1 mr-2">
+                <View className="flex-row justify-between items-center">
+                    <Text className="text-white font-pregular flex-1" numberOfLines={1}>
+                        {chapterTitle}
+                    </Text>
+                </View>
+                <ProgressBar 
+                    progress={isCompleted ? 1.0 : downloadProgress} indeterminate={downloadIsIndeterminate} 
+                    className="my-1 rounded-md" 
+                    fillStyle={{backgroundColor: `${colors.accent.DEFAULT}`}}
+                />
+                <Text className="text-white text-opacity-75 font-pregular text-xs" numberOfLines={1}>
+                    {downloadTextInfo()}   
                 </Text>
-                {!isCompleted && (
-                    <TouchableOpacity onPress={onCancelPress} className="ml-2">
-                        <MaterialIcons name="cancel" size={24} color={colors.accent.DEFAULT} />
-                    </TouchableOpacity>
-                )}
             </View>
-            <ProgressBar 
-                progress={isCompleted ? 1.0 : downloadProgress} indeterminate={downloadIsIndeterminate} 
-                className="my-1 rounded-md" 
-                fillStyle={{backgroundColor: `${colors.accent.DEFAULT}`}}
-            />
-            <Text className="text-white text-opacity-75 font-pregular text-xs" numberOfLines={1}>
-                {downloadTextInfo()}   
-            </Text>
+            {!isCompleted && (downloadProgress < 1) &&(
+                <TouchableOpacity onPress={onCancelPress} className="ml-2">
+                    <MaterialIcons name="cancel" size={24} color={colors.accent.DEFAULT} />
+                </TouchableOpacity>
+            )}
         </View>
     );
 });

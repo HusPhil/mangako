@@ -27,12 +27,14 @@ export const readerReducer = (state, action) => {
                 ...state,
                 chapterPages: action.payload,
                 isLoading: false,
+                // showModal: false
             };
         case READER_ACTIONS.GET_CHAPTER_PAGES_ERROR:
             console.log("action.payload.error sa reducer:", action.payload.error)
             return {
                 ...state,
                 isLoading: false,
+                // showModal: false,
                 errorData: action.payload.error,
                 chapterPages: action.payload.chapterPages,
             };
