@@ -388,7 +388,71 @@ const MangaReaderScreen = () => {
                         </View>
                     )}
                 </View>
+            <View className="hfull w-full absolute z-50">
+            <ModalPopup 
+                visible={state.showModal} otherStyles={{backgroundColor: 'transparent',}}
+                handleClose={handleTap}
+            >
+                <View className="h-full w-full justify-end items-center bg-transparent">
+                    <View className="bg-secondary justify-end rounded-md p-1 px-2">
+                        <TouchableOpacity onPress={handleReadFinish} onLongPress={handleTitleLongPress}>
+                            <View className="justify-center items-center w-full flex-row px-3">
+                                <Text numberOfLines={1} className="text-white font-pregular text-base text-center pr-1 py-3 flex-1 ">{chapterDataRef.current.chTitle}</Text>
+                                {state.finished && <Feather name="check-circle" size={24} color="red" />}
+                            </View>
+                        </TouchableOpacity>
+
+                        <HorizontalRule />
+                    
+                        <View className="w-full">
+                            <DropDownList
+                                title={"Reading mode:"}
+                                otherContainerStyles={'rounded-md p-2 px-4  z-50 '}
+                                listItems={backend.READER_MODES}
+                                onValueChange={handleDropDownValueChange}
+                                selectedIndex={backend.READER_MODES.indexOf(state.readingMode)}
+                            />
+                        </View>  
+
+                        <View>
+                            <View className="flex-row pl-4 items-center justify-between pt-2 mt-2">
+                                <Text className="font-pregular text-white text">Loading range:</Text>
+                                <Slider
+                                    style={{flex: 1}}
+                                    value={state.loadingRange}
+                                    minimumValue={1}
+                                    maximumValue={10}
+                                    step={1}
+                                    thumbTintColor={colors.accent.DEFAULT}
+                                    minimumTrackTintColor={colors.accent.DEFAULT}
+                                    maximumTrackTintColor={colors.primary.DEFAULT}
+                                    onValueChange={handleSliderValueChange}
+                                    />  
+                                <Text className="text-white font-pregular text-xs pr-4">{state.loadingRange}</Text>
+                            </View>     
+                            <Text className="text-white font-pregular text-xs mt-1 px-4">{"• " + backend.loadingRangeDesc}</Text>
+                        </View>       
+                    
+                        <View className="flex-row justify-between m-2 my-3">
+                            <View className="flex-row justify-between">
+                                <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md " onPress={handleToPrevChapter}>
+                                    <AntDesign name="stepbackward" size={12} color="white" />
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md ml-2" onPress={handleToNextChapter}>
+                                    <AntDesign name="stepforward" size={12} color="white" />
+                                </TouchableOpacity> 
+                            </View>
+
+                            <TouchableOpacity className="py-1 px-3 bg-accent rounded-md flex-1 ml-4 " onPress={handleClearCache}>
+                                <Text className="text-white font-pregular text-center">Clear cache</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
             
+          </ModalPopup>
+            </View>
 
         </View>
     )
