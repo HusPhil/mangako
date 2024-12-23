@@ -26,7 +26,7 @@ import { fetchData as getMangaInfo } from './_manga_info';
 import { Modal, PaperProvider, Portal } from 'react-native-paper';
 
 const MangaReaderScreen = () => {
-    const { mangaUrl, currentChapterData, currentChapterIndex, isListedAsString } = useLocalSearchParams()
+    const { mangaUrl, currentChapterData, currentChapterIndex, isListedAsString, isDownloadedAsString } = useLocalSearchParams()
     const parsedCurrentChapterData = JSON.parse(currentChapterData)
     
     const [state, dispatch] = useReducer(readerReducer, INITIAL_STATE)
@@ -36,27 +36,52 @@ const MangaReaderScreen = () => {
     const chapterListref = useRef([])
     const chapterFinishedref = useRef(false)
     const isListedRef = useRef(isListedAsString === "true")
+    const isDownloadedRef = useRef(isDownloadedAsString === "true")
     const longHeightWarned = useRef(false)
     const isMounted = useRef(true)
     const controllerRef = useRef(null)
 
     const AsyncEffect = useCallback(async () => {
         
-        // setTimeout(() => {
-        //     if(isMounted.current) {
-        //         dispatch({type: READER_ACTIONS.SHOW_MODAL})
-        //     }
-        // }, 500)
         
         const AsyncEffect = async () => {
             // Create new controller for this effect
+
+            dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES});
+            
+            const listItemConfig = await readMangaListItemConfig(mangaUrl);
+            dispatch({type: READER_ACTIONS.SET_IS_LISTED, payload: listItemConfig?.length > 0})
+            isListedRef.current = listItemConfig?.length > 0
+
+            const savedConfig = await readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, (listItemConfig?.length > 0))
+            if (savedConfig) {
+                dispatch({
+                    type: READER_ACTIONS.LOAD_CONFIG,
+                    payload: {
+                        currentPage: savedConfig?.manga?.lastPageReadList?.[chapterDataRef.current.chapterUrl] ?? 0,
+                        readingModeIndex: savedConfig?.manga?.readingModeIndex ?? 0,
+                        scrollOffSetY: savedConfig?.chapter?.scrollOffSetY ?? 0,
+                        finished: savedConfig?.chapter?.finished,
+                        loadingRange: savedConfig?.manga?.loadingRange ?? 1,
+                    }
+                });
+            }
+            if(savedConfig?.manga?.readingStats) {
+                const currentChapterReadingStatus = savedConfig.manga.readingStats[chapterDataRef.current.chapterUrl]; 
+                dispatch({
+                    type:READER_ACTIONS.SET_STATUS_FINISHED, 
+                    payload: currentChapterReadingStatus ? currentChapterReadingStatus.finished : false
+                })
+                chapterFinishedref.current = currentChapterReadingStatus ? currentChapterReadingStatus.finished : false;
+            }
+
             if (controllerRef.current) {
                 controllerRef.current.abort(); // Abort previous requests
             }
+            
             controllerRef.current = new AbortController();
             
             try {
-                dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES});
                 const fetchedChapterPages = await backend.fetchData(
                     mangaUrl, chapterDataRef.current.chapterUrl, 
                     controllerRef.current.signal, (isListedRef.current)
@@ -277,6 +302,9 @@ const MangaReaderScreen = () => {
     const handleDropDownValueChange = useCallback(async (data) => {
         dispatch({type: READER_ACTIONS.SHOW_MODAL})
 
+        console.log("data:", data)
+        console.log("newReadingMode:", backend.READER_MODES.indexOf(data))
+
         await saveMangaConfigData (
             mangaUrl, 
             chapterDataRef.current.chapterUrl, 
@@ -392,6 +420,8 @@ const MangaReaderScreen = () => {
                 <Portal>
                     <Modal visible={state.showModal} onDismiss={handleTap} contentContainerStyle={{backgroundColor: "transparent"}} style={{backgroundColor: "transparent"}} dismissable>
                         <View className="h-full w-full justify-end items-center bg-transparent">
+                            
+                        {/* <Text numberOfLines={1} className="text-white font-pregular text-base text-center pr-1 py-3 flex-1 ">{isDownloadedAsString}</Text> */}
                             <View className="bg-secondary justify-end rounded-md p-1 px-2">
                                 <TouchableOpacity onPress={handleReadFinish} onLongPress={handleTitleLongPress}>
                                     <View className="justify-center items-center w-full flex-row px-3">
@@ -399,6 +429,7 @@ const MangaReaderScreen = () => {
                                         {state.finished && <Feather name="check-circle" size={24} color="red" />}
                                     </View>
                                 </TouchableOpacity>
+
 
                                 <HorizontalRule />
                             

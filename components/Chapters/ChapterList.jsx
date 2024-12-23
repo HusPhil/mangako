@@ -7,7 +7,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { AntDesign } from '@expo/vector-icons';
 
 import ChapterListItem from './ChapterListItem';
-import { readMangaConfigData, CONFIG_READ_WRITE_MODE, saveMangaConfigData, ensureDirectoryExists, downloadDir, getMangaDirectory, downloadFolderNameInRoot, getMangaDownloadPermissionDir } from '../../services/Global';
+import { readMangaConfigData, CONFIG_READ_WRITE_MODE, saveMangaConfigData, ensureDirectoryExists, downloadDir, getMangaDirectory, downloadFolderNameInRoot, getMangaDownloadPermissionDir, DOWNLOAD_STATUS } from '../../services/Global';
 import { CHAPTER_LIST_MODE, READ_MARK_MODE } from '../../app/screens/_manga_info';
 import colors from '../../constants/colors';
 import HorizontalRule from '../HorizontalRule';
@@ -53,13 +53,14 @@ const ChapterList = ({
   const handleChapterPress = useCallback((chapterData) => {
     
     if(listModeRef.current !== CHAPTER_LIST_MODE.MULTI_SELECT_MODE) {
+      console.log("pressed chapterdata", chapterData?.isDownloaded?.downloadStatus === DOWNLOAD_STATUS.DOWNLOADED)
       router.push({
         pathname: "screens/manga_reader",
         params: {
           currentChapterData: JSON.stringify(chapterData),
           currentChapterIndex: chapterData.index,
           isListedAsString: isListed,
-          mangaUrl, 
+          mangaUrl, isDownloadedAsString: chapterData?.isDownloaded?.downloadStatus === DOWNLOAD_STATUS.DOWNLOADED
         }
       });
       return

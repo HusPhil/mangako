@@ -51,8 +51,8 @@ const MangaInfoScreen = () => {
 
   const handleClearMangaCache = () => {
     Alert.alert(
-      'Clearing Manga Data',
-      'All saved data for this manga will be removed. Do you wish to proceed?',
+      'Clearing manga data',
+      'All the saved data on this manga will be deleted, do you still wish to proceed?',
       [
         
         {

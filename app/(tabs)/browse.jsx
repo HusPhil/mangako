@@ -10,6 +10,7 @@ import icons from '../../constants/icons'
 import { MangaGrid, MangaSlide } from "../../components/manga_menu"
 
 import { getMangaByOrder } from '../../services/MangakakalotClient'
+import HorizontalRule from '../../components/HorizontalRule';
 
 const BrowseTab = () => {
   const [newestManga, setNewestManga] = useState([]);
@@ -124,7 +125,7 @@ const BrowseTab = () => {
                 } 
                 onEndReached={()=>{getMoreManga('popular')}}
             />
-            <Text className="font-pregular text-white text-xl mx-4 py-2">New release..</Text>
+            <HorizontalRule displayText={'Latest Releases'} otherStyles={'my-4 mx-4'} />
             <MangaGrid
                 mangaData={isLoading ? null : newestManga}
                 numColumns={3}
