@@ -10,7 +10,7 @@ import Slider from '@react-native-community/slider';
 
 import * as backend from "./_manga_reader"
 
-import { CONFIG_READ_WRITE_MODE, readMangaConfigData, readMangaListItemConfig, saveMangaConfigData } from '../../services/Global';
+import { CONFIG_READ_WRITE_MODE, readMangaConfigData, readMangaListItemConfig, saveMangaConfigData, deleteChapterData, DOWNLOAD_STATUS } from '../../services/Global';
 import MangaReaderComponent from '../../components/manga_reader/MangaReaderComponent';
 import DropDownList from '../../components/modal/DropdownList';
 import ModalPopup from '../../components/modal/ModalPopup';
@@ -40,6 +40,9 @@ const MangaReaderScreen = () => {
     const longHeightWarned = useRef(false)
     const isMounted = useRef(true)
     const controllerRef = useRef(null)
+    const cleanupTimerRef = useRef(null);
+
+    const CLEAR_CHAPTER_CACHE_DELAY = 3 * 1000;
 
     const AsyncEffect = useCallback(async () => {
         
@@ -78,7 +81,7 @@ const MangaReaderScreen = () => {
             if (controllerRef.current) {
                 controllerRef.current.abort(); // Abort previous requests
             }
-            
+
             controllerRef.current = new AbortController();
             
             try {
@@ -119,6 +122,7 @@ const MangaReaderScreen = () => {
                 controllerRef.current.abort();
                 controllerRef.current = null;
             }
+            
         };
     }, [mangaUrl, chapterDataRef.current.chapterUrl]);
 
@@ -131,7 +135,36 @@ const MangaReaderScreen = () => {
 
     useEffect(() => {
         AsyncEffect();
-    }, []);
+    }, [mangaUrl, chapterDataRef.current.chapterUrl, isListedRef.current]);
+
+
+    useEffect(() => {
+        return () => {
+                        
+            if (cleanupTimerRef.current) {
+                clearTimeout(cleanupTimerRef.current);
+            }
+
+            // Set a timeout to clear cache after 1 minute
+            cleanupTimerRef.current = setTimeout(async () => {
+                const success = await deleteChapterData(
+                    mangaUrl, 
+                    chapterDataRef.current.chapterUrl, 
+                    isListedRef.current,
+                    true
+                );
+
+                if (success) {
+                    console.log("Cache cleared!");
+                } 
+                else {
+                    console.error("CACHE NOT CLEARED");
+                }
+                cleanupTimerRef.current = null;
+            }, CLEAR_CHAPTER_CACHE_DELAY); // 60000ms = 1 minute
+
+        }
+    }, [])
 
     const handleTap = useCallback(() => {
         dispatch({type: READER_ACTIONS.SHOW_MODAL})
@@ -146,46 +179,24 @@ const MangaReaderScreen = () => {
                     text: "Yes",
                     style: "destructive",
                     onPress: async () => {
-                        const pageFileName = "NO-PAGE-FILE"
-                        const pageMangaDir = getMangaDirectory(
-                            mangaUrl, chapterDataRef.current.chapterUrl, 
-                            "chapterPageImages", pageFileName,
-                            `${isListedRef.current ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
-                            )
-                        
-                        ensureDirectoryExists(pageMangaDir.cachedFolderPath)
-                    
-                        console.log("pageMangaDir.cachedFolderPath:", pageMangaDir.cachedFolderPath)
-                    
-                        // Delete the chapter files
-                        await FileSystem.deleteAsync(pageMangaDir.cachedFolderPath)
-
-                        // Remove chapter from downloadedChapters in manga config
-                        const mangaRetrievedConfigData = await readMangaConfigData(
-                          mangaUrl,
-                          CONFIG_READ_WRITE_MODE.MANGA_ONLY,
-                          isListedRef.current
+                        const success = await deleteChapterData(
+                            mangaUrl, 
+                            chapterDataRef.current.chapterUrl, 
+                            isListedRef.current
                         );
 
-                        if (mangaRetrievedConfigData?.manga?.downloadedChapters) {
-                          const updatedDownloadedChapters = { ...mangaRetrievedConfigData.manga.downloadedChapters };
-                          delete updatedDownloadedChapters[chapterDataRef.current.chapterUrl];
-
-                          await saveMangaConfigData(
-                            mangaUrl,
-                            CONFIG_READ_WRITE_MODE.MANGA_ONLY,
-                            { "downloadedChapters": updatedDownloadedChapters },
-                            isListedRef.current,
-                            CONFIG_READ_WRITE_MODE.MANGA_ONLY
-                          );
+                        if (success) {
+                            router.back();
+                            ToastAndroid.show(
+                                "Cache cleared!",
+                                ToastAndroid.SHORT
+                            );
+                        } else {
+                            ToastAndroid.show(
+                                "Error clearing cache",
+                                ToastAndroid.SHORT
+                            );
                         }
-
-                        router.back()
-
-                        ToastAndroid.show(
-                            "Cache cleared!",
-                            ToastAndroid.SHORT
-                        )
                     }
                 },
                 {
@@ -250,6 +261,31 @@ const MangaReaderScreen = () => {
                 })
                 chapterFinishedref.current = currentChapterReadingStatus ? currentChapterReadingStatus.finished : false
             }
+
+            if (savedMangaConfigData?.manga?.downloadedChapters) {
+                const retrievedDownloadedChaptersList = savedMangaConfigData.manga.downloadedChapters;
+                if (retrievedDownloadedChaptersList[chapterNavigator.targetChapter.chapterUrl]?.downloadStatus === DOWNLOAD_STATUS.DOWNLOADED) {
+                    isDownloadedRef.current = true
+                }
+                else {
+                    isDownloadedRef.current = false
+                }
+            }
+
+            const cacheClearsuccess = await deleteChapterData(
+                mangaUrl, 
+                chapterDataRef.current.chapterUrl, 
+                isListedRef.current,
+                true
+            );
+
+            if (cacheClearsuccess) {
+                console.log("Cache cleared!" + chapterDataRef.current.chapterUrl);
+            } 
+            else {
+                console.error("CACHE NOT CLEARED");
+            }
+
     
             dispatch({type: READER_ACTIONS.SET_CURRENT_PAGE, payload: 0})
             dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_SUCCESS, payload: chapterNavigator.data})

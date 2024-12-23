@@ -340,7 +340,7 @@ const MangaReaderComponent = ({
         
         if(retryImgSize.width > 0 && retryImgSize.height > 0) {
           ToastAndroid.show(
-            `Success retrying page: ${pageNum}\nStatus code: ${retryDownloadResult.status}`,
+            `Retrying page: ${pageNum} success!`,
             ToastAndroid.SHORT
           )
           return {

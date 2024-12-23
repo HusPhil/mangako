@@ -93,7 +93,7 @@ const ChapterPage = forwardRef(({
               <ActivityIndicator size={30} color={colors.accent.DEFAULT}/>
               {imgSrc.imgRetry && (
                 <Text className="font-pregular text-white text-xs mt-3">
-                  {`Trying to retry page ${pageNum}..`}
+                  {`Retrying ${pageNum}..`}
                 </Text>
               )}
               <Text className="font-pregular text-white text-xs mt-3">

@@ -197,3 +197,61 @@ export const saveMangaListItemConfig = async (mangaUrl, listItemConfigToSave) =>
     console.error('An error occured while saving manga list item config:', error)
   }
 }
+
+export const deleteChapterData = async (mangaUrl, chapterUrl, isListed, autoDelete) => {
+    try {
+        const mangaRetrievedConfigData = await readMangaConfigData(
+          mangaUrl,
+          CONFIG_READ_WRITE_MODE.MANGA_ONLY,
+          isListed,
+          CONFIG_READ_WRITE_MODE.MANGA_ONLY
+        );
+        
+        const downloadedChapters = mangaRetrievedConfigData?.manga?.downloadedChapters;
+
+        if(autoDelete) {
+          console.log("CHAPTER URL:", chapterUrl);
+          console.log("Downloaded chapters:", downloadedChapters[chapterUrl]?.downloadStatus);
+          if(downloadedChapters) {  
+            if(downloadedChapters[chapterUrl]?.downloadStatus === DOWNLOAD_STATUS.DOWNLOADED) {
+              return false;
+            }
+          }
+        }
+
+        const pageFileName = "NO-PAGE-FILE"
+        const pageMangaDir = getMangaDirectory(
+            mangaUrl, chapterUrl, 
+            "chapterPageImages", pageFileName,
+            `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+        )
+        
+        await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
+    
+        // Delete the chapter files
+        const dirInfo = await FileSystem.getInfoAsync(pageMangaDir.cachedFolderPath);
+        if (dirInfo.exists) {
+            await FileSystem.deleteAsync(pageMangaDir.cachedFolderPath)
+        }
+
+        
+
+        if (downloadedChapters) {
+            const updatedDownloadedChapters = { ...mangaRetrievedConfigData.manga.downloadedChapters };
+            delete updatedDownloadedChapters[chapterUrl];
+
+            await saveMangaConfigData(
+                mangaUrl,
+                CONFIG_READ_WRITE_MODE.MANGA_ONLY,
+                { "downloadedChapters": updatedDownloadedChapters },
+                isListed,
+                CONFIG_READ_WRITE_MODE.MANGA_ONLY
+            );
+        }
+
+        return true;
+    } catch (error) {
+        console.error("Error deleting chapter data:", error);
+        return false;
+    }
+};
