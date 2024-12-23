@@ -1,4 +1,4 @@
-import { View, Text, ActivityIndicator, TouchableOpacity, ToastAndroid } from 'react-native'
+import { View, Text, ActivityIndicator, TouchableOpacity, ToastAndroid, Alert } from 'react-native'
 import React, {useRef, useEffect, useReducer, useCallback, useMemo } from 'react'
 import { router, useLocalSearchParams } from 'expo-router';
 import Toast from 'react-native-simple-toast';
@@ -23,6 +23,7 @@ import { READER_ACTIONS } from '../../redux/readerScreen/readerActions';
 import colors from '../../constants/colors';
 import { getChapterList } from '../../services/MangakakalotClient';
 import { fetchData as getMangaInfo } from './_manga_info';
+import { Modal, PaperProvider, Portal } from 'react-native-paper';
 
 const MangaReaderScreen = () => {
     const { mangaUrl, currentChapterData, currentChapterIndex, isListedAsString } = useLocalSearchParams()
@@ -47,66 +48,54 @@ const MangaReaderScreen = () => {
         //     }
         // }, 500)
         
-        dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
-        
-        const listItemConfig = await readMangaListItemConfig(mangaUrl);
-        dispatch({type: READER_ACTIONS.SET_IS_LISTED, payload: listItemConfig?.length > 0})
-        isListedRef.current = listItemConfig?.length > 0
-
-        const savedConfig = await readMangaConfigData(mangaUrl, chapterDataRef.current.chapterUrl, (listItemConfig?.length > 0))
-        if (savedConfig) {
-            dispatch({
-                type: READER_ACTIONS.LOAD_CONFIG,
-                payload: {
-                    currentPage: savedConfig?.manga?.lastPageReadList?.[chapterDataRef.current.chapterUrl] ?? 0,
-                    readingModeIndex: savedConfig?.manga?.readingModeIndex ?? 0,
-                    scrollOffSetY: savedConfig?.chapter?.scrollOffSetY ?? 0,
-                    finished: savedConfig?.chapter?.finished,
-                    loadingRange: savedConfig?.manga?.loadingRange ?? 1,
-                }
-            });
-        }
-        if(savedConfig?.manga?.readingStats) {
-            const currentChapterReadingStatus = savedConfig.manga.readingStats[chapterDataRef.current.chapterUrl]; 
-            dispatch({
-                type:READER_ACTIONS.SET_STATUS_FINISHED, 
-                payload: currentChapterReadingStatus ? currentChapterReadingStatus.finished : false
-            })
-            chapterFinishedref.current = currentChapterReadingStatus ? currentChapterReadingStatus.finished : false;
-        }
-        
-        controllerRef.current = new AbortController();
-        const signal = controllerRef.current.signal;
-        
-
-        try {
-            const fetchedChapterPages = await backend.fetchData(
-                mangaUrl, chapterDataRef.current.chapterUrl, 
-                signal, (listItemConfig?.length > 0)
-                );
-            if(fetchedChapterPages.error) {
-                console.log(fetchedChapterPages.error)
-                throw fetchedChapterPages.error
+        const AsyncEffect = async () => {
+            // Create new controller for this effect
+            if (controllerRef.current) {
+                controllerRef.current.abort(); // Abort previous requests
             }
-
-            const mangaInfo = await getMangaInfo(mangaUrl, signal, isListedRef.current)
-            if(mangaInfo.error) throw mangaInfo.error
-            chapterListref.current = mangaInfo.data.chapterList
-
-            dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_SUCCESS, payload: fetchedChapterPages.data})
-        } 
-        catch (error) {
-            console.log(error)
-            router.back()
-            Toast.show(
-                `An error occured while fetching pages in manga reader screen: ${error}`,
-                Toast.LONG,
-            );
-            dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_ERROR, payload: {error, chapterPages: []}})
+            controllerRef.current = new AbortController();
             
-        } 
-        
-    }, [])
+            try {
+                dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES});
+                const fetchedChapterPages = await backend.fetchData(
+                    mangaUrl, chapterDataRef.current.chapterUrl, 
+                    controllerRef.current.signal, (isListedRef.current)
+                );
+                if(fetchedChapterPages.error) {
+                    console.log(fetchedChapterPages.error);
+                    throw fetchedChapterPages.error;
+                }
+
+                const mangaInfo = await getMangaInfo(mangaUrl, controllerRef.current.signal, isListedRef.current);
+                if(mangaInfo.error) throw mangaInfo.error;
+                chapterListref.current = mangaInfo.data.chapterList;
+
+                dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_SUCCESS, payload: fetchedChapterPages.data});
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    // Request was aborted, ignore the error
+                    return;
+                }
+                console.log(error);
+                router.back();
+                Toast.show(
+                    `Error loading chapter: ${error.message || 'Unknown error'}`,
+                    Toast.LONG,
+                );
+                dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES_ERROR, payload: {error, chapterPages: []}});
+            }
+        };
+
+        AsyncEffect();
+
+        // Cleanup function
+        return () => {
+            if (controllerRef.current) {
+                controllerRef.current.abort();
+                controllerRef.current = null;
+            }
+        };
+    }, [mangaUrl, chapterDataRef.current.chapterUrl]);
 
     const saveLastViewedChapterPage = debounce(async (pageToSave) => {
         const chapterToPageMap = {}
@@ -116,61 +105,72 @@ const MangaReaderScreen = () => {
       }, 500)
 
     useEffect(() => {
-        AsyncEffect()
-        return () => {
-            isMounted.current = false
-            if(controllerRef.current) controllerRef.current.abort()
-            dispatch({type: READER_ACTIONS.EFFECT_CLEAN_UP})
-        }
-    }, [])
+        AsyncEffect();
+    }, []);
 
     const handleTap = useCallback(() => {
         dispatch({type: READER_ACTIONS.SHOW_MODAL})
     }, [])
 
     const handleClearCache = useCallback(async () => {
-        const pageFileName = "NO-PAGE-FILE"
-        const pageMangaDir = getMangaDirectory(
-            mangaUrl, chapterDataRef.current.chapterUrl, 
-            "chapterPageImages", pageFileName,
-            `${isListedRef.current ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
-            )
-        
-        ensureDirectoryExists(pageMangaDir.cachedFolderPath)
-    
-        console.log("pageMangaDir.cachedFolderPath:", pageMangaDir.cachedFolderPath)
-    
-        // Delete the chapter files
-        await FileSystem.deleteAsync(pageMangaDir.cachedFolderPath)
+        Alert.alert(
+            "Clearing chapter cache",
+            "This will remove the downloaded chapter from your device, do you still wish to proceed?",
+            [
+                {
+                    text: "Yes",
+                    style: "destructive",
+                    onPress: async () => {
+                        const pageFileName = "NO-PAGE-FILE"
+                        const pageMangaDir = getMangaDirectory(
+                            mangaUrl, chapterDataRef.current.chapterUrl, 
+                            "chapterPageImages", pageFileName,
+                            `${isListedRef.current ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
+                            )
+                        
+                        ensureDirectoryExists(pageMangaDir.cachedFolderPath)
+                    
+                        console.log("pageMangaDir.cachedFolderPath:", pageMangaDir.cachedFolderPath)
+                    
+                        // Delete the chapter files
+                        await FileSystem.deleteAsync(pageMangaDir.cachedFolderPath)
 
-        // Remove chapter from downloadedChapters in manga config
-        const mangaRetrievedConfigData = await readMangaConfigData(
-          mangaUrl,
-          CONFIG_READ_WRITE_MODE.MANGA_ONLY,
-          isListedRef.current
+                        // Remove chapter from downloadedChapters in manga config
+                        const mangaRetrievedConfigData = await readMangaConfigData(
+                          mangaUrl,
+                          CONFIG_READ_WRITE_MODE.MANGA_ONLY,
+                          isListedRef.current
+                        );
+
+                        if (mangaRetrievedConfigData?.manga?.downloadedChapters) {
+                          const updatedDownloadedChapters = { ...mangaRetrievedConfigData.manga.downloadedChapters };
+                          delete updatedDownloadedChapters[chapterDataRef.current.chapterUrl];
+
+                          await saveMangaConfigData(
+                            mangaUrl,
+                            CONFIG_READ_WRITE_MODE.MANGA_ONLY,
+                            { "downloadedChapters": updatedDownloadedChapters },
+                            isListedRef.current,
+                            CONFIG_READ_WRITE_MODE.MANGA_ONLY
+                          );
+                        }
+
+                        router.back()
+
+                        ToastAndroid.show(
+                            "Cache cleared!",
+                            ToastAndroid.SHORT
+                        )
+                    }
+                },
+                {
+                    text: "Cancel",
+                    style: "cancel"
+                },
+            ],
+            { cancelable: false }
         );
-
-        if (mangaRetrievedConfigData?.manga?.downloadedChapters) {
-          const updatedDownloadedChapters = { ...mangaRetrievedConfigData.manga.downloadedChapters };
-          delete updatedDownloadedChapters[chapterDataRef.current.chapterUrl];
-
-          await saveMangaConfigData(
-            mangaUrl,
-            CONFIG_READ_WRITE_MODE.MANGA_ONLY,
-            { "downloadedChapters": updatedDownloadedChapters },
-            isListedRef.current,
-            CONFIG_READ_WRITE_MODE.MANGA_ONLY
-          );
-        }
-
-        router.back()
-
-        ToastAndroid.show(
-            "Cache cleared!",
-            ToastAndroid.SHORT
-        )
-    
-      }, [mangaUrl])
+    }, [mangaUrl])
 
     const handlePageChange = useCallback(async (currentPage, readingStatus) => {
         dispatch({ type: READER_ACTIONS.SET_CURRENT_PAGE, payload: currentPage });
@@ -303,7 +303,7 @@ const MangaReaderScreen = () => {
     }, [500]), [state.loadingRange, isListedRef.current])
 
     return (
-        <View className="h-full w-full bg-primary">
+        <PaperProvider className="h-full w-full bg-primary">
             <View className="h-full w-full bg-primary">
                 {!state.isLoading ? (
                     !state.errorData ? (
@@ -388,73 +388,70 @@ const MangaReaderScreen = () => {
                         </View>
                     )}
                 </View>
-            <View className="hfull w-full absolute z-50">
-            <ModalPopup 
-                visible={state.showModal} otherStyles={{backgroundColor: 'transparent',}}
-                handleClose={handleTap}
-            >
-                <View className="h-full w-full justify-end items-center bg-transparent">
-                    <View className="bg-secondary justify-end rounded-md p-1 px-2">
-                        <TouchableOpacity onPress={handleReadFinish} onLongPress={handleTitleLongPress}>
-                            <View className="justify-center items-center w-full flex-row px-3">
-                                <Text numberOfLines={1} className="text-white font-pregular text-base text-center pr-1 py-3 flex-1 ">{chapterDataRef.current.chTitle}</Text>
-                                {state.finished && <Feather name="check-circle" size={24} color="red" />}
-                            </View>
-                        </TouchableOpacity>
 
-                        <HorizontalRule />
-                    
-                        <View className="w-full">
-                            <DropDownList
-                                title={"Reading mode:"}
-                                otherContainerStyles={'rounded-md p-2 px-4  z-50 '}
-                                listItems={backend.READER_MODES}
-                                onValueChange={handleDropDownValueChange}
-                                selectedIndex={backend.READER_MODES.indexOf(state.readingMode)}
-                            />
-                        </View>  
-
-                        <View>
-                            <View className="flex-row pl-4 items-center justify-between pt-2 mt-2">
-                                <Text className="font-pregular text-white text">Loading range:</Text>
-                                <Slider
-                                    style={{flex: 1}}
-                                    value={state.loadingRange}
-                                    minimumValue={1}
-                                    maximumValue={10}
-                                    step={1}
-                                    thumbTintColor={colors.accent.DEFAULT}
-                                    minimumTrackTintColor={colors.accent.DEFAULT}
-                                    maximumTrackTintColor={colors.primary.DEFAULT}
-                                    onValueChange={handleSliderValueChange}
-                                    />  
-                                <Text className="text-white font-pregular text-xs pr-4">{state.loadingRange}</Text>
-                            </View>     
-                            <Text className="text-white font-pregular text-xs mt-1 px-4">{"• " + backend.loadingRangeDesc}</Text>
-                        </View>       
-                    
-                        <View className="flex-row justify-between m-2 my-3">
-                            <View className="flex-row justify-between">
-                                <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md " onPress={handleToPrevChapter}>
-                                    <AntDesign name="stepbackward" size={12} color="white" />
+                <Portal>
+                    <Modal visible={state.showModal} onDismiss={handleTap} contentContainerStyle={{backgroundColor: "transparent"}} style={{backgroundColor: "transparent"}} dismissable>
+                        <View className="h-full w-full justify-end items-center bg-transparent">
+                            <View className="bg-secondary justify-end rounded-md p-1 px-2">
+                                <TouchableOpacity onPress={handleReadFinish} onLongPress={handleTitleLongPress}>
+                                    <View className="justify-center items-center w-full flex-row px-3">
+                                        <Text numberOfLines={1} className="text-white font-pregular text-base text-center pr-1 py-3 flex-1 ">{chapterDataRef.current.chTitle}</Text>
+                                        {state.finished && <Feather name="check-circle" size={24} color="red" />}
+                                    </View>
                                 </TouchableOpacity>
-                                
-                                <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md ml-2" onPress={handleToNextChapter}>
-                                    <AntDesign name="stepforward" size={12} color="white" />
-                                </TouchableOpacity> 
+
+                                <HorizontalRule />
+                            
+                                <View className="w-full">
+                                    <DropDownList
+                                        title={"Reading mode:"}
+                                        otherContainerStyles={'rounded-md p-2 px-4  z-50 '}
+                                        listItems={backend.READER_MODES}
+                                        onValueChange={handleDropDownValueChange}
+                                        selectedIndex={backend.READER_MODES.indexOf(state.readingMode)}
+                                    />
+                                </View>  
+
+                                <View>
+                                    <View className="flex-row pl-4 items-center justify-between pt-2 mt-2">
+                                        <Text className="font-pregular text-white text">Loading range:</Text>
+                                        <Slider
+                                            style={{flex: 1}}
+                                            value={state.loadingRange}
+                                            minimumValue={1}
+                                            maximumValue={10}
+                                            step={1}
+                                            thumbTintColor={colors.accent.DEFAULT}
+                                            minimumTrackTintColor={colors.accent.DEFAULT}
+                                            maximumTrackTintColor={colors.primary.DEFAULT}
+                                            onValueChange={handleSliderValueChange}
+                                            />  
+                                        <Text className="text-white font-pregular text-xs pr-4">{state.loadingRange}</Text>
+                                    </View>     
+                                    <Text className="text-white font-pregular text-xs mt-1 px-4">{"• " + backend.loadingRangeDesc}</Text>
+                                </View>       
+                            
+                                <View className="flex-row justify-between m-2 my-3">
+                                    <View className="flex-row justify-between">
+                                        <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md " onPress={handleToPrevChapter}>
+                                            <AntDesign name="stepbackward" size={12} color="white" />
+                                        </TouchableOpacity>
+                                        
+                                        <TouchableOpacity className="py-1 px-3 justify-center items-center bg-accent rounded-md ml-2" onPress={handleToNextChapter}>
+                                            <AntDesign name="stepforward" size={12} color="white" />
+                                        </TouchableOpacity> 
+                                    </View>
+
+                                    <TouchableOpacity className="py-1 px-3 bg-accent rounded-md flex-1 ml-4 " onPress={handleClearCache}>
+                                        <Text className="text-white font-pregular text-center">Clear cache</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
-
-                            <TouchableOpacity className="py-1 px-3 bg-accent rounded-md flex-1 ml-4 " onPress={handleClearCache}>
-                                <Text className="text-white font-pregular text-center">Clear cache</Text>
-                            </TouchableOpacity>
                         </View>
-                    </View>
-                </View>
-            
-          </ModalPopup>
-            </View>
+                    </Modal>
+                </Portal>
 
-        </View>
+        </PaperProvider>
     )
 }
 

@@ -51,15 +51,12 @@ const MangaInfoScreen = () => {
 
   const handleClearMangaCache = () => {
     Alert.alert(
-      'Confirm Clear Data',
-      'All the saved data on this manga will be deleted, do you still wish to proceed?',
+      'Clearing Manga Data',
+      'All saved data for this manga will be removed. Do you wish to proceed?',
       [
+        
         {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'OK',
+          text: 'Yes',
           onPress: async () => {
             try {
               const mangaDir = shorthash.unique(mangaUrl)
@@ -92,6 +89,10 @@ const MangaInfoScreen = () => {
               console.error(error)
             }
           },
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
         },
       ],
       { cancelable: false }

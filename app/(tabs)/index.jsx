@@ -196,18 +196,14 @@ const Index = () => {
   }, [tabsToDelete])
 
   const deleteTabCanceled = useCallback(() => {
-    ToastAndroid.show(
-      'Deleting tabs canceled', 
-      ToastAndroid.SHORT
-    )
     setShowModal(MODAL_MODES.HIDDEN) 
     setTabsToDelete([])
   }, [])
 
   const handleDeleteTab = useCallback(() => {
       Alert.alert(
-        'Choose an Action',
-        'Are you sure you want to delete these items?',
+        'Deleting tabs',
+        'All the mangas within the selected tabs will be removed from the list, do you still wish to proceed?',
         [
           {
             text: 'Yes',

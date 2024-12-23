@@ -497,36 +497,6 @@ const ChapterList = ({
     }
   }, [])
 
-  const getValidMangaDownloadDir = useCallback(async () => {
-    const { downloadPermissionFileName, downloadPermissionFilePath } = getMangaDownloadPermissionDir(mangaUrl)
-    const downloadPermissionFileInfo = await FileSystem.getInfoAsync(downloadPermissionFilePath)
-
-    if(downloadPermissionFileInfo.exists) {
-      //do things
-      const downloadFolderPath = await FileSystem.readAsStringAsync(downloadPermissionFilePath)
-      return downloadFolderPath
-    }
-
-    Alert.alert(
-      'Download file location needed',
-      'Would you like to choose the download location?',
-      [
-        {
-          text: 'Yes',
-          onPress: askForDownloadRootDirPermission,
-          style: 'default'
-        },
-        {
-          text: 'No',
-          style: 'cancel'
-        }
-      ],
-      { cancelable: false }
-    )
-
-    return null
-  }, [])
-
 
   const getPagesFromChapters = useCallback(async (chapters, signal) => {
     try {
@@ -607,75 +577,93 @@ const ChapterList = ({
       return;
     }
 
-    try {
-      // First, get the current manga config
-      const mangaRetrievedConfigData = await readMangaConfigData(
-        mangaUrl,
-        CONFIG_READ_WRITE_MODE.MANGA_ONLY,
-        isListed
-      );
-
-      let downloadedChapters = mangaRetrievedConfigData?.manga?.downloadedChapters || {};
-      
-      // Delete physical files and update config
-      await Promise.all(selectedChapters.current.map(async (chapterData) => {
-        const chapterKey = shorthash.unique(chapterData.chapterUrl);
-        const parentKey = shorthash.unique(mangaUrl);
-        const chapterDir = `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}${parentKey}/${chapterKey}`;
+    Alert.alert(
+      "Delete downloads",
+      "These chapters will be removed from your device, do you still wish to proceed?",
+      [
         
-        try {
-          // Delete the physical files
-          const dirInfo = await FileSystem.getInfoAsync(chapterDir);
-          if (dirInfo.exists) {
-            await FileSystem.deleteAsync(chapterDir, { idempotent: true });
-          }
-          
-          // Remove from downloadedChapters in config
-          if (downloadedChapters[chapterData.chapterUrl]) {
-            delete downloadedChapters[chapterData.chapterUrl];
-          }
-        } catch (err) {
-          console.warn(`Error deleting chapter ${chapterData.chapterTitle}:`, err);
-        }
-      }));
+        {
+          text: "Yes",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // First, get the current manga config
+              const mangaRetrievedConfigData = await readMangaConfigData(
+                mangaUrl,
+                CONFIG_READ_WRITE_MODE.MANGA_ONLY,
+                isListed
+              );
 
-      // Save the updated config
-      await saveMangaConfigData(
-        mangaUrl,
-        CONFIG_READ_WRITE_MODE.MANGA_ONLY,
-        { downloadedChapters },
-        isListed,
-        CONFIG_READ_WRITE_MODE.MANGA_ONLY
-      );
+              let downloadedChapters = mangaRetrievedConfigData?.manga?.downloadedChapters || {};
+              
+              // Delete physical files and update config
+              await Promise.all(selectedChapters.current.map(async (chapterData) => {
+                const chapterKey = shorthash.unique(chapterData.chapterUrl);
+                const parentKey = shorthash.unique(mangaUrl);
+                const chapterDir = `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}${parentKey}/${chapterKey}`;
+                
+                try {
+                  // Delete the physical files
+                  const dirInfo = await FileSystem.getInfoAsync(chapterDir);
+                  if (dirInfo.exists) {
+                    await FileSystem.deleteAsync(chapterDir, { idempotent: true });
+                  }
+                  
+                  // Remove from downloadedChapters in config
+                  if (downloadedChapters[chapterData.chapterUrl]) {
+                    delete downloadedChapters[chapterData.chapterUrl];
+                  }
+                } catch (err) {
+                  console.warn(`Error deleting chapter ${chapterData.chapterTitle}:`, err);
+                }
+              }));
 
-      // Reset UI state
-      setChapterList(prev => {
-        const newChapterList = [...prev];
-        // Update download status for deleted chapters
-        selectedChapters.current.forEach(chapter => {
-          if (newChapterList[chapter.index]) {
-            newChapterList[chapter.index] = {
-              ...newChapterList[chapter.index],
-              isSelected: false,
-              isDownloaded: false // Reset download status
-            };
+              // Save the updated config
+              await saveMangaConfigData(
+                mangaUrl,
+                CONFIG_READ_WRITE_MODE.MANGA_ONLY,
+                { downloadedChapters },
+                isListed,
+                CONFIG_READ_WRITE_MODE.MANGA_ONLY
+              );
+
+              // Reset UI state
+              setChapterList(prev => {
+                const newChapterList = [...prev];
+                // Update download status for deleted chapters
+                selectedChapters.current.forEach(chapter => {
+                  if (newChapterList[chapter.index]) {
+                    newChapterList[chapter.index] = {
+                      ...newChapterList[chapter.index],
+                      isSelected: false,
+                      isDownloaded: false // Reset download status
+                    };
+                  }
+                });
+                return newChapterList;
+              });
+              
+              selectedChapters.current = [];
+              listModeRef.current = CHAPTER_LIST_MODE.SELECT_MODE;
+              ToastAndroid.show("Selected downloads deleted", ToastAndroid.SHORT);
+            } catch (error) {
+              console.error("Error deleting downloads:", error);
+              ToastAndroid.show("Error deleting downloads", ToastAndroid.SHORT);
+            }
+
+            setChapterList(prev => {
+              const newChapterList = [...prev];
+              return newChapterList;
+            });
           }
-        });
-        return newChapterList;
-      });
-      
-      selectedChapters.current = [];
-      listModeRef.current = CHAPTER_LIST_MODE.SELECT_MODE;
-      ToastAndroid.show("Selected downloads deleted", ToastAndroid.SHORT);
-    } catch (error) {
-      console.error("Error deleting downloads:", error);
-      ToastAndroid.show("Error deleting downloads", ToastAndroid.SHORT);
-    }
-
-    setChapterList(prev => {
-      const newChapterList = [...prev];
-      return newChapterList;
-    });
+        },
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+      ],
+      { cancelable: false }
+    );
   }, [mangaUrl, isListed]);
 
   const handleDownloadLongPress = useCallback(async () => {
