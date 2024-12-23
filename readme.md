@@ -9,7 +9,7 @@ Get the latest version of MangaKo:
 ### Latest Release
 - **Android**: [Download APK](https://github.com/HusPhil/mangako/releases/latest)
 
-Visit our [Releases Page](https://github.com/HusPhil/mangako/releases) to see all versions and release notes.
+Visit the [Releases Page](https://github.com/HusPhil/mangako/releases) to see all versions and release notes.
 
 ## ✨ Features
 - Manga reader with smooth page navigation
@@ -23,7 +23,6 @@ Visit our [Releases Page](https://github.com/HusPhil/mangako/releases) to see al
 - Node.js (v14 or higher)
 - npm or yarn
 - Expo CLI
-- iOS Simulator (for iOS development) or Android Studio (for Android development)
 
 ### Installation
 1. Clone the repository:
