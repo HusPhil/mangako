@@ -199,9 +199,7 @@ const MangaInfoScreen = () => {
             // Delete the cache directory after copying
             await FileSystem.deleteAsync(mangaCacheDir, { idempotent: true });
             console.log("Cache Directory Deleted");
-          } else {
-            console.log("Cache Directory does not exist");
-          }
+          } 
         } catch (error) {
           console.error("Error in manga file operations:", error);
         }

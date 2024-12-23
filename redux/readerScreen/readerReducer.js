@@ -77,7 +77,6 @@ export const readerReducer = (state, action) => {
                 ...state,
             };
         case READER_ACTIONS.SHOW_MODAL:
-            console.log(state.showModal)
             return {
                 ...state,
                 showModal: !state.showModal

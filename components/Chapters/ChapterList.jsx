@@ -53,7 +53,6 @@ const ChapterList = ({
   const handleChapterPress = useCallback((chapterData) => {
     
     if(listModeRef.current !== CHAPTER_LIST_MODE.MULTI_SELECT_MODE) {
-      console.log("pressed chapterdata", chapterData?.isDownloaded?.downloadStatus === DOWNLOAD_STATUS.DOWNLOADED)
       router.push({
         pathname: "screens/manga_reader",
         params: {

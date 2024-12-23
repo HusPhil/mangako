@@ -42,7 +42,7 @@ const MangaReaderScreen = () => {
     const controllerRef = useRef(null)
     const cleanupTimerRef = useRef(null);
 
-    const CLEAR_CHAPTER_CACHE_DELAY = 3 * 1000;
+    const CLEAR_CHAPTER_CACHE_DELAY = 30 * 1000; // 30 seconds | 1000ms = 1 second
 
     const AsyncEffect = useCallback(async () => {
         
@@ -147,19 +147,13 @@ const MangaReaderScreen = () => {
 
             // Set a timeout to clear cache after 1 minute
             cleanupTimerRef.current = setTimeout(async () => {
-                const success = await deleteChapterData(
+                const clearCacheSuccess = await deleteChapterData(
                     mangaUrl, 
                     chapterDataRef.current.chapterUrl, 
                     isListedRef.current,
                     true
                 );
 
-                if (success) {
-                    console.log("Cache cleared!");
-                } 
-                else {
-                    console.error("CACHE NOT CLEARED");
-                }
                 cleanupTimerRef.current = null;
             }, CLEAR_CHAPTER_CACHE_DELAY); // 60000ms = 1 minute
 

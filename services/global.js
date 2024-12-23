@@ -210,8 +210,6 @@ export const deleteChapterData = async (mangaUrl, chapterUrl, isListed, autoDele
         const downloadedChapters = mangaRetrievedConfigData?.manga?.downloadedChapters;
 
         if(autoDelete) {
-          console.log("CHAPTER URL:", chapterUrl);
-          console.log("Downloaded chapters:", downloadedChapters[chapterUrl]?.downloadStatus);
           if(downloadedChapters) {  
             if(downloadedChapters[chapterUrl]?.downloadStatus === DOWNLOAD_STATUS.DOWNLOADED) {
               return false;
