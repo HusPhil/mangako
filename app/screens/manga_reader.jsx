@@ -1,5 +1,5 @@
 import { View, Text, ActivityIndicator, TouchableOpacity, ToastAndroid, Alert } from 'react-native'
-import React, {useRef, useEffect, useReducer, useCallback, useMemo } from 'react'
+import React, {useRef, useEffect, useReducer, useCallback, useMemo, useState } from 'react'
 import { router, useLocalSearchParams } from 'expo-router';
 import Toast from 'react-native-simple-toast';
 import { Feather } from '@expo/vector-icons';
@@ -23,7 +23,7 @@ import { READER_ACTIONS } from '../../redux/readerScreen/readerActions';
 import colors from '../../constants/colors';
 import { getChapterList } from '../../services/MangakakalotClient';
 import { fetchData as getMangaInfo } from './_manga_info';
-import { Modal, PaperProvider, Portal } from 'react-native-paper';
+import { Modal, PaperProvider, Portal, Snackbar } from 'react-native-paper';
 
 const MangaReaderScreen = () => {
     const { mangaUrl, currentChapterData, currentChapterIndex, isListedAsString, isDownloadedAsString } = useLocalSearchParams()
@@ -41,8 +41,9 @@ const MangaReaderScreen = () => {
     const isMounted = useRef(true)
     const controllerRef = useRef(null)
     const cleanupTimerRef = useRef(null);
+    const [snackbarVisible, setSnackbarVisible] = useState(false);
 
-    const CLEAR_CHAPTER_CACHE_DELAY = 30 * 1000; // 30 seconds | 1000ms = 1 second
+    const CLEAR_CHAPTER_CACHE_DELAY = 5 * 1000; // 30 seconds | 1000ms = 1 second
 
     const AsyncEffect = useCallback(async () => {
         
@@ -139,14 +140,15 @@ const MangaReaderScreen = () => {
 
 
     useEffect(() => {
+
+
         return () => {
-                        
+
             if (cleanupTimerRef.current) {
                 clearTimeout(cleanupTimerRef.current);
             }
 
-            // Set a timeout to clear cache after 1 minute
-            cleanupTimerRef.current = setTimeout(async () => {
+            const chapterCleanUp = async () => {
                 const clearCacheSuccess = await deleteChapterData(
                     mangaUrl, 
                     chapterDataRef.current.chapterUrl, 
@@ -154,8 +156,14 @@ const MangaReaderScreen = () => {
                     true
                 );
 
-                cleanupTimerRef.current = null;
-            }, CLEAR_CHAPTER_CACHE_DELAY); // 60000ms = 1 minute
+                if (clearCacheSuccess) {
+                    console.warn("Cache cleared!");
+                }   else {
+                    console.error("Error clearing cache");
+                }
+            }
+            
+            chapterCleanUp()
 
         }
     }, [])
@@ -204,10 +212,14 @@ const MangaReaderScreen = () => {
 
     const handlePageChange = useCallback(async (currentPage, readingStatus) => {
         dispatch({ type: READER_ACTIONS.SET_CURRENT_PAGE, payload: currentPage });
+        
+        if(readingStatus?.finished) {
+            showNextChapterAlert()
+        }
+
         if (readingStatus?.finished && !chapterFinishedref.current) {
             await handleReadFinish()
             dispatch({type:READER_ACTIONS.SET_STATUS_FINISHED, payload: true})
-            Toast.show('Finished! Tap to navigate chapters!');
             chapterFinishedref.current = true
         }
     
@@ -220,7 +232,7 @@ const MangaReaderScreen = () => {
             const savedMangaConfigData = await readMangaConfigData(mangaUrl, CONFIG_READ_WRITE_MODE.MANGA_ONLY, isListedRef.current)
             const currentChapterPages = state.chapterPages
             dispatch({type: READER_ACTIONS.GET_CHAPTER_PAGES})
-            dispatch({type: READER_ACTIONS.SHOW_MODAL})
+            dispatch({type: READER_ACTIONS.SHOW_MODAL, payload: false})
             
     
             controllerRef.current =  new AbortController()
@@ -360,6 +372,10 @@ const MangaReaderScreen = () => {
 
     }, [500]), [state.loadingRange, isListedRef.current])
 
+    const showNextChapterAlert = () => {
+        setSnackbarVisible(true);
+    };
+
     return (
         <PaperProvider className="h-full w-full bg-primary">
             <View className="h-full w-full bg-primary">
@@ -445,7 +461,7 @@ const MangaReaderScreen = () => {
                             <ActivityIndicator color={`white`} size='large' />
                         </View>
                     )}
-                </View>
+            </View>
 
                 <Portal>
                     <Modal visible={state.showModal} onDismiss={handleTap} 
@@ -513,7 +529,22 @@ const MangaReaderScreen = () => {
                         </View>
                     </Modal>
                 </Portal>
-
+                <Snackbar
+                    visible={snackbarVisible}
+                    onDismiss={() => setSnackbarVisible(false)}
+                    duration={60 * 1000}
+                    wrapperStyle={{backgroundColor: 'transparent', color: 'white', fontFamily: 'Poppins-Regular'}}
+                    style={{marginBottom: 30, color: 'white', fontFamily: 'Poppins-Regular'}}
+                    action={{
+                        label: 'Next Chapter',
+                        onPress: () => {
+                            setSnackbarVisible(false);
+                            handleChapterNavigation(backend.CHAPTER_NAVIGATION.NEXT);
+                        },
+                    }}
+                    onIconPress={() => setSnackbarVisible(false)}>
+                    Chapter finished!
+                </Snackbar>
         </PaperProvider>
     )
 }

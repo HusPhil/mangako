@@ -663,19 +663,10 @@ const MangaReaderComponent = ({
     if(viewableItems.length > 0) {
       const currentPageNum = horizontal ? viewableItems[0].index : viewableItems.splice(-1)[0].index;
       readerCurrentPage.current = currentPageNum;
+      // console.log("Current page:", readerCurrentPage.current)
       // call the callback func to update the ui back in the parent component
-      const endingPageNum = chapterPages.length - 1  
-      // ToastAndroid.show(
-      //   "STATS:" + `${currentPageNum}/${endingPageNum}`,
-      //   ToastAndroid.SHORT
-      // )
-      if (currentPageNum === endingPageNum) {
-        onPageChange(currentPageNum, {finished: true})
-      }
-      else {
-        onPageChange(currentPageNum)
-      }
-
+      onPageChange(currentPageNum)
+      
       await debouncedLoadPageImages(currentPageNum)
 
     }
@@ -715,14 +706,7 @@ const MangaReaderComponent = ({
   }, [])
 
   const handleEndReached = useCallback(() => {
-    ToastAndroid.show(
-      "currentPageRef " + readerCurrentPage.current,
-      ToastAndroid.SHORT
-    )
-
-    const realCurrentPage = chapterPages.length - 1  
-    console.log("realCurrentPage", realCurrentPage, "readerCurrentPage", readerCurrentPage.current)
-    if (readerCurrentPage.current != realCurrentPage) return
+    onPageChange(chapterPages.length - 1, {finished: true})
   }, [readerCurrentPage.current, chapterPages]);
   
   const renderItem = useCallback(({ item, index }) => {
@@ -754,17 +738,6 @@ const MangaReaderComponent = ({
     return ` ${item?.id}-${index}`;
   }, []);
 
-  const handleToNextChapter = useCallback(() => {
-    cancelSingleTap.current = true
-    onToNextChapter()
-  }, [onToNextChapter])
-
-  const handleToPrevChapter = useCallback(() => {
-    cancelSingleTap.current = true
-    onToPrevChapter()
-  }, [onToPrevChapter])
-
-  
   const handleOnTouchStart = useCallback(async (gestureEvent) => {
 
     const currentTouchTimeStamp = gestureEvent.nativeEvent.timestamp
@@ -896,15 +869,14 @@ const MangaReaderComponent = ({
               keyExtractor={keyExtractor}
               estimatedItemSize={horizontal ? screenWidth : screenHeight}
               onViewableItemsChanged={handleViewableItemsChanged}
-              // onEndReached={handleEndReached}
-              // maintainVisibleContentPosition={true}
+              onEndReached={handleEndReached}
               onEndReachedThreshold={0.5}
               pagingEnabled={horizontal}
               horizontal={horizontal}
               inverted={inverted} 
             />
           </View>
-         </ReactNativeZoomableView>
+      </ReactNativeZoomableView>
     </View>
   );
 };

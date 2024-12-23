@@ -77,9 +77,10 @@ export const readerReducer = (state, action) => {
                 ...state,
             };
         case READER_ACTIONS.SHOW_MODAL:
+            const newState = action.payload
             return {
                 ...state,
-                showModal: !state.showModal
+                showModal: newState != null? newState : !state.showModal
             };
         case READER_ACTIONS.EFFECT_CLEAN_UP:
             return INITIAL_STATE;

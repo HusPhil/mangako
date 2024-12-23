@@ -216,6 +216,7 @@ export const deleteChapterData = async (mangaUrl, chapterUrl, isListed, autoDele
             }
           }
         }
+        
 
         const pageFileName = "NO-PAGE-FILE"
         const pageMangaDir = getMangaDirectory(
@@ -224,6 +225,7 @@ export const deleteChapterData = async (mangaUrl, chapterUrl, isListed, autoDele
             `${isListed ? FileSystem.documentDirectory : FileSystem.cacheDirectory}`
         )
         
+
         await ensureDirectoryExists(pageMangaDir.cachedFolderPath)
     
         // Delete the chapter files
