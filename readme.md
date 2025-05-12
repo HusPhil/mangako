@@ -59,6 +59,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 🤝 Contributing
 Contributions are welcome! Feel free to open issues and submit pull requests.
 
----
-
-For more information, please visit our [GitHub repository](https://github.com/HusPhil/mangako).
