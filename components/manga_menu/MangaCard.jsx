@@ -1,4 +1,3 @@
-import { images } from "@/constants";
 import { ImageBackground } from "expo-image";
 import { router } from "expo-router";
 import { TouchableOpacity, View } from "react-native";
@@ -37,23 +36,19 @@ const MangaCard = ({
       onPress={handlePress}
       disabled={disabled}
     >
-      {source ? (
-        <ImageBackground
-          source={{
-            uri: source ?? images.test,
-            headers: {
-              Referer: "https://www.mangakakalot.gg/",
-              "User-Agent": "Mozilla/5.0 (ExpoApp)",
-            },
-          }}
-          className={`${coverStyles} relative`}
-          contentFit="cover"
-        >
-          <View className="justify-end h-full bg-acc">{children}</View>
-        </ImageBackground>
-      ) : (
-        <View className="justify-end h-full bg-acc" />
-      )}
+      <ImageBackground
+        source={{
+          uri: mangaCover,
+          headers: {
+            Referer: "https://www.mangakakalot.gg/",
+            "User-Agent": "Mozilla/5.0 (ExpoApp)",
+          },
+        }}
+        className={`${coverStyles} relative`}
+        contentFit="cover"
+      >
+        <View className="justify-end h-full bg-acc">{children}</View>
+      </ImageBackground>
     </TouchableOpacity>
   );
 };

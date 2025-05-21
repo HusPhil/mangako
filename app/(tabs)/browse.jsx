@@ -1,6 +1,6 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -32,9 +32,21 @@ const BrowseTab = () => {
     isFetchingNextPage: isFetchingMoreLatestManga,
   } = useGetLatestMangaList("mangakakalot");
 
-  const latestMangaList = latestMangaData?.pages.flatMap(
-    (page) => page.latest_manga
-  );
+  const latestMangaList = useMemo(() => {
+    if (!latestMangaData) return [];
+
+    const seen = new Map();
+
+    latestMangaData.pages.forEach((page) => {
+      page.latest_manga.forEach((manga) => {
+        if (!seen.has(manga.mangaId)) {
+          seen.set(manga.mangaId, manga);
+        }
+      });
+    });
+
+    return Array.from(seen.values());
+  }, [latestMangaData]);
 
   const {
     data: popularMangaData,
@@ -51,11 +63,16 @@ const BrowseTab = () => {
   const getMoreManga = async (type) => {
     if (type === "latest" && hasMoreLatestManga) {
       Toast.show({
-        type: "success",
+        type: "info",
         text1: "Loading..",
         text2: "More manga coming up!",
       });
       await fetchNextLatestManga();
+      Toast.show({
+        type: "success",
+        text1: "New mangas available!",
+        text2: "Scroll down for more mangas..",
+      });
     }
   };
 
