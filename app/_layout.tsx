@@ -30,7 +30,7 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
-          name="screens/manga_info"
+          name="screens/manga_info/manga_info"
           options={{
             headerShown: false,
             animation: "none",

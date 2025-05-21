@@ -1,4 +1,4 @@
-// colors.js
+// Colors.js
 const primary = {
   DEFAULT: "#1D2434",
   100: "rgba(29, 36, 52, 0.5)",
@@ -10,7 +10,7 @@ const secondary = {
 const accent = {
   DEFAULT: "#FC3B2C",
   100: "rgba(252, 59, 44, .5)",
-  100: "rgba(252, 59, 44, .2)",
+  50: "rgba(252, 59, 44, .2)",
 };
 
 export default { primary, secondary, accent };

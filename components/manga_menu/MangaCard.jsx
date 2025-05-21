@@ -17,7 +17,7 @@ const MangaCard = ({
   const handlePress = () => {
     if (!mangaDetails) {
       router.push({
-        pathname: "screens/manga_info",
+        pathname: "screens/manga_info/manga_info",
         params: {
           mangaId: mangaId,
           mangaCover: mangaCover,

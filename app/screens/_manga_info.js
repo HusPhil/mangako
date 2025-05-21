@@ -73,3 +73,5 @@ export const deleteSavedMangaInfo = async (mangaUrl, isListed) => {
     throw error;
   }
 };
+
+// export default MangaInfoScreen;
