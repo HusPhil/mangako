@@ -1,14 +1,15 @@
+import { useGetMangaInfo } from "@/services/useGetMangaInfo";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
   StatusBar,
   Text,
-  View,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ChapterList from "./components/ChapterList";
@@ -39,27 +40,17 @@ const MangaInfoScreen = () => {
   const router = useRouter();
   const { mangaId, mangaCover, mangaTitle, mangaUrl } = useLocalSearchParams<LocalSearchParams>();
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // const [isLoading, setIsLoading] = useState<boolean>(!false);
   const [tabsListed, setTabsListed] = useState<string[]>(["Chapters", "Details"]);
   const [activeTab, setActiveTab] = useState<"Details" | "Chapters">("Details");
   const [errorData, setErrorData] = useState<null | string>(null);
-  const [numberOfReadChapters, setNumberOfReadChapters] = useState<number>(123);
+  const [numberOfReadChapters, setNumberOfReadChapters] = useState<number>(1);
 
-  const [mangaInfo, setMangaInfo] = useState<MangaInfo>({
-    mangaDetails: {
-      tags: ["Action", "Adventure", "Fantasy", "Magic"],
-      alternativeNames: ["Alt Title 1", "Alt Title 2"],
-      author: "Unknown Author",
-      status: "Ongoing",
-      description:
-        "Set in a fantasy world where magic and adventure abound, this manga follows the journey of a young protagonist discovering their powers while navigating through dangerous quests and powerful enemies.",
-    },
-    chapterList: Array.from({ length: 1000 }, (_, i) => i + 1),
-  });
+
+  const { data: mangaInfo, isLoading: isMangaInfoLoading } = useGetMangaInfo('mangakakalot', mangaUrl!);
 
   const handleRefresh = async () => {
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 1000); // Simulated loading
+    // setTimeout(() => setIsLoading(false), 1000); // Simulated loading
   };
 
   const handleSetLastReadChapterIndex = (index: number) => {
@@ -95,35 +86,30 @@ const MangaInfoScreen = () => {
       <StatusBar backgroundColor={"transparent"} barStyle={"light-content"} />
       <View className="h-full w-full">
         {renderHeader(mangaTitle || "")}
-
-        {isLoading ? (
-          <View className="flex-1 justify-center items-center">
-            <ActivityIndicator color="white" size="large" />
-            <Text className="font-pregular text-white text-md mt-3">
-              Loading chapter list...
-            </Text>
-          </View>
-        ) : !errorData ? (
+        {/* {!isMangaDetailsLoading && (
+          // <Text>{mangaDetails?.mangaDescription}</Text>
+        )} */}
+        {!errorData ? (
           <>
-          <View>
             <MangaHeader
-              mangaCover={mangaCover as string}
-              mangaId={(mangaId as string) || "loading"}
-              mangaTitle={mangaTitle as string}
-              mangaUrl={mangaUrl as string}
-              details={mangaInfo.mangaDetails}
-              isLoading={isLoading}
-              tabsListed={tabsListed.length > 0}
+              mangaCover={mangaCover}
+              mangaId={(mangaId) || "loading"}
+              mangaTitle={mangaTitle}
+              mangaUrl={mangaUrl}
+              isLoading={isMangaInfoLoading}
+              details={{
+                author: mangaInfo?.mangaDetails.mangaAuthor,
+                status: mangaInfo?.mangaDetails.mangaStatus,
+              }}
               numberOfReadChapters={numberOfReadChapters}
               onReadingResume={handleReadingResume}
-              chapterCount={mangaInfo.chapterList.length}
+              chapterCount={mangaInfo?.mangaChapters.length || 0}
             />
-          </View>
         
           <TabsNavigation
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            chapterCount={mangaInfo.chapterList.length}
+            chapterCount={mangaInfo?.mangaChapters.length || 0}
           />
         
           {activeTab === "Details" ? (
@@ -132,18 +118,25 @@ const MangaInfoScreen = () => {
               scrollEventThrottle={16}
               showsVerticalScrollIndicator={false}
             >
-              <MangaDetailsContent
-                mangaInfo={mangaInfo}
+              {!isMangaInfoLoading && (
+                <MangaDetailsContent
+                mangaAlternativeNames={mangaInfo?.mangaDetails.mangaAlternativeNames || []}
+                mangaAuthor={mangaInfo?.mangaDetails.mangaAuthor || ""}
+                mangaStatus={mangaInfo?.mangaDetails.mangaStatus || ""}
+                mangaTags={mangaInfo?.mangaDetails.mangaTags || []}
+                mangaDescription={mangaInfo?.mangaDetails.mangaDescription || ""}
+                totalChapters={mangaInfo?.mangaChapters.length || 0}
                 numberOfReadChapters={numberOfReadChapters}
                 handleReadingResume={handleReadingResume}
                 handleClearMangaCache={handleClearMangaCache}
               />
+              )}
             </ScrollView>
           ) : (
             <View className="flex-1">
               <ChapterList
                 mangaUrl={(mangaUrl as string) || ""}
-                chaptersData={mangaInfo.chapterList.map(String)}
+                chaptersData={mangaInfo?.mangaChapters || []}
                 listStyles={{ flex: 1 }}
                 onRefresh={handleRefresh}
                 onChapterReadStatusChange={handleSetLastReadChapterIndex}
@@ -182,13 +175,13 @@ const renderHeader = (mangaTitle: string) => {
   return (
     <View className="bg-primary">
       <View className="flex-row justify-between items-center pt-3 mb-5 border-b border-gray-300 mx-4 rounded-lg">
-        <Pressable
+        <TouchableOpacity
           onPress={handleBackPress}
           className="p-3 pr-5"
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="arrow-back" size={26} color="white" />
-        </Pressable>
+        </TouchableOpacity>
 
         <View className="flex-1" >
           <Text className="text-white text-lg font-semibold line-clamp-1">{mangaTitle}</Text>
@@ -237,7 +230,7 @@ const TabsNavigation = ({ activeTab, setActiveTab, chapterCount }: TabsNavigatio
         >
           <Ionicons name="list" size={16} color="white" style={{ marginRight: 6 }} />
           <Text className={`text-sm ${activeTab === "Chapters" ? "text-white" : "text-gray-300"}`}>
-            Chapters ({chapterCount})
+            Chapters
           </Text>
         </Pressable>
       </View>

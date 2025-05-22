@@ -3,35 +3,68 @@ import React from 'react';
 import { Text, View } from 'react-native';
 
 interface MangaDetailsContentProps {
-  mangaInfo: {
-    mangaDetails: {
-      description: string;
-      tags: string[];
-      alternativeNames: string[];
-    };
-    chapterList: any[]; // You can replace `any` with a more specific type if available
-  };
+  mangaDescription: string;
+  mangaAuthor: string;
+  mangaStatus: string;
+  mangaTags: string[];
+  mangaAlternativeNames: string[];
   numberOfReadChapters: number;
+  totalChapters: number;
   handleReadingResume: () => void;
   handleClearMangaCache: () => void;
 }
 
 const MangaDetailsContent: React.FC<MangaDetailsContentProps> = ({
-  mangaInfo,
+  mangaDescription,
+  mangaAuthor,
+  mangaStatus,
+  mangaTags,
+  mangaAlternativeNames,
   numberOfReadChapters,
+  totalChapters,
   handleReadingResume,
   handleClearMangaCache,
 }) => {
-  const totalChapters = mangaInfo.chapterList.length;
   const progress = Math.round((numberOfReadChapters / totalChapters) * 100);
 
   return (
     <View className="px-4 py-2">
+      {/* Tags */}
+      {mangaTags.length > 0 && mangaTags[0] !== '' && (
+        <View className="bg-secondary rounded-lg p-4 mb-4">
+          {/* <Text className="text-white font-bold text-lg mb-2">Tags</Text> */}
+          <View className="flex-row flex-wrap">
+            {mangaTags.map((tag, i) => (
+              <View
+                key={i}
+                className="bg-primary rounded-lg py-1.5 px-2.5 m-0.5 flex-row items-center"
+              >
+                <Ionicons
+                  name="pricetag"
+                  size={10}
+                  color="#9ca3af"
+                  style={{ marginRight: 4 }}
+                />
+                <Text className="text-white text-xs">{tag}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
       {/* About Section */}
       <View className="bg-secondary rounded-lg p-4 mb-4">
-        <Text className="text-white font-bold text-lg mb-2">About</Text>
-        <Text className="text-gray-100 text-sm">
-          {mangaInfo.mangaDetails.description}
+        <Text className="text-white font-bold text-lg mb-2">Summary</Text>
+        <Text className="text-gray-100 text-sm font-pthin">{mangaDescription}</Text>
+      </View>
+
+      {/* Author & Status */}
+      <View className="bg-secondary rounded-lg p-4 mb-4">
+        <Text className="text-white text-sm mb-1">
+          <Text className="font-bold">Author:</Text> {mangaAuthor}
+        </Text>
+        <Text className="text-white text-sm">
+          <Text className="font-bold">Status:</Text> {mangaStatus}
         </Text>
       </View>
 
@@ -60,54 +93,27 @@ const MangaDetailsContent: React.FC<MangaDetailsContentProps> = ({
         </View>
       </View>
 
-      {/* Tags and Metadata */}
-      {mangaInfo.mangaDetails && (
-        <View className="bg-secondary rounded-lg p-4 mb-4">
-          {/* Tags */}
-          {mangaInfo.mangaDetails.tags.length > 0 &&
-            mangaInfo.mangaDetails.tags[0] !== '' && (
-              <View>
-                <Text className="text-white font-bold text-lg mb-2">Tags</Text>
-                <View className="flex-row flex-wrap">
-                  {mangaInfo.mangaDetails.tags.map((tag, i) => (
-                    <View
-                      key={i}
-                      className="bg-primary rounded-lg py-1.5 px-2.5 m-0.5 flex-row items-center"
-                    >
-                      <Ionicons
-                        name="pricetag"
-                        size={10}
-                        color="#9ca3af"
-                        style={{ marginRight: 4 }}
-                      />
-                      <Text className="text-white text-xs">{tag}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
+      
 
-          {/* Alternative Titles */}
-          {mangaInfo.mangaDetails.alternativeNames.length > 0 && (
-            <View className="mt-3">
-              <Text className="text-white font-bold text-lg mb-2">
-                Alternative Titles
-              </Text>
-              <View className="space-y-3">
-                {mangaInfo.mangaDetails.alternativeNames.map((title, index) => (
-                  <View
-                    key={index}
-                    className="bg-primary rounded-lg my-1 flex-row items-center"
-                  >
-                    <View className="w-1 h-full bg-accent rounded-l-lg" />
-                    <Text className="text-gray-100 text-sm py-2 px-3 flex-1">
-                      {title}
-                    </Text>
-                  </View>
-                ))}
+      {/* Alternative Titles */}
+      {mangaAlternativeNames.length > 0 && (
+        <View className="bg-secondary rounded-lg p-4 mb-4">
+          <Text className="text-white font-bold text-lg mb-2">
+            Alternative Titles
+          </Text>
+          <View className="space-y-3">
+            {mangaAlternativeNames.map((title, index) => (
+              <View
+                key={index}
+                className="bg-primary rounded-lg my-1 flex-row items-center"
+              >
+                <View className="w-1 h-full bg-accent rounded-l-lg" />
+                <Text className="text-gray-100 text-sm py-2 px-3 flex-1">
+                  {title}
+                </Text>
               </View>
-            </View>
-          )}
+            ))}
+          </View>
         </View>
       )}
 

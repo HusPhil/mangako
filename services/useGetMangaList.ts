@@ -4,23 +4,9 @@ import {
   UseQueryResult,
 } from "@tanstack/react-query";
 import { axiosInstance, BASE_URL } from "./axios/axiosInstance";
+import { LatestMangaListResponse, PopularMangaListResponse } from "./ResponseTypes";
 
-interface Manga {
-  mangaId: string;
-  mangaTitle: string;
-  mangaUrl: string;
-  mangaCover: string;
-}
 
-export interface LatestMangaListResponse {
-  source: string;
-  latest_manga: Manga[];
-}
-
-export interface PopularMangaListResponse {
-  source: string;
-  popular_manga: Manga[];
-}
 
 export const getLatestMangaList = async ({
   source,

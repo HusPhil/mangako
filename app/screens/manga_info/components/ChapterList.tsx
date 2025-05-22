@@ -1,3 +1,4 @@
+import { MangaChapter } from '@/services/ResponseTypes';
 import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import React from 'react';
@@ -5,7 +6,7 @@ import { Pressable, Text, TouchableOpacity, View } from 'react-native';
 
 interface ChapterListProps {
   mangaUrl: string;
-  chaptersData: string[]; // Or a more detailed type if needed
+  chaptersData: MangaChapter[]; // Or a more detailed type if needed
   listStyles?: object;
   onRefresh: () => void;
   onChapterReadStatusChange: (index: number) => void;
@@ -14,24 +15,28 @@ interface ChapterListProps {
   numberOfReadChapters: number;
 }
 
+
 interface ChapterItemProps {
-  chapter: string;
+  chapterTitle: string;
+  chapterUrl: string;
+  chapterDateUploaded: string;
   index: number;
   onPress: (index: number) => void;
   isRead: boolean;
 }
 
-const ChapterItem: React.FC<ChapterItemProps> = ({ chapter, index, onPress, isRead }) => (
+const ChapterItem: React.FC<ChapterItemProps> = ({ chapterTitle, chapterUrl, chapterDateUploaded, index, onPress, isRead }) => (
   <TouchableOpacity
     onPress={() => onPress(index)}
     className="flex-row items-center justify-between py-3 mx-4 border-b border-gray-700"
   >
     <View className="flex-1">
-      <Text className="text-white text-sm">Vol 1 Ch. {chapter}</Text>
-      <Text className="text-gray-300 text-xs">Chapter {chapter}</Text>
+      <Text className="text-white text-sm">{chapterTitle}</Text>
+      {/* <Text className="text-gray-300 text-xs">Chapter {chapterUrl}</Text> */}
+      <Text className="text-gray-300 text-xs mr-3">{chapterDateUploaded}</Text>
+
     </View>
     <View className="flex-row items-center">
-      <Text className="text-gray-300 text-xs mr-3">May 15, 2023</Text>
       {isRead ? (
         <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
       ) : (
@@ -51,9 +56,11 @@ const ChapterList: React.FC<ChapterListProps> = ({
   headerComponent,
   numberOfReadChapters,
 }) => {
-  const renderChapterItem = ({ item, index }: { item: string; index: number }) => (
+  const renderChapterItem = ({ item, index }: { item: MangaChapter; index: number }) => (
     <ChapterItem
-      chapter={item}
+      chapterTitle={item.chapterTitle}
+      chapterUrl={item.chapterUrl}
+      chapterDateUploaded={item.chapterTimeUploaded}  
       index={index}
       onPress={onChapterReadStatusChange}
       isRead={index < numberOfReadChapters}

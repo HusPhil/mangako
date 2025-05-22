@@ -1,6 +1,7 @@
+import { Image } from 'expo-image';
 import { BookOpen, CopyPlus, Trash2 } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { Dimensions, Image, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Text, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -14,7 +15,6 @@ interface MangaHeaderProps {
     status?: string;
   };
   isLoading?: boolean;
-  tabsListed?: boolean;
   numberOfReadChapters: number;
   chapterCount: number;
   onReadingResume: () => void;
@@ -28,7 +28,6 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
   mangaUrl,
   details,
   isLoading,
-  tabsListed,
   numberOfReadChapters,
   onReadingResume,
   chapterCount,
@@ -45,19 +44,23 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
   return (
     <View className="px-4 rounded-lg shadow-md mt-2 mb-4">
       <View className="flex-row">
+    
         {/* Cover Image */}
         <View style={{ width: imageWidth, height: imageHeight }} className="rounded-lg overflow-hidden bg-gray-200">
           {mangaCover ? (
             <Image
-            source={{
+              source={{
                 uri: mangaCover,
                 headers: {
                   Referer: "https://www.mangakakalot.gg/",
                   "User-Agent": "Mozilla/5.0 (ExpoApp)",
-                },
+                }
               }}
-              className="w-full h-full"
-              resizeMode="cover"
+              allowDownscaling={false}
+              // className='h-full w-full'
+              style={{ width: '100%', height: '100%' }}
+              contentFit="cover"
+              
             />
           ) : (
             <View className="flex-1 justify-center items-center bg-gray-300 rounded-lg">
@@ -75,18 +78,17 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
 
           {/* Author & Status */}
           <View className="mb-3">
-            {details?.author && (
-              <Text className="text-sm text-gray-300 mb-1">
-                Author: {details.author}
-              </Text>
-            )}
-            <Text className="text-sm font-medium text-gray-300">
-              {details?.status || 'Ongoing'}
+            
+            <Text className={`text-sm text-gray-300 mb-1  ${isLoading && !details?.author ? 'animate-pulse' : ''}`}>
+                Author • {isLoading && !details?.author ? 'Loading...' : details?.author}
+            </Text>
+            <Text className={`text-sm font-medium text-gray-300 ${isLoading && !details?.status ? 'animate-pulse' : ''}`}>
+              Status • {isLoading && !details?.status ? 'Loading...' : details?.status}
             </Text>
           </View>
 
           {/* Buttons */}
-          <View className="flex-row mb-3">
+          <View className={`flex-row mb-3 ${isLoading ? 'animate-pulse' : ''}`} pointerEvents={isLoading ? 'none' : 'auto'}>
             <TouchableOpacity
               onPress={onReadingResume}
               disabled={isLoading}
@@ -120,14 +122,17 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
           {/* Progress Bar */}
           <View>
             
-            <View className="h-1.5 bg-gray-300 rounded-full overflow-hidden">
-              <View
+            <View className={`h-1.5  rounded-full overflow-hidden ${isLoading ? 'animate-pulse bg-gray-700' : 'bg-gray-300'}`}>
+              {!isLoading && (
+                <View
                 style={{ width: `${(numberOfReadChapters / chapterCount) * 100}%` }}
                 className="h-full bg-accent rounded-full"
               />
+              )}
             </View>
           </View>
         </View>
+    
       </View>
     </View>
   );

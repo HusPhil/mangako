@@ -2,11 +2,10 @@ import { colors } from "@/constants";
 import { Tabs } from "expo-router";
 import React from "react";
 import {
-  Image,
   ImageSourcePropType,
   StatusBar,
   Text,
-  View,
+  View
 } from "react-native";
 
 import icons from "../../constants/icons";
@@ -18,15 +17,16 @@ interface TabIconProps {
   focused: boolean;
 }
 
+import { BookOpenText, Home } from "lucide-react-native";
+
 const TabIcon = ({ icon, color, name, focused }: TabIconProps) => {
   return (
     <View className="flex items-center justify-center pt-7">
-      <Image
-        source={icon}
-        tintColor={color}
-        resizeMode="contain"
-        style={{ width: 20, height: 20 }}
-      />
+      {name === "Home" ? (
+        <Home size={18} color={color} />
+      ) : (name === "Browse") && (
+        <BookOpenText size={18} color={color} />
+      )}
       <View className="items-center justify-center w-[60px]">
         <Text
           className={`${
