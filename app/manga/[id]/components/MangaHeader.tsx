@@ -52,7 +52,7 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
         <View style={{ width: imageWidth, height: imageHeight }} className="rounded-lg overflow-hidden bg-gray-200">
           {mangaCover ? (
             <Image
-              source={{ uri: `https://mangako-worker.manga-image-proxy.workers.dev/?url=${encodeURIComponent(mangaCover)}`}}
+              source={{ uri: mangaCover}}
               allowDownscaling={false}
               // className='h-full w-full'
               style={{ width: '100%', height: '100%' }}
@@ -76,11 +76,11 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
           {/* Author & Status */}
           <View className="mb-3">
             
-            <Text className={`text-sm text-gray-300 mb-1  ${isLoading && !details?.author ? 'animate-pulse' : ''}`}>
-                Author • {isLoading && !details?.author ? 'Loading...' : details?.author}
+            <Text className={`text-sm font-pmedium text-gray-300 mb-1  ${isLoading && !details?.author ? 'animate-pulse' : ''}`}>
+                Author • {isLoading && !details?.author ? 'Loading...' : (details?.author || 'Unknown')}
             </Text>
-            <Text className={`text-sm font-medium text-gray-300 ${isLoading && !details?.status ? 'animate-pulse' : ''}`}>
-              Status • {isLoading && !details?.status ? 'Loading...' : details?.status}
+            <Text className={`text-sm font-pmedium text-gray-300 ${isLoading && !details?.status ? 'animate-pulse' : ''}`}>
+              Status • {isLoading && !details?.status ? 'Loading...' : (details?.status || 'Unknown')}
             </Text>
           </View>
 

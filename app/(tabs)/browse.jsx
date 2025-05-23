@@ -56,7 +56,7 @@ const BrowseTab = () => {
 
   const handleSearchButton = () => {
     router.push({
-      pathname: "screens/manga_searcher",
+      pathname: "/search",
     });
   };
 

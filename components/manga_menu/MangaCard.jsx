@@ -2,6 +2,7 @@ import { ImageBackground } from "expo-image";
 import { router } from "expo-router";
 import { TouchableOpacity, View } from "react-native";
 
+
 const MangaCard = ({
   mangaId,
   mangaUrl,
@@ -15,16 +16,19 @@ const MangaCard = ({
   disabled,
 }) => {
   const handlePress = () => {
+    
     if (!mangaDetails) {
-      router.push({
-        pathname: "/manga/" + mangaId,
-        params: {
-          mangaId: mangaId,
-          mangaCover: mangaCover,
-          mangaTitle: mangaTitle,
-          mangaUrl: mangaUrl || "NONE",
-        },
-      });
+      
+      const query = new URLSearchParams({
+        mangaCover: mangaCover ?? "",
+        mangaTitle: mangaTitle ?? "",
+        mangaUrl: mangaUrl ?? "NONE",
+      }).toString();
+
+      router.push(
+        `/manga/${mangaId}?${query}`
+      );
+      
     }
   };
 
@@ -37,14 +41,10 @@ const MangaCard = ({
       disabled={disabled}
     >
       <ImageBackground
-        source={{ uri: `https://mangako-worker.manga-image-proxy.workers.dev/?url=${encodeURIComponent(mangaCover)}` }}
+        source={{ uri: mangaCover }}
         className={`${coverStyles} relative`}
-        // style={{
-        //   width: "100%",
-        //   height: "100%",
-        // }}
         onError={(e) => {
-          // console.error("Error loading manga cover", e);
+          console.error("Error loading manga cover", e, mangaCover);
         }}
         contentFit="cover"
       >

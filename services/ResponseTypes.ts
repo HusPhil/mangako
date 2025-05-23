@@ -24,6 +24,7 @@ export interface MangaDetails {
 }
 
 export interface MangaChapter {
+  chapterId: string;
   chapterTitle: string;
   chapterUrl: string;
   chapterTimeUploaded: string;
@@ -32,4 +33,10 @@ export interface MangaChapter {
 export interface MangaInfoResponse {
   mangaDetails: MangaDetails;
   mangaChapters: MangaChapter[];
+}
+
+
+export interface MangaSearchResponse {
+    source: string;
+    results: Manga[];
 }

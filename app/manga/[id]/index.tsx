@@ -5,14 +5,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Pressable,
-    ScrollView,
-    StatusBar,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ChapterList from "./components/ChapterList";
@@ -27,13 +27,8 @@ type MangaDetails = {
   description: string;
 };
 
-type MangaInfo = {
-  mangaDetails: MangaDetails;
-  chapterList: number[];
-};
-
 type LocalSearchParams = {
-  mangaId?: string;
+  id?: string;
   mangaCover?: string;
   mangaTitle?: string;
   mangaUrl?: string;
@@ -41,7 +36,9 @@ type LocalSearchParams = {
 
 const MangaInfoScreen = () => {
   const router = useRouter();
-  const { mangaId, mangaCover, mangaTitle, mangaUrl } = useLocalSearchParams<LocalSearchParams>();
+  const { id: mangaId, mangaCover, mangaTitle, mangaUrl } = useLocalSearchParams<LocalSearchParams>();
+  const testParams = useLocalSearchParams<LocalSearchParams>();
+
 
   // const [isLoading, setIsLoading] = useState<boolean>(!false);
   const [tabsListed, setTabsListed] = useState<string[]>(["Chapters", "Details"]);
@@ -83,6 +80,18 @@ const MangaInfoScreen = () => {
       { cancelable: false }
     );
   };
+
+  const handleChapterPress = (chapterId: string, chapterUrl: string) => {
+    console.log("Chapter pressed:", chapterId);
+    console.log("Manga ID:", mangaId);
+    const query = new URLSearchParams({
+        chapterUrl: chapterUrl ?? "",
+      }).toString();
+
+    if (!mangaId) return;
+    router.push(`/manga/${mangaId}/${chapterId}?${query}`);
+  };
+  
 
   return (
     <SafeAreaView className="h-full w-full bg-primary">
@@ -155,6 +164,7 @@ const MangaInfoScreen = () => {
                 listStyles={{ flex: 1 }}
                 onRefresh={handleRefresh}
                 onChapterReadStatusChange={handleSetLastReadChapterIndex}
+                onChapterPress={handleChapterPress}
                 isListed={tabsListed.length > 0}
                 numberOfReadChapters={numberOfReadChapters}
               />

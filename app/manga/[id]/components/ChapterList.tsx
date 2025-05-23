@@ -10,6 +10,7 @@ interface ChapterListProps {
   listStyles?: object;
   onRefresh: () => void;
   onChapterReadStatusChange: (index: number) => void;
+  onChapterPress: (chapterId: string, chapterUrl: string) => void;
   isListed: boolean;
   headerComponent?: React.ReactNode;
   numberOfReadChapters: number;
@@ -17,17 +18,18 @@ interface ChapterListProps {
 
 
 interface ChapterItemProps {
+  chapterId: string;
   chapterTitle: string;
   chapterUrl: string;
   chapterDateUploaded: string;
   index: number;
-  onPress: (index: number) => void;
+  onPress: (chapterId: string, chapterUrl: string) => void;
   isRead: boolean;
 }
 
-const ChapterItem: React.FC<ChapterItemProps> = ({ chapterTitle, chapterUrl, chapterDateUploaded, index, onPress, isRead }) => (
+const ChapterItem: React.FC<ChapterItemProps> = ({ chapterId, chapterTitle, chapterUrl, chapterDateUploaded, index, onPress, isRead }) => (
   <TouchableOpacity
-    onPress={() => onPress(index)}
+    onPress={() => onPress(chapterId, chapterUrl)}
     className="flex-row items-center justify-between py-3 mx-4 border-b border-gray-700"
   >
     <View className="flex-1">
@@ -52,17 +54,19 @@ const ChapterList: React.FC<ChapterListProps> = ({
   listStyles,
   onRefresh,
   onChapterReadStatusChange,
+  onChapterPress,
   isListed,
   headerComponent,
   numberOfReadChapters,
 }) => {
   const renderChapterItem = ({ item, index }: { item: MangaChapter; index: number }) => (
     <ChapterItem
+      chapterId={item.chapterId}
       chapterTitle={item.chapterTitle}
       chapterUrl={item.chapterUrl}
       chapterDateUploaded={item.chapterTimeUploaded}  
       index={index}
-      onPress={onChapterReadStatusChange}
+      onPress={onChapterPress}
       isRead={index < numberOfReadChapters}
     />
   );
