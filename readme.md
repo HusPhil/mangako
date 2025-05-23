@@ -7,7 +7,7 @@ MangaKo is a React Native mobile application for reading manga/manhwa/manhua. Th
 Get the latest version of MangaKo:
 
 ### Latest Release
-- **Android**: [Download APK](https://github.com/HusPhil/mangako/releases/latest)
+- **Android**: [Download APK]([https://github.com/HusPhil/mangako/releases/latest](https://github.com/HusPhil/mangako/releases/download/download_apk/MangaKo.v1.1.0.apk))
 
 Visit the [Releases Page](https://github.com/HusPhil/mangako/releases) to see all versions and release notes.
 
