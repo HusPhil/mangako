@@ -17,7 +17,7 @@ const MangaCard = ({
   const handlePress = () => {
     if (!mangaDetails) {
       router.push({
-        pathname: "screens/manga_info/manga_info",
+        pathname: "/manga/" + mangaId,
         params: {
           mangaId: mangaId,
           mangaCover: mangaCover,
@@ -37,14 +37,15 @@ const MangaCard = ({
       disabled={disabled}
     >
       <ImageBackground
-        source={{
-          uri: mangaCover,
-          headers: {
-            Referer: "https://www.mangakakalot.gg/",
-            "User-Agent": "Mozilla/5.0 (ExpoApp)",
-          },
-        }}
+        source={{ uri: `https://mangako-worker.manga-image-proxy.workers.dev/?url=${encodeURIComponent(mangaCover)}` }}
         className={`${coverStyles} relative`}
+        // style={{
+        //   width: "100%",
+        //   height: "100%",
+        // }}
+        onError={(e) => {
+          // console.error("Error loading manga cover", e);
+        }}
         contentFit="cover"
       >
         <View className="justify-end h-full bg-acc">{children}</View>

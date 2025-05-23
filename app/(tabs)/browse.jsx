@@ -61,6 +61,10 @@ const BrowseTab = () => {
   };
 
   const getMoreManga = async (type) => {
+    if (latestMangaLoading) {
+      console.log("latestMangaLoading", latestMangaLoading);
+      return;
+    }
     if (type === "latest" && hasMoreLatestManga) {
       Toast.show({
         type: "info",
