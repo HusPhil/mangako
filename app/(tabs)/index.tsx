@@ -78,7 +78,7 @@ const Index = () => {
           }}
         />
         <Text className="text-2xl mt-7 mb-2 text-white font-pregular ">
-          Manga List
+          MangaKo
         </Text>
       </View>
       <View className="flex-row mt-4 justify-around w-[35%]">

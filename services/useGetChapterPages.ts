@@ -6,6 +6,8 @@ export interface MangaChapterPage {
   pageId: string;
   pageUrl: string;
   pageImageUrl: string;
+  pageHeight: number;
+  pageWidth: number;
 }
 
 // Fetcher function that calls your backend endpoint
