@@ -28,6 +28,7 @@ export interface MangaChapter {
   chapterTitle: string;
   chapterUrl: string;
   chapterTimeUploaded: string;
+  isRead?: boolean;
 }
 
 export interface MangaInfoResponse {
