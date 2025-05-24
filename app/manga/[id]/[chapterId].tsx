@@ -117,11 +117,10 @@ const MangaReaderScreen = () => {
       zoomableViewRef?.current?.zoomBy(0.5)
       return
     }
-    
-    if(currentZoomLevel.current <= 1) {
-      zoomableViewRef?.current?.zoomTo(2)
+    else {
+      zoomableViewRef?.current?.zoomTo(1, {x: 0, y: 0}) 
     }
-
+    
   }
 
   const onTap = () => {
@@ -209,6 +208,18 @@ const MangaReaderScreen = () => {
     }
   }
 
+  const handleOnStartShouldSetPanResponderCapture = (gestureEvent: GestureResponderEvent, gestureState: PanResponderGestureState) => {
+    console.log("handleOnStartShouldSetPanResponderCapture", gestureEvent, gestureState)
+
+    if(currentZoomLevel.current === 1 && gestureState.numberActiveTouches === 1) {
+      gestureEvent.preventDefault()
+      gestureEvent.stopPropagation()
+      return false
+    }
+
+    return true
+  }
+
   return (
     <View className="h-full w-full bg-black">
       {isLoading ? (
@@ -238,6 +249,7 @@ const MangaReaderScreen = () => {
             zoomStep={3}
             minZoom={1}
             maxZoom={3.5}
+            onStartShouldSetPanResponderCapture={handleOnStartShouldSetPanResponderCapture}
             pinchToZoomInSensitivity={1.5}
             bindToBorders
             contentWidth={screenWidth}
