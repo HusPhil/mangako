@@ -1,19 +1,35 @@
 // useReadChapters.ts
-import { useMangaCache } from './useMangaCache';
+import { useCallback } from 'react';
+import { loadMangaData, updateMangaData } from './mangaCacheUtils';
 
 export const useReadChapters = (mangaId: string) => {
-  const { data, updateData, isLoading } = useMangaCache(mangaId);
-  const readChapters = data.readChapters ?? [];
+  const loadReadChapters = useCallback(async () => {
+    const data = await loadMangaData(mangaId);
+    return data?.readChapters || [];
+  }, [mangaId]);
 
-  const markChapterAsRead = (chapterId: string) => {
-    if (!readChapters.includes(chapterId)) {
-      updateData({ readChapters: [...readChapters, chapterId] });
+  const markChapterAsRead = async (chapterId: string) => {
+    const currentReadChapters = await loadReadChapters();
+  
+    if (!currentReadChapters.includes(chapterId)) {
+      const updatedReadChapters = [...currentReadChapters, chapterId];
+      await updateMangaData(mangaId, { readChapters: updatedReadChapters });
     }
   };
 
+  const clearReadChapters = async () => {
+    await updateMangaData(mangaId, { readChapters: [] });
+  }
+
+  const checkIfChapterRead = async (chapterId: string) => {
+    const currentReadChapters = await loadReadChapters();
+    return currentReadChapters.includes(chapterId);
+  }
+  
   return {
-    readChapters,
+    loadReadChapters,
     markChapterAsRead,
-    isLoading,
+    clearReadChapters,
+    checkIfChapterRead,
   };
 };

@@ -1,17 +1,17 @@
 import { MangaChapterPage } from "@/services/useGetChapterPages";
 import {
-    ReactNativeZoomableView,
-    ZoomableViewEvent,
+  ReactNativeZoomableView,
+  ZoomableViewEvent,
 } from "@openspacelabs/react-native-zoomable-view";
 import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import React from "react";
 import {
-    Dimensions,
-    GestureResponderEvent,
-    PanResponderGestureState,
-    View,
-    ViewToken,
+  Dimensions,
+  GestureResponderEvent,
+  PanResponderGestureState,
+  View,
+  ViewToken,
 } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -125,6 +125,7 @@ const MangaZoomableReader = ({
             pagingEnabled={horizontal}
             horizontal={horizontal}
             inverted={inverted}
+            
             onEndReached={() => {
                 Toast.show({
                     text1: "End reached",

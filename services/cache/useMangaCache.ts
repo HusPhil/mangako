@@ -1,4 +1,3 @@
-
 // useMangaCache.ts
 import { useCallback, useEffect, useState } from 'react';
 import { loadMangaData, saveMangaData } from './mangaCacheUtils';
@@ -8,21 +7,26 @@ export const useMangaCache = (mangaId: string) => {
   const [data, setData] = useState<MangaCache>({});
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadMangaData(mangaId).then((result) => {
-      setData(result || {});
-      setIsLoading(false);
-    });
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    const result = await loadMangaData(mangaId);
+    setData(result || {});
+    setIsLoading(false);
   }, [mangaId]);
+
+  useEffect(() => {
+    load();
+  }, []);
 
   const updateData = useCallback(
     async (newData: Partial<MangaCache>) => {
       const updated = { ...data, ...newData };
-      setData(updated);
       await saveMangaData(mangaId, updated);
+      setData(updated);
+      return updated;
     },
-    [data, mangaId]
+    [mangaId, data]
   );
 
-  return { data, updateData, isLoading };
+  return { data, updateData, isLoading, reload: load };
 };

@@ -1,11 +1,13 @@
 import { MangaChapter } from '@/services/ResponseTypes';
 import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
+import { Book, BookOpen } from 'lucide-react-native';
 import React from 'react';
 import { Pressable, Text, TouchableOpacity, View } from 'react-native';
 
 interface ChapterListProps {
   mangaUrl: string;
+  mangaId: string;
   chaptersData: MangaChapter[]; // Or a more detailed type if needed
   listStyles?: object;
   onRefresh: () => void;
@@ -32,7 +34,7 @@ const ChapterItem: React.FC<ChapterItemProps> = ({ chapterId, chapterTitle, chap
     onPress={() => onPress(chapterId, chapterUrl)}
     className="flex-row items-center justify-between py-3 mx-4 border-b border-gray-700"
   >
-    <View className="flex-1">
+    <View className={`flex-1 ${isRead ? 'opacity-50' : ''}`}>
       <Text className="text-white text-sm">{chapterTitle}</Text>
       {/* <Text className="text-gray-300 text-xs">Chapter {chapterUrl}</Text> */}
       <Text className="text-gray-300 text-xs mr-3">{chapterDateUploaded}</Text>
@@ -40,16 +42,16 @@ const ChapterItem: React.FC<ChapterItemProps> = ({ chapterId, chapterTitle, chap
     </View>
     <View className="flex-row items-center">
       {isRead ? (
-        <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+        <BookOpen size={20} color="#4CAF50" />
       ) : (
-        <Ionicons name="download-outline" size={20} color="white" />
+        <Book size={20} color="white" />
       )}
     </View>
   </TouchableOpacity>
 );
 
 const ChapterList: React.FC<ChapterListProps> = ({
-  mangaUrl,
+  mangaId,
   chaptersData,
   listStyles,
   onRefresh,
@@ -59,6 +61,9 @@ const ChapterList: React.FC<ChapterListProps> = ({
   headerComponent,
   numberOfReadChapters,
 }) => {
+
+  // const {checkIfChapterRead, readChapters, markChapterAsRead, isLoading} = useReadChapters(mangaId as string);
+
   const renderChapterItem = ({ item, index }: { item: MangaChapter; index: number }) => (
     <ChapterItem
       chapterId={item.chapterId}
@@ -67,7 +72,7 @@ const ChapterList: React.FC<ChapterListProps> = ({
       chapterDateUploaded={item.chapterTimeUploaded}  
       index={index}
       onPress={onChapterPress}
-      isRead={index < numberOfReadChapters}
+      isRead={item.isRead ?? false}
     />
   );
 
@@ -89,13 +94,13 @@ const ChapterList: React.FC<ChapterListProps> = ({
     <View className="flex-1" style={listStyles}>
       <FlashList
         data={chaptersData}
+        keyExtractor={(item) => item.chapterId}
         renderItem={renderChapterItem}
         estimatedItemSize={70}
         ListHeaderComponent={ListHeader}
         showsVerticalScrollIndicator={false}
         refreshing={false}
         onRefresh={onRefresh}
-        keyExtractor={(item, index) => index.toString()}
       />
     </View>
   );

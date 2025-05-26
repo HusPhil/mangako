@@ -25,7 +25,44 @@ export const loadMangaData = async (mangaId: string): Promise<MangaCache | null>
 };
 
 export const saveMangaData = async (mangaId: string, data: MangaCache) => {
+  console.log("Saving manga data:", data);
   await ensureMangaDir(mangaId);
   const path = getMangaDataPath(mangaId);
   await FileSystem.writeAsStringAsync(path, JSON.stringify(data));
+};
+
+
+export const updateMangaData = async (
+  mangaId: string,
+  newData: Partial<MangaCache>
+): Promise<void> => {
+  const existingData = await loadMangaData(mangaId) || {};
+
+  const mergedData: MangaCache = {
+    ...existingData,
+    ...newData,
+    options: {
+      ...existingData.options,
+      ...newData.options,
+    },
+    readChapters: newData.readChapters
+      ? Array.from(new Set([...(existingData.readChapters || []), ...newData.readChapters]))
+      : existingData.readChapters,
+    lastRead: newData.lastRead || existingData.lastRead,
+  };
+
+  // Validate `readingMode` before assigning (avoid undefined fields)
+  if (
+    newData.options?.readingMode &&
+    newData.options.readingMode.label &&
+    newData.options.readingMode.desc &&
+    newData.options.readingMode.value
+  ) {
+    mergedData.options!.readingMode = {
+      ...existingData.options?.readingMode,
+      ...newData.options.readingMode,
+    };
+  }
+
+  await saveMangaData(mangaId, mergedData);
 };

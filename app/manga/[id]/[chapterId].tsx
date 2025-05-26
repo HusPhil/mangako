@@ -1,10 +1,10 @@
 import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
 import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { ActivityIndicator, Text, View, ViewToken } from "react-native";
 
-import { useLastRead } from "@/services/cache/useLastRead";
+import { ReaderMode } from "@/services/cache/types";
 import { useReadingOptions } from "@/services/cache/useReadingOptions";
 import {
   MangaChapterPage,
@@ -16,8 +16,6 @@ import useReaderWrapperHandler from "./components/manga_reader/useReaderWrapperH
 import useZoomableViewHandlers from "./components/manga_reader/useZoomableViewHandlers";
 import MangaZoomableReader from "./components/MangaZoomableReader";
 
-const horizontal = !false;
-const inverted = false;
 
 const MangaReaderScreen = () => {
   const router = useRouter();
@@ -38,11 +36,8 @@ const MangaReaderScreen = () => {
 
   const [showOptions, setShowOptions] = useState(false);
   
-  const { updateLastRead, lastRead, isLoading: isLoadingLastRead } = useLastRead(mangaId as string);
-  const {options, updateOptions, isLoading: isLoadingReadingOptions} = useReadingOptions(mangaId as string);
-  
-  const [readingMode, setReadingMode] = useState(horizontal ?? false);
-  const [invertedMode, setInvertedMode] = useState(inverted ?? false);
+
+  const {readingMode, updateReadingMode} = useReadingOptions(mangaId as string);
 
   const handleReaderNavigation = (navigationMode: {
     mode: string;
@@ -121,14 +116,11 @@ const MangaReaderScreen = () => {
     handleReaderNavigation,
     currentZoomLevel,
     zoomableViewRef,
-    inverted: invertedMode,
-    horizontal: readingMode,
+    inverted: readingMode.value.inverted,
+    horizontal: readingMode.value.horizontal,
   });
 
   const onDoubleTap = () => {
-    Toast.show({
-      text1: "Double tap",
-    });
     if (currentZoomLevel.current <= 1) {
       zoomableViewRef?.current?.zoomBy(0.5);
       return;
@@ -152,7 +144,7 @@ const MangaReaderScreen = () => {
     // Update the current page reference
     readerCurrentPage.current = currentPageNum;
 
-    updateLastRead(chapterId as string, currentPageNum);
+    // updateLastRead(chapterId as string, currentPageNum);
 
     // Log the current page for debugging
     console.log(`Current page: ${currentPageNum + 1} of ${pages?.length || 0}`);
@@ -164,7 +156,7 @@ const MangaReaderScreen = () => {
     viewableItems: ViewToken[];
   }) => {
     if(viewableItems.length > 0) {
-      const currentPageNum = horizontal ? viewableItems[0].index : viewableItems.splice(-1)[0].index;
+      const currentPageNum = readingMode.value.horizontal ? viewableItems[0].index : viewableItems.splice(-1)[0].index;
       // readerCurrentPage.current = currentPageNum;
       // console.log("Current page:", readerCurrentPage.current)
       // call the callback func to update the ui back in the parent component
@@ -175,10 +167,11 @@ const MangaReaderScreen = () => {
     }
   };
 
-  const handleToggleReadingMode = () => {
+  const handleToggleReadingMode = (readingMode: ReaderMode) => {
     // Toggle reading mode
-    setReadingMode(!readingMode);
-    updateOptions({ horizontal: !readingMode });
+    console.log("Toggling reading mode:", readingMode);
+    updateReadingMode(readingMode);
+    // updateOptions({ horizontal: !readingMode });
 
     // Close options sheet
     setShowOptions(false);
@@ -186,24 +179,14 @@ const MangaReaderScreen = () => {
 
   const handleToggleInverted = () => {
     // Toggle inverted mode
-    setInvertedMode(!invertedMode);
-    updateOptions({ inverted: !invertedMode });
+    updateReadingMode({...readingMode, value: {...readingMode.value, inverted: !readingMode.value.inverted}});
+    // updateOptions({ inverted: !invertedMode });
     
     // Close options sheet
     setShowOptions(false);
   };
 
-  useEffect(() => {
-    if (lastRead) {
-      console.log("lastRead", lastRead);
-    }
-  }, [lastRead]);
 
-  useEffect(() => {
-    if (options) {
-      console.log("options", options);
-    }
-  }, [options]);
 
   return (
     <View className="h-full w-full bg-black">
@@ -217,12 +200,12 @@ const MangaReaderScreen = () => {
         <View className="h-full w-full">
           <MangaZoomableReader
             pages={pages}
-            currentPage={lastRead?.page ?? 0}
+            currentPage={readerCurrentPage.current}
             flashListRef={flashListRef}
             zoomableViewRef={zoomableViewRef}
             panEnabled={panEnabled}
-            horizontal={readingMode}
-            inverted={invertedMode}
+            horizontal={readingMode.value.horizontal}
+            inverted={readingMode.value.inverted}
             
             handleOnTouchStart={handleOnTouchStart}
             handleOnTouchEnd={handleOnTouchEnd}
@@ -236,19 +219,19 @@ const MangaReaderScreen = () => {
             }
           />
 
-          <Text>{JSON.stringify(lastRead)}</Text>
+          {/* <Text>{JSON.stringify(lastRead)}</Text> */}
 
           <ReaderOptionsSheet
             flashListRef={flashListRef}
             visible={showOptions}
+            readingMode={readingMode}
             onClose={() => setShowOptions(false)}
+            mangaId={mangaId as string}
+            chapterId={chapterId as string}
             currentPage={readerCurrentPage.current}
             totalPages={pages.length}
             onNavigate={handleReaderNavigation}
-            horizontal={options.horizontal}
-            inverted={options.inverted}
             onToggleReadingMode={handleToggleReadingMode}
-            onToggleInverted={handleToggleInverted}
           />
         </View>
       )}

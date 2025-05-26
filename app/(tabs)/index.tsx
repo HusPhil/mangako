@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
+import { Manga } from "@/services/ResponseTypes";
 import HorizontalRule from "../../components/HorizontalRule";
 import TabListItem from "../../components/manga_home/TabListItem";
 import TabsView from "../../components/manga_home/TabsView";
@@ -30,14 +31,11 @@ import {
 } from "../../services/Global";
 
 // Define interfaces for data structures
-interface MangaItem {
-  link: string;
-  // Add other manga properties as needed
-}
+
 
 interface TabItem {
   title: string;
-  data: MangaItem[];
+  data: Manga[];
 }
 
 // Define modal modes as enum for better type safety
@@ -107,7 +105,14 @@ const Index = () => {
           const mangaListToSave: TabItem[] = [
             {
               title: "FAVORITES",
-              data: [],
+              data: [
+                {
+                  mangaId: "c2e9c5eeeb6b5fdc078e161f2bad76fe",
+                  mangaTitle: "kems Magic Emperor",
+                  mangaUrl: "https://www.mangakakalot.gg/manga/magic-emperor",
+                  mangaCover: "https://mangako-page-image-proxy.manga-image-proxy.workers.dev/?url=https%3A%2F%2Fimg-r1.2xstorage.com%2Fthumb%2Fmagic-emperor.webp",
+                },
+              ],
             },
           ];
           await saveMangaList(mangaListToSave);
@@ -178,7 +183,7 @@ const Index = () => {
     const retrievedMangaList = await readSavedMangaList();
 
     const tabsToDeletedAsSet = new Set<string>(tabsToDelete);
-    const tabTitleToDataMap = new Map<string, MangaItem[]>();
+    const tabTitleToDataMap = new Map<string, Manga[]>();
 
     retrievedMangaList.forEach((tab: TabItem) => {
       if (tabsToDeletedAsSet.has(tab.title)) {
@@ -201,10 +206,10 @@ const Index = () => {
       if (tabData) {
         tabData.forEach(async (manga) => {
           const retrievedMangaListItemConfig = await readMangaListItemConfig(
-            manga.link
+            manga.mangaUrl
           );
           console.log(
-            `${tabTitle}-${manga.link}-${retrievedMangaListItemConfig}`
+            `${tabTitle}-${manga.mangaUrl}-${retrievedMangaListItemConfig}`
           );
 
           const mangaListItemConfigToSave = retrievedMangaListItemConfig.filter(
@@ -213,7 +218,7 @@ const Index = () => {
 
           console.log("mangaListItemConfigToSave", mangaListItemConfigToSave);
 
-          await saveMangaListItemConfig(manga.link, mangaListItemConfigToSave);
+          await saveMangaListItemConfig(manga.mangaUrl, mangaListItemConfigToSave);
         });
       }
     }

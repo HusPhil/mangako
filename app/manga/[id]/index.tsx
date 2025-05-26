@@ -1,9 +1,9 @@
 import HorizontalRule from "@/components/HorizontalRule";
 import { colors } from "@/constants";
-import { useGetMangaInfo } from "@/services/useGetMangaInfo";
+import { useReadChapters } from "@/services/cache/useReadChapters";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -18,14 +18,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import ChapterList from "./components/ChapterList";
 import MangaDetailsContent from "./components/MangaDetailsContent";
 import MangaHeader from "./components/MangaHeader";
+import { useChaptersWithReadStatus } from "./components/manga_reader/useChaptersWithReadStatus";
 
-type MangaDetails = {
-  tags: string[];
-  alternativeNames: string[];
-  author: string;
-  status: string;
-  description: string;
-};
 
 type LocalSearchParams = {
   id?: string;
@@ -39,18 +33,23 @@ const MangaInfoScreen = () => {
   const { id: mangaId, mangaCover, mangaTitle, mangaUrl } = useLocalSearchParams<LocalSearchParams>();
   const testParams = useLocalSearchParams<LocalSearchParams>();
 
-
-  // const [isLoading, setIsLoading] = useState<boolean>(!false);
-  const [tabsListed, setTabsListed] = useState<string[]>(["Chapters", "Details"]);
   const [activeTab, setActiveTab] = useState<"Details" | "Chapters">("Details");
-  // const [errorData, setErrorData] = useState<null | string>(Error);
   const [numberOfReadChapters, setNumberOfReadChapters] = useState<number>(1);
+  
+  const {clearReadChapters} = useReadChapters(mangaId!);
 
+  const {chapters, isLoading: isMangaInfoLoading, error: errorData, mangaInfo, setChapters} = useChaptersWithReadStatus(mangaUrl!, mangaId!);
+  // const { data: mangaInfo, isLoading: isMangaInfoLoading, error: errorData } = useGetMangaInfo("mangakakalot", mangaUrl!);
 
-  const { data: mangaInfo, isLoading: isMangaInfoLoading, error: errorData } = useGetMangaInfo('mangakakalot', mangaUrl!);
+  useEffect(() => {
+    if (mangaInfo) {
+      setChapters(mangaInfo.mangaChapters);
+    }
+  }, [mangaInfo]);
 
   const handleRefresh = async () => {
     // setTimeout(() => setIsLoading(false), 1000); // Simulated loading
+    await clearReadChapters();
   };
 
   const handleSetLastReadChapterIndex = (index: number) => {
@@ -59,9 +58,18 @@ const MangaInfoScreen = () => {
 
   const handleReadingResume = () => {
     console.log("Resume reading...");
+    setChapters((prevChapters) =>
+      prevChapters.map((chapter, index) => {
+        if (index === 0) {
+          return { ...chapter, isRead: true }; // Mark last chapter as read
+        }
+        return chapter;
+      })
+    );
   };
 
   const handleClearMangaCache = () => {
+    
     Alert.alert(
       "Clearing manga data",
       "All the saved data on this manga will be deleted, do you still wish to proceed?",
@@ -159,13 +167,14 @@ const MangaInfoScreen = () => {
           ) : (
             <View className="flex-1">
               <ChapterList
+                mangaId={mangaId || ""}
                 mangaUrl={mangaUrl || ""}
-                chaptersData={mangaInfo?.mangaChapters || []}
+                chaptersData={chapters}
                 listStyles={{ flex: 1 }}
                 onRefresh={handleRefresh}
                 onChapterReadStatusChange={handleSetLastReadChapterIndex}
                 onChapterPress={handleChapterPress}
-                isListed={tabsListed.length > 0}
+                isListed={false}
                 numberOfReadChapters={numberOfReadChapters}
               />
             </View>
@@ -181,6 +190,30 @@ const MangaInfoScreen = () => {
 };
 
 export default MangaInfoScreen;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const renderHeader = (mangaTitle: string) => {
   const handleBackPress = () => {
