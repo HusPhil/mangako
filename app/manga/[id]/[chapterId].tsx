@@ -37,11 +37,12 @@ const MangaReaderScreen = () => {
   const readerCurrentPage = useRef(0);
 
   const [showOptions, setShowOptions] = useState(false);
-  const [readingMode, setReadingMode] = useState(horizontal);
-  const [invertedMode, setInvertedMode] = useState(inverted);
-
+  
   const { updateLastRead, lastRead, isLoading: isLoadingLastRead } = useLastRead(mangaId as string);
   const {options, updateOptions, isLoading: isLoadingReadingOptions} = useReadingOptions(mangaId as string);
+  
+  const [readingMode, setReadingMode] = useState(horizontal ?? false);
+  const [invertedMode, setInvertedMode] = useState(inverted ?? false);
 
   const handleReaderNavigation = (navigationMode: {
     mode: string;

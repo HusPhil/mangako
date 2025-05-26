@@ -106,7 +106,7 @@ const Index = () => {
         if (savedMangaList.length <= 0) {
           const mangaListToSave: TabItem[] = [
             {
-              title: "DEFAULT",
+              title: "FAVORITES",
               data: [],
             },
           ];
@@ -372,13 +372,21 @@ const Index = () => {
           )}
           {showModal === MODAL_MODES.ADD_TAB && (
             <View className="w-full bg-secondary rounded-md p-3 max-h-[420px]">
-              <Text className="text-white font-pregular text-center pb-2">
+              <View className="flex-row justify-between items-center">
+              <Text className="text-white font-pregular text-center">
                 Add a new Tab on the List!
               </Text>
+              <TouchableOpacity 
+                  className="flex-1 items-end p-3" 
+                  onPress={handleHideModal}
+                >
+                  <MaterialIcons name="close" size={20} color="white" />
+                </TouchableOpacity>
+              </View>
               <HorizontalRule displayText={""} otherStyles={""} />
               <View className="flex-row px-4 pt-2 items-center mt-2">
                 <TextInput
-                  placeholder="ex: Favorites"
+                  placeholder="ex: Completed, Ongoing, etc"
                   placeholderTextColor={colors.secondary[100]}
                   className="bg-white rounded-lg py-1 px-3 text-primary font-pregular text-sm w-full"
                   autoFocus={true}
