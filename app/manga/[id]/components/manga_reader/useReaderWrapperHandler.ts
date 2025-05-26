@@ -31,8 +31,8 @@ const useReaderWrapperHandler = ({
       return;
     }
 
-    const TAP_DURATION_THRESHOLD = 100; //in ms
-    const DOUBLE_TAP_TIME_THRESHOLD = 150; // in ms
+    const TAP_DURATION_THRESHOLD = 200; //in ms
+    const DOUBLE_TAP_TIME_THRESHOLD = 350; // in ms
     const TAP_DISTANCE_THRESHOLD = 0.01; //in px
 
     const currentTouchTimeStamp = event.nativeEvent.timestamp;
