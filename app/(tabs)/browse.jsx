@@ -1,11 +1,10 @@
+import { colors } from "@/constants";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMemo, useRef, useState } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Portal, Snackbar } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import Toast from "react-native-toast-message";
-
 import HorizontalRule from "../../components/HorizontalRule";
 import { MangaGrid, MangaSlide } from "../../components/manga_menu";
 import icons from "../../constants/icons";
@@ -14,11 +13,13 @@ import {
   useGetPopularMangaList,
 } from "../../services/useGetMangaList";
 
+
 const BrowseTab = () => {
   // const [newestManga, setNewestManga] = useState([]);
   // const [popularManga, setPopularManga] = useState([]);
   // const [isLoading, setIsLoading] = useState(true);
   const [errorData, setErrorData] = useState();
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
 
   const currentNewestMangaPage = useRef(1);
   const currentPopularMangaPage = useRef(1);
@@ -66,17 +67,18 @@ const BrowseTab = () => {
       return;
     }
     if (type === "latest" && hasMoreLatestManga) {
-      Toast.show({
-        type: "info",
-        text1: "Loading..",
-        text2: "More manga coming up!",
-      });
+      
       await fetchNextLatestManga();
-      Toast.show({
-        type: "success",
-        text1: "New mangas available!",
-        text2: "Scroll down for more mangas..",
-      });
+      // Snackbar.show({
+      //   text: 'Hello world',
+      //   duration: 5000,
+      //   action: {
+      //     text: 'UNDO',
+      //     textColor: 'green',
+      //     onPress: () => { /* Do something. */ },
+      //   },
+      // });
+      
     }
   };
 
@@ -121,6 +123,7 @@ const BrowseTab = () => {
             isLoading={latestMangaLoading || isFetchingMoreLatestManga}
             onEndReached={() => {
               getMoreManga("latest");
+              setSnackbarVisible(true);
             }}
           />
         </>
@@ -145,6 +148,24 @@ const BrowseTab = () => {
           </TouchableOpacity>
         </View>
       )}
+      <Portal>
+      <Snackbar
+          style={{
+            backgroundColor: colors.primary.DEFAULT,
+          }}
+          icon={'close'}
+          onIconPress={() => {
+            setSnackbarVisible(false);
+          }}
+          visible={snackbarVisible}
+          duration={2000}
+          onDismiss={() => {
+            setSnackbarVisible(false);
+          }}
+        >
+          <Text className="text-white font-pregular">More mangas has been loaded!</Text>
+        </Snackbar>
+      </Portal>
     </SafeAreaView>
   );
 };

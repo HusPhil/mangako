@@ -13,7 +13,6 @@ import {
   View,
   ViewToken,
 } from "react-native";
-import Toast from "react-native-toast-message";
 
 interface MangaReaderProps {
   handleOnTouchStart: (event: GestureResponderEvent) => void;
@@ -127,9 +126,9 @@ const MangaZoomableReader = ({
             inverted={inverted}
             
             onEndReached={() => {
-                Toast.show({
-                    text1: "End reached",
-                });
+                // Snackbar.show({
+                //     text: "End reached",
+                // });
             }}
             key={`manga-reader-${horizontal ? 'horizontal' : 'vertical'}`}
           />

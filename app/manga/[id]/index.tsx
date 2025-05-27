@@ -1,9 +1,10 @@
 import HorizontalRule from "@/components/HorizontalRule";
 import { colors } from "@/constants";
+import { saveMangaData } from "@/services/cache/mangaCacheUtils";
 import { useReadChapters } from "@/services/cache/useReadChapters";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -34,18 +35,12 @@ const MangaInfoScreen = () => {
   const testParams = useLocalSearchParams<LocalSearchParams>();
 
   const [activeTab, setActiveTab] = useState<"Details" | "Chapters">("Details");
-  const [numberOfReadChapters, setNumberOfReadChapters] = useState<number>(1);
   
   const {clearReadChapters} = useReadChapters(mangaId!);
-
-  const {chapters, isLoading: isMangaInfoLoading, error: errorData, mangaInfo, setChapters} = useChaptersWithReadStatus(mangaUrl!, mangaId!);
+  
+  const {chapters, isLoading: isMangaInfoLoading, error: errorData, mangaInfo, setChapters, readChapters} = useChaptersWithReadStatus(mangaUrl!, mangaId!);
+  // const [numberOfReadChapters, setNumberOfReadChapters] = useState<number>(readChapters.length);
   // const { data: mangaInfo, isLoading: isMangaInfoLoading, error: errorData } = useGetMangaInfo("mangakakalot", mangaUrl!);
-
-  useEffect(() => {
-    if (mangaInfo) {
-      setChapters(mangaInfo.mangaChapters);
-    }
-  }, [mangaInfo]);
 
   const handleRefresh = async () => {
     // setTimeout(() => setIsLoading(false), 1000); // Simulated loading
@@ -77,6 +72,9 @@ const MangaInfoScreen = () => {
         {
           text: "Yes",
           onPress: async () => {
+            await saveMangaData(mangaId!, {});
+            router.replace("/");
+            router.back();
             console.log("Cache cleared");
           },
         },
@@ -121,9 +119,10 @@ const MangaInfoScreen = () => {
           author: mangaInfo?.mangaDetails.mangaAuthor,
           status: mangaInfo?.mangaDetails.mangaStatus,
         }}
-        numberOfReadChapters={numberOfReadChapters}
-        onReadingResume={handleReadingResume}
+        numberOfReadChapters={readChapters.length}
         chapterCount={mangaInfo?.mangaChapters.length || 0}
+        onReadingResume={handleReadingResume}
+        onClearCache={handleClearMangaCache}
       />
 
       {isMangaInfoLoading ? (
@@ -159,7 +158,7 @@ const MangaInfoScreen = () => {
                 mangaTags={mangaInfo?.mangaDetails.mangaTags || []}
                 mangaDescription={mangaInfo?.mangaDetails.mangaDescription || ""}
                 totalChapters={mangaInfo?.mangaChapters.length || 0}
-                numberOfReadChapters={numberOfReadChapters}
+                numberOfReadChapters={readChapters.length}
                 handleReadingResume={handleReadingResume}
                 handleClearMangaCache={handleClearMangaCache}
               />
@@ -175,7 +174,7 @@ const MangaInfoScreen = () => {
                 onChapterReadStatusChange={handleSetLastReadChapterIndex}
                 onChapterPress={handleChapterPress}
                 isListed={false}
-                numberOfReadChapters={numberOfReadChapters}
+                numberOfReadChapters={readChapters.length}
               />
             </View>
           )}

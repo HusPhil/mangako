@@ -17,6 +17,7 @@ export const useChaptersWithReadStatus = (mangaUrl: string, mangaId: string) => 
   } = useReadChapters(mangaId);
 
   const [chapters, setChapters] = useState<MangaChapter[]>([]);
+  const [readChapters, setReadChapters] = useState<string[]>([]);
 
   // Update chapters initially when mangaInfo or readChapters are ready
   // Refresh read status on screen focus
@@ -25,10 +26,11 @@ export const useChaptersWithReadStatus = (mangaUrl: string, mangaId: string) => 
         
         if(!isMangaInfoLoading) {
             loadReadChapters().then((readChapters) => {
-                setChapters(prev => prev.map(chapter => ({
+                setReadChapters(readChapters);
+                setChapters(mangaInfo?.mangaChapters.map(chapter => ({
                     ...chapter,
                     isRead: readChapters.includes(chapter.chapterId) || false
-                })));
+                })) ?? []);
             });
         }
     }, [isMangaInfoLoading])
@@ -37,6 +39,7 @@ export const useChaptersWithReadStatus = (mangaUrl: string, mangaId: string) => 
   return {
     chapters,
     setChapters,
+    readChapters,
     mangaInfo,
     isLoading: isMangaInfoLoading   ,
     error: errorData,

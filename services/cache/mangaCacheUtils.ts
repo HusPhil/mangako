@@ -1,6 +1,6 @@
 // mangaCacheUtils.ts
 import * as FileSystem from 'expo-file-system';
-import { MangaCache } from './types';
+import { MangaCache, MangaLastRead, MangaOptions } from './types';
 
 const CACHE_DIR = `${FileSystem.documentDirectory}manga_cache`;
 
@@ -65,4 +65,59 @@ export const updateMangaData = async (
   }
 
   await saveMangaData(mangaId, mergedData);
+};
+
+
+export const updateLastRead = async (
+  mangaId: string,
+  lastRead: MangaLastRead
+): Promise<void> => {
+  const existingData = await loadMangaData(mangaId) || {};
+  const updatedData = {
+    ...existingData,
+    lastRead,
+  };
+  await saveMangaData(mangaId, updatedData);
+};
+
+
+export const updateReadChapters = async (
+  mangaId: string,
+  newChapters: string[]
+): Promise<void> => {
+  const existingData = await loadMangaData(mangaId) || {};
+  const combinedChapters = Array.from(
+    new Set([...(existingData.readChapters || []), ...newChapters])
+  );
+
+  const updatedData = {
+    ...existingData,
+    readChapters: combinedChapters,
+  };
+
+  await saveMangaData(mangaId, updatedData);
+};
+
+
+export const updateMangaOptions = async (
+  mangaId: string,
+  newOptions: Partial<MangaOptions>
+): Promise<void> => {
+  const existingData = await loadMangaData(mangaId) || {};
+
+  const updatedData = {
+    ...existingData,
+    options: {
+      ...existingData.options,
+      ...newOptions,
+      readingMode: newOptions.readingMode
+        ? {
+            ...existingData.options?.readingMode,
+            ...newOptions.readingMode,
+          }
+        : existingData.options?.readingMode,
+    },
+  };
+
+  await saveMangaData(mangaId, updatedData);
 };

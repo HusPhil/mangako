@@ -10,7 +10,6 @@ import {
   MangaChapterPage,
   useGetChapterPages,
 } from "@/services/useGetChapterPages";
-import Toast from "react-native-toast-message";
 import ReaderOptionsSheet from "./components/manga_reader/ReaderOptionsSheet";
 import useReaderWrapperHandler from "./components/manga_reader/useReaderWrapperHandler";
 import useZoomableViewHandlers from "./components/manga_reader/useZoomableViewHandlers";
@@ -86,10 +85,10 @@ const MangaReaderScreen = () => {
             });
             
             // Show toast notification
-            Toast.show({
-              text1: `Jumped to page ${navigationMode.jumpIndex + 1}`,
-              position: 'bottom',
-            });
+              // Snackbar.show({
+              //   text: `Jumped to page ${navigationMode.jumpIndex + 1}`,
+              //   duration: Snackbar.LENGTH_INDEFINITE,
+              // });
           }
           break;
         case "jumpToOffset":
