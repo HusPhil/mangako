@@ -2,7 +2,8 @@
 
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { loadMangaData, updateMangaData } from "./mangaCacheUtils";
+import { loadMangaData, saveMangaData } from "./mangaCacheUtils";
+import { MangaLastRead } from "./types";
 
 export const useLastRead = (mangaId: string) => {
   const [hasStartedReading, setHasStartedReading] = useState<boolean>(false);
@@ -12,13 +13,18 @@ export const useLastRead = (mangaId: string) => {
     return data?.lastRead ?? null;
   }, [mangaId]);
 
-  const updateLastRead = useCallback(async (chapterId: string, page: number) => {
-    const data = await loadMangaData(mangaId);
-    if (data) {
-      data.lastRead = { chapterId, page };
-      await updateMangaData(mangaId, {lastRead: {chapterId, page}});
-    }
-  }, [mangaId]);
+  const updateLastRead = async (
+    mangaId: string,
+    lastRead: MangaLastRead
+  ): Promise<void> => {
+    const existingData = await loadMangaData(mangaId) || {};
+    console.log("Existing data:", existingData);
+    const updatedData = {
+      ...existingData,
+      lastRead,
+    };
+    await saveMangaData(mangaId, updatedData);
+  };
 
   useFocusEffect(
     useCallback(() => {

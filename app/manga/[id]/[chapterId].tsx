@@ -1,10 +1,11 @@
 import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
 import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Text, View, ViewToken } from "react-native";
 
 import { ReaderMode } from "@/services/cache/types";
+import { useLastRead } from "@/services/cache/useLastRead";
 import { useReadingOptions } from "@/services/cache/useReadingOptions";
 import {
   MangaChapterPage,
@@ -137,6 +138,8 @@ const MangaReaderScreen = () => {
     onTap,
   });
 
+  const { updateLastRead } = useLastRead(mangaId as string);
+
   const onPageChange = (currentPageNum: number | null) => {
     if (currentPageNum === null) return;
 
@@ -184,6 +187,10 @@ const MangaReaderScreen = () => {
     // Close options sheet
     setShowOptions(false);
   };
+
+  useEffect(() => {
+    updateLastRead(mangaId as string, {chapterId: chapterId as string, chapterUrl: chapterUrl as string, page: readerCurrentPage.current});
+  }, [readerCurrentPage.current]);
 
 
 

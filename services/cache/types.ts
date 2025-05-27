@@ -2,6 +2,7 @@
 
 export interface MangaLastRead {
   chapterId: string;
+  chapterUrl: string;
   page: number;
 }
 

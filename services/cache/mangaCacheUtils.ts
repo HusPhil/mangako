@@ -1,6 +1,6 @@
 // mangaCacheUtils.ts
 import * as FileSystem from 'expo-file-system';
-import { MangaCache, MangaLastRead, MangaOptions } from './types';
+import { MangaCache, MangaOptions } from './types';
 
 const CACHE_DIR = `${FileSystem.documentDirectory}manga_cache`;
 
@@ -68,17 +68,7 @@ export const updateMangaData = async (
 };
 
 
-export const updateLastRead = async (
-  mangaId: string,
-  lastRead: MangaLastRead
-): Promise<void> => {
-  const existingData = await loadMangaData(mangaId) || {};
-  const updatedData = {
-    ...existingData,
-    lastRead,
-  };
-  await saveMangaData(mangaId, updatedData);
-};
+
 
 
 export const updateReadChapters = async (

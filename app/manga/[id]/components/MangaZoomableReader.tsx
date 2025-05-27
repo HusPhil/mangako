@@ -80,6 +80,12 @@ const MangaZoomableReader = ({
     </View>
   );
 
+  const viewabilityConfig = {
+    minimumViewTime: 300,           // How long an item should be visible (ms)
+    itemVisiblePercentThreshold: 50, // Consider it visible if 30% is on screen
+    waitForInteraction: false,
+  };
+
   return (
     <View
       className="h-full w-full"
@@ -120,6 +126,7 @@ const MangaZoomableReader = ({
             ref={flashListRef}
             estimatedItemSize={horizontal ? screenWidth : screenHeight}
             onViewableItemsChanged={handleViewableItemsChanged}
+            viewabilityConfig={viewabilityConfig}
             onEndReachedThreshold={0.5}
             pagingEnabled={horizontal}
             horizontal={horizontal}
@@ -132,6 +139,7 @@ const MangaZoomableReader = ({
             }}
             key={`manga-reader-${horizontal ? 'horizontal' : 'vertical'}`}
           />
+          
         </View>
       </ReactNativeZoomableView>
     </View>

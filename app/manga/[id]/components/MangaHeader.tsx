@@ -16,6 +16,7 @@ interface MangaHeaderProps {
   };
   isLoading?: boolean;
   isError: boolean;
+  hasStartedReading: boolean;
   numberOfReadChapters: number;
   chapterCount: number;
   onReadingResume: () => void;
@@ -30,6 +31,7 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
   details,
   isLoading,
   isError,
+  hasStartedReading,
   numberOfReadChapters,
   onReadingResume,
   chapterCount,
@@ -93,7 +95,7 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
             >
               <BookOpen size={20} color="#fff" />
               <Text className="text-white font-semibold ml-2">
-                {numberOfReadChapters > 0 ? 'Continue' : 'Start'}
+                {hasStartedReading ? 'Continue' : 'Start'}
               </Text>
             </TouchableOpacity>
 
