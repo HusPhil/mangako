@@ -4,7 +4,7 @@ import ModalPopup from "@/components/modal/ModalPopup";
 import { ReaderMode } from "@/services/cache/types";
 import { useReadChapters } from "@/services/cache/useReadChapters";
 import { READER_MODES } from "@/services/cache/useReadingOptions";
-import { MangaChapterPage } from "@/services/useGetChapterPages";
+import { MangaChapterPage } from "@/services/ResponseTypes";
 import { MaterialIcons } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";
 import React, { useEffect, useState } from "react";

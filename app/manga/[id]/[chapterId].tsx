@@ -1,7 +1,7 @@
 import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
 import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { ActivityIndicator, Text, View, ViewToken } from "react-native";
 
 import { ReaderMode } from "@/services/cache/types";
@@ -187,12 +187,6 @@ const MangaReaderScreen = () => {
     setShowOptions(false);
   };
 
-  useEffect(() => {
-    updateLastRead(mangaId as string, {chapterId: chapterId as string, chapterUrl: chapterUrl as string, page: readerCurrentPage.current});
-  }, [readerCurrentPage.current]);
-
-
-
   return (
     <View className="h-full w-full bg-black">
       {isLoading ? (
@@ -211,6 +205,13 @@ const MangaReaderScreen = () => {
             panEnabled={panEnabled}
             horizontal={readingMode.value.horizontal}
             inverted={readingMode.value.inverted}
+
+            onSingleTap={() => {
+              console.log("Single tap");
+            }}
+            onDoubleTap={() => {
+              console.log("Double tap");
+            }}
             
             handleOnTouchStart={handleOnTouchStart}
             handleOnTouchEnd={handleOnTouchEnd}

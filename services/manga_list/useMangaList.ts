@@ -5,7 +5,7 @@ import { Manga } from '../ResponseTypes';
 import { cleanUnusedManga, ensureMangaListFolder, readMangaListFile, writeMangaListFile } from './mangaListUtils';
 import { MangaList, Tab } from './types';
 
-const DEFAULT_MANGA_LIST: MangaList = { tabs: [], manga: {} };
+const DEFAULT_MANGA_LIST: MangaList = { tabs: [{id: "favorites", name: "Favorites", order: 0, mangaIds: []}], manga: {} };
 
 export function useMangaList() {
   const [mangaList, setMangaList] = useState<MangaList>(DEFAULT_MANGA_LIST);
@@ -17,7 +17,16 @@ export function useMangaList() {
         await ensureMangaListFolder();
         await cleanUnusedManga();
         const data = await readMangaListFile();
-        if (data) setMangaList(data);
+        if (data) {
+          setMangaList(data)
+          if (data.tabs.length === 0) {
+            await addTab("Favorites");
+            setMangaList(DEFAULT_MANGA_LIST);
+          }
+        }
+        else {
+          
+        }
         console.log("mangalistTabs", data?.tabs);
         console.log("mangalistManga", data?.manga);
         setIsReady(true);

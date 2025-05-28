@@ -80,7 +80,7 @@ const useZoomableViewHandlers = ({
       currentZoomLevel.current === 1 &&
       gestureState.numberActiveTouches === 1
     ) {
-      gestureEvent.preventDefault();
+      // gestureEvent.preventDefault();
       gestureEvent.stopPropagation();
       return false;
     }
