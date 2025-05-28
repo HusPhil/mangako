@@ -128,9 +128,8 @@ const MangaListScreen = () => {
       </ModalPopup>
 
       <TabsView
-        key={mangaList.tabs.length + isSorting.toString()}
         tabs={mangaList.tabs}
-        mangaData={Object.values(mangaList.manga)}
+        mangas={mangaList.manga}
         onAddTab={() => handleShowModalAddTab()}
         isLoading={!isReady}
       />

@@ -168,7 +168,7 @@ const ModalEditTabs = ({
   const keyExtractor = useCallback((item: Tab) => item.id, []);
 
 	return (
-		<View className="w-full bg-secondary rounded-md p-3 max-h-[420px]">
+		<View className="relative  w-full bg-secondary rounded-md p-3 max-h-[420px]">
 			<View className="flex-row justify-between items-center">
 				<Text className="text-white font-pregular text-center pb-2">
 					Sort the tabs however you like!
@@ -181,7 +181,7 @@ const ModalEditTabs = ({
 				</TouchableOpacity>
 			</View>
 			<HorizontalRule displayText={''} otherStyles={''} />
-			<View className="relative max-h-[75%]">
+			<View className="max-h-[75%]">
 				<DragList
 					keyExtractor={keyExtractor}
 					className="mt-3"
@@ -189,14 +189,7 @@ const ModalEditTabs = ({
 					onReordered={handleReordered}
 					renderItem={draggableRenderItem}
 				/>
-				{isSorting && (
-					<View className="absolute inset-0 bg-black/50 items-center justify-center">
-						<ActivityIndicator
-							size={25}
-							color={colors.accent.DEFAULT}
-						/>
-					</View>
-				)}
+				
 			</View>
       <HorizontalRule displayText={''} otherStyles={''} />
       <View className="flex-row justify-center items-center">
@@ -205,6 +198,14 @@ const ModalEditTabs = ({
         </Text>
         
       </View>
+      {isSorting && (
+					<View className="absolute inset-0 bg-black/50 items-center justify-center">
+						<ActivityIndicator
+							size={25}
+							color={colors.accent.DEFAULT}
+						/>
+					</View>
+				)}
 		</View>
 	);
 };

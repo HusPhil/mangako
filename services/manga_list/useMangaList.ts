@@ -18,6 +18,8 @@ export function useMangaList() {
         await cleanUnusedManga();
         const data = await readMangaListFile();
         if (data) setMangaList(data);
+        console.log("mangalistTabs", data?.tabs);
+        console.log("mangalistManga", data?.manga);
         setIsReady(true);
       })();
     }, [])
@@ -107,7 +109,9 @@ export function useMangaList() {
   const checkIfMangaIsFavorite = async (mangaId: string) => {
     const currentMangaList = await readMangaListFile();
     if (!currentMangaList) return false;
-    return currentMangaList.tabs.some((tab) => tab.mangaIds.includes(mangaId));
+    const favoritesTab = currentMangaList.tabs.find((tab) => tab.id === "favorites");
+    if (!favoritesTab) return false;
+    return favoritesTab.mangaIds.includes(mangaId);
   };
 
   const deleteTab = async (tabId: string) => {
@@ -162,11 +166,43 @@ export function useMangaList() {
     return currentMangaList.tabs.filter((tab) => tab.mangaIds.includes(mangaId));
   };
 
+  const updateMangaListings = async (manga: Manga, mangaListings: Tab[]) => {
+    const mangaListingIds = mangaListings.map(listing => listing.id);
   
+    const updatedMangaTabs = mangaList.tabs.map(tab => {
+      if (mangaListingIds.includes(tab.id)) {
+        return {
+          ...tab,
+          mangaIds: [...new Set([...tab.mangaIds, manga.mangaId])],
+        };
+      }
+      return {
+        ...tab,
+        mangaIds: tab.mangaIds.filter(id => id !== manga.mangaId),
+      };
+    });
+  
+    const updated: MangaList = {
+      tabs: updatedMangaTabs,
+      manga: {
+        ...mangaList.manga,
+        [manga.mangaId]: manga, // always update or insert the manga entry
+      },
+    };
+  
+    console.log("updated.tabs", updated.tabs);
+    console.log("updated.manga", updated.manga);
+  
+    await saveMangaList(updated);
+    setMangaList(updated);
+  };
+  
+
   return {
     mangaList,
     isReady,
     getMangaListings,
+    updateMangaListings,
     checkIfMangaIsFavorite,
     addTab,
     addMangaToTab,

@@ -13,19 +13,19 @@ const Tabs = createMaterialTopTabNavigator();
 
 interface TabViewProps {
   tabs: Tab[];
-  mangaData: Manga[];
+  mangas: Record<string, Manga>;
   onAddTab: () => void;
   isLoading: boolean;
 }
 
-const TabsView = ({tabs, mangaData, onAddTab, isLoading }: TabViewProps) => {
+const TabsView = ({tabs, mangas, onAddTab, isLoading }: TabViewProps) => {
 
   const getTabScreenComponent = useCallback(
     (tabItem: Tab) => {
       if (tabItem.mangaIds.length > 0) {
         return (
           <View className="flex-1 bg-primary pt-3">
-            <MangaGrid mangaData={mangaData} numColumns={3} />
+            <MangaGrid mangaData={tabItem.mangaIds.map(id => mangas[id])} numColumns={3} />
           </View>
         );
       }

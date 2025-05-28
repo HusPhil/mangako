@@ -62,7 +62,7 @@ const MangaInfoScreen = () => {
 
 	const { loadLastRead, hasStartedReading } = useLastRead(mangaId!);
 
-  const { addToMangaFavorites, checkIfMangaIsFavorite, removeMangaFromTab, mangaList, getMangaListings } =
+  const { addToMangaFavorites, checkIfMangaIsFavorite, removeMangaFromTab, mangaList, getMangaListings, updateMangaListings } =
   useMangaList();
 
   const { isModalVisible, setIsModalVisible } = useMangaTabsEditor();
@@ -125,8 +125,13 @@ const MangaInfoScreen = () => {
 		router.push(`/manga/${mangaId}/${chapterId}?${query}`);
 	};
 
-  const handleSaveMangaListings = (mangaListings: Tab[]) => {
-    console.log('Manga listings:', mangaListings);
+  const handleSaveMangaListings = async (mangaListings: Tab[]) => {
+    await updateMangaListings( {
+      mangaId: mangaId!,
+      mangaTitle: mangaTitle!,
+      mangaUrl: mangaUrl!,
+      mangaCover: mangaCover!,
+    }, mangaListings);
     setIsModalVisible(false);
   }
 
