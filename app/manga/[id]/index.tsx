@@ -6,7 +6,7 @@ import { useReadChapters } from '@/services/cache/useReadChapters';
 import { useMangaList } from '@/services/manga_list/useMangaList';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -310,44 +310,67 @@ const renderHeader = ({
 		router.back();
 	};
 
-  const { addToMangaFavorites } = useMangaList();
+  const { addToMangaFavorites, checkIfMangaIsFavorite, removeMangaFromTab } = useMangaList();
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const checkFavorite = async () => {
+      const isFav = await checkIfMangaIsFavorite(mangaId);
+      setIsFavorite(isFav);
+      setIsLoading(false);
+    };
+    setIsLoading(true);
+    checkFavorite();
+  }, [mangaId]);
 
 	const handleAddToFavorites = async () => {
 		console.log('addToFavorites', mangaId);
-    await addToMangaFavorites({mangaId, mangaTitle, mangaUrl, mangaCover});
+    if(isFavorite) {
+      await removeMangaFromTab('favorites', mangaId);
+      setIsFavorite(false);
+    }
+    else {
+      await addToMangaFavorites({mangaId, mangaTitle, mangaUrl, mangaCover});
+      setIsFavorite(true);
+    }
 	};
 
 	return (
-		<View className="bg-primary">
-			<View className="flex-row justify-between items-center pt-3 mb-5 border-b border-gray-300 mx-4 rounded-lg">
-				<TouchableOpacity
-					onPress={handleBackPress}
-					className="p-3 pr-5"
-					hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-				>
-					<Ionicons name="arrow-back" size={26} color="white" />
-				</TouchableOpacity>
-
-				<View className="flex-1">
-					<Text className="text-white text-lg font-semibold line-clamp-1">
-						{mangaTitle}
-					</Text>
-				</View>
-
-				<View className="flex-row items-center">
-					<TouchableOpacity
-						className="p-3 mr-1"
-						onPress={handleAddToFavorites}
-					>
-						<Ionicons
-							name="heart-outline"
-							size={24}
-							color="white"
-						/>
-					</TouchableOpacity>
-				</View>
-			</View>
-		</View>
+		<>
+      {!isLoading && (
+        <View className="bg-primary">
+        <View className="flex-row justify-between items-center pt-3 mb-5 border-b border-gray-300 mx-4 rounded-lg">
+          <TouchableOpacity
+            onPress={handleBackPress}
+            className="p-3 pr-5"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="arrow-back" size={26} color="white" />
+          </TouchableOpacity>
+  
+          <View className="flex-1">
+            <Text className="text-white text-lg font-semibold line-clamp-1">
+              {mangaTitle}
+            </Text>
+          </View>
+  
+          <View className="flex-row items-center">
+            <TouchableOpacity
+              className="p-3 mr-1"
+              onPress={handleAddToFavorites}
+            >
+              <Ionicons
+                name={isFavorite ? "heart" : "heart-outline"}
+                size={24}
+                color="white"
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+      )}
+    </>
 	);
 };
 

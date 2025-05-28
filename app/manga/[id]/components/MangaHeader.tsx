@@ -1,7 +1,6 @@
-import { useMangaList } from '@/services/manga_list/useMangaList';
 import { Image } from 'expo-image';
 import { BookOpen, CopyPlus, Trash2 } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React from 'react';
 import { Dimensions, Text, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -42,18 +41,8 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
   const imageWidth = width * 0.3;
   const imageHeight = imageWidth * 1.5;
   
-  const { addToMangaFavorites, isMangaFavorite } = useMangaList();
-  const [isFavorite, setIsFavorite] = useState(isMangaFavorite(mangaId));
-
-  const toggleFavorite = () => {
-    console.log("toggleFavorite", mangaId);
-    addToMangaFavorites({
-      mangaId,
-      mangaTitle: mangaTitle || "",
-      mangaUrl: mangaUrl || "",
-      mangaCover: mangaCover || "",
-    });
-    setIsFavorite(isMangaFavorite(mangaId));
+  const handleShowAddToMangaListModal = () => {
+    console.log("handleShowAddToMangaListModal", mangaId);
   };
 
   return (
@@ -98,35 +87,35 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
           </View>
 
           {/* Buttons */}
-          <View className={`flex-row mb-3 ${isLoading ? 'animate-pulse' : ''}`} pointerEvents={isLoading ? 'none' : 'auto'}>
+          <View className={`flex-row gap-2 mb-3 ${isLoading ? 'animate-pulse' : ''}`} pointerEvents={isLoading ? 'none' : 'auto'}>
             <TouchableOpacity
               onPress={onReadingResume}
               disabled={isLoading}
-              className="flex-1 mr-2 flex-row items-center justify-center px-4 py-2 rounded-lg bg-accent"
+              className="flex-1 flex-row items-center justify-center px-4 py-2 rounded-lg bg-accent"
             >
               <BookOpen size={20} color="#fff" />
               <Text className="text-white font-semibold ml-2">
                 {hasStartedReading ? 'Continue' : 'Start'}
               </Text>
             </TouchableOpacity>
-
             <TouchableOpacity
-              onPress={onClearCache}
-              disabled={isLoading}
-              className="w-10 h-10 mr-2 items-center justify-center bg-gray-200 rounded-lg"
-            >
-              <Trash2 size={20} color="#333" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={toggleFavorite}
+              onPress={handleShowAddToMangaListModal}
               className="w-10 h-10 items-center justify-center bg-gray-200 rounded-lg"
             >
               <CopyPlus
                 size={20}
-                color={isFavorite ? '#FF6B6B' : '#333'}
+                color="#333"
               />
             </TouchableOpacity>
+            <TouchableOpacity
+              onPress={onClearCache}
+              disabled={isLoading}
+              className="w-10 h-10 items-center justify-center bg-gray-200 rounded-lg"
+            >
+              <Trash2 size={20} color="#333" />
+            </TouchableOpacity>
+
+            
           </View>
 
           {/* Progress Bar */}

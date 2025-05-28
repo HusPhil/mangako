@@ -70,6 +70,14 @@ export function useMangaList() {
     setMangaList(updated);
   };
 
+  const removeMangaFromTab = async (tabId: string, mangaId: string) => {
+    const updatedTabs = mangaList.tabs.map((tab) =>
+      tab.id === tabId ? { ...tab, mangaIds: tab.mangaIds.filter((id) => id !== mangaId) } : tab
+    );
+    await saveMangaList({ ...mangaList, tabs: updatedTabs });
+    setMangaList({ ...mangaList, tabs: updatedTabs });
+  };
+
   const addToMangaFavorites = async (manga: Manga) => {
     console.log("addToMangaFavorites", manga);
     const mangaExists = !!mangaList.manga[manga.mangaId];
@@ -95,8 +103,10 @@ export function useMangaList() {
     }
   };
 
-  const isMangaFavorite = (mangaId: string) => {
-    return mangaList.tabs.some((tab) => tab.mangaIds.includes(mangaId));
+  const checkIfMangaIsFavorite = async (mangaId: string) => {
+    const currentMangaList = await readMangaListFile();
+    if (!currentMangaList) return false;
+    return currentMangaList.tabs.some((tab) => tab.mangaIds.includes(mangaId));
   };
 
   const deleteTab = async (tabId: string) => {
@@ -148,9 +158,10 @@ export function useMangaList() {
   return {
     mangaList,
     isReady,
-    isMangaFavorite,
+    checkIfMangaIsFavorite,
     addTab,
     addMangaToTab,
+    removeMangaFromTab,
     addToMangaFavorites,
     deleteTab,
     deleteSelectedTabs,
