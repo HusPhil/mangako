@@ -4,23 +4,35 @@ import React, { useCallback } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { colors } from "@/constants";
+import { Tab } from "@/services/manga_list/types";
+
+import { Manga } from "@/services/ResponseTypes";
+import { CaptionsOff } from "lucide-react-native";
 import { MangaGrid } from "../manga_menu";
+const Tabs = createMaterialTopTabNavigator();
 
-const Tab = createMaterialTopTabNavigator();
+interface TabViewProps {
+  tabs: Tab[];
+  mangaData: Manga[];
+  onAddTab: () => void;
+  isLoading: boolean;
+}
 
-const TabsView = ({ tabs, onAddTab, isLoading }) => {
+const TabsView = ({tabs, mangaData, onAddTab, isLoading }: TabViewProps) => {
+
   const getTabScreenComponent = useCallback(
-    (tabItem) => {
-      if (tabItem.data.length > 0) {
+    (tabItem: Tab) => {
+      if (tabItem.mangaIds.length > 0) {
         return (
           <View className="flex-1 bg-primary pt-3">
-            <MangaGrid mangaData={tabItem.data} numColumns={3} />
+            <MangaGrid mangaData={mangaData} numColumns={3} />
           </View>
         );
       }
       return (
         <View className="h-full w-full justify-center items-center bg-primary">
-          <Text className="text-center font-pregular text-white">
+          <CaptionsOff size={100} color="white" />
+          <Text className="text-center font-pregular text-white mt-3">
             No manga has been added here yet!
           </Text>
         </View>
@@ -34,7 +46,8 @@ const TabsView = ({ tabs, onAddTab, isLoading }) => {
   return (
     <View className="flex-1">
       {tabs.length > 0 ? (
-        <Tab.Navigator
+        <Tabs.Navigator
+          backBehavior="history"
           screenOptions={{
             tabBarActiveTintColor: colors.accent[100],
             tabBarIndicatorStyle: { backgroundColor: colors.accent.DEFAULT },
@@ -47,15 +60,15 @@ const TabsView = ({ tabs, onAddTab, isLoading }) => {
           }}
         >
           {tabs.map((tabItem, index) => (
-            <Tab.Screen
+            <Tabs.Screen
               key={index}
-              name={tabItem.title}
-              options={{ title: tabItem.title }}
+              name={tabItem.name}
+              options={{ title: tabItem.name }}
             >
               {() => getTabScreenComponent(tabItem)}
-            </Tab.Screen>
+            </Tabs.Screen>
           ))}
-        </Tab.Navigator>
+        </Tabs.Navigator>
       ) : (
         <View className="justify-center items-center h-full w-full">
           <MaterialIcons name="not-interested" size={75} color="white" />
@@ -87,7 +100,8 @@ const styles = StyleSheet.create({
   tabBarLabelStyle: {
     color: "white",
     fontFamily: "Poppins-Regular",
-    fontSize: 10,
+    textTransform: "uppercase",
+    fontSize: 11,
   },
   container: {
     flex: 1,

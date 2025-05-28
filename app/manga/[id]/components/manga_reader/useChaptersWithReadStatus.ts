@@ -46,3 +46,6 @@ export const useChaptersWithReadStatus = (mangaUrl: string, mangaId: string) => 
     markChapterAsRead,
   };
 };
+
+
+export default useChaptersWithReadStatus;

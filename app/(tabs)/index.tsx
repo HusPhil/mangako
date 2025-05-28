@@ -1,474 +1,141 @@
-import { useFocusEffect } from "@react-navigation/native";
-import React, { useCallback, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Image,
-  StatusBar,
-  Text,
-  TextInput,
-  ToastAndroid,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import DragList, { DragListRenderItemInfo } from "react-native-draglist";
-import { SafeAreaView } from "react-native-safe-area-context";
+import ModalAddTab from "@/components/manga_home/ModalAddTab";
+import ModalDeleteTabs from "@/components/manga_home/ModalDeleteTabs";
+import ModalEditTabs from "@/components/manga_home/ModalEditTabs";
+import TabsView from "@/components/manga_home/TabsView";
+import MangaListHeader from "@/components/manga_list/MangaListHeader";
+import ModalPopup from "@/components/modal/ModalPopup";
+import { Tab } from "@/services/manga_list/types";
+import { useMangaList } from "@/services/manga_list/useMangaList";
+import useMangaListModal from "@/services/manga_list/useMangaListModal";
+import { SafeAreaView, View } from "react-native";
 
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+const MangaListScreen = () => {
+  const {
+    mangaList,
+    isReady,
+    addTab,
+    deleteTab,
+    addMangaToTab,
+    deleteSelectedTabs,
+    updateTabOrder,
+    renameTab,
+  } = useMangaList();
 
-import { Manga } from "@/services/ResponseTypes";
-import HorizontalRule from "../../components/HorizontalRule";
-import TabListItem from "../../components/manga_home/TabListItem";
-import TabsView from "../../components/manga_home/TabsView";
-import ModalPopup from "../../components/modal/ModalPopup";
-import { colors, images } from "../../constants";
-import {
-  readMangaListItemConfig,
-  readSavedMangaList,
-  saveMangaList,
-  saveMangaListItemConfig,
-} from "../../services/Global";
+  const {
+    activeModal,
+    isDeleteModalVisible,
+    isAddModalVisible,
+    isEditModalVisible,
+    isSorting,
+    selectedItems,
+    tabTitleToAdd,
+    renamingTabId,
+    setRenamingTabId,
+    setIsSorting,
+    setTabTitleToAdd,
+    toggleItemSelection,
+    openModal,
+    closeModal,
+  } = useMangaListModal();
 
-// Define interfaces for data structures
-
-
-interface TabItem {
-  title: string;
-  data: Manga[];
-}
-
-// Define modal modes as enum for better type safety
-enum MODAL_MODES {
-  ADD_TAB = "ADD_TAB",
-  DELETE_TAB = "DELETE_TAB",
-  SORT_TABS = "SORT_TABS",
-  HIDDEN = "HIDDEN",
-}
-
-// We'll use the DragListRenderItemInfo type from the library instead of our custom interface
-
-// Define props for the FlatList render item
-interface RenderItemProps {
-  item: TabItem;
-  index: number;
-}
-
-const Index = () => {
-  const [showModal, setShowModal] = useState<MODAL_MODES>(MODAL_MODES.HIDDEN);
-  const [tabs, setTabs] = useState<TabItem[]>([]);
-  const [tabTitleToAdd, setTabTitleToAdd] = useState<string>("");
-  const [tabsToDelete, setTabsToDelete] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isSorting, setIsSorting] = useState<boolean>(false);
-
-  const MangaListHeader = () => (
-    <View className="flex-row justify-between items-center mx-4">
-      <View className="flex-row justify-center items-center">
-        <Image
-          source={images.ramenMiniIcon}
-          style={{
-            height: "undefined" as any,
-            width: 35,
-            aspectRatio: 1,
-            marginTop: 20,
-            marginRight: 5,
-          }}
-        />
-        <Text className="text-2xl mt-7 mb-2 text-white font-pregular ">
-          MangaKo
-        </Text>
-      </View>
-      <View className="flex-row mt-4 justify-around w-[35%]">
-        <TouchableOpacity className="p-2" onPress={handleShowAddTab}>
-          <MaterialIcons name="playlist-add" size={20} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity className="p-2" onPress={handleShowDeleteTab}>
-          <MaterialIcons name="playlist-remove" size={20} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity className="p-2" onPress={handleShowSortTab}>
-          <MaterialIcons name="filter-list" size={20} color="white" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  useFocusEffect(
-    useCallback(() => {
-      const AsyncEffect = async () => {
-        StatusBar.setBackgroundColor(colors.secondary.DEFAULT);
-        StatusBar.setBarStyle("light-content");
-
-        const savedMangaList = await readSavedMangaList();
-
-        if (savedMangaList.length <= 0) {
-          const mangaListToSave: TabItem[] = [
-            {
-              title: "FAVORITES",
-              data: [
-                {
-                  mangaId: "c2e9c5eeeb6b5fdc078e161f2bad76fe",
-                  mangaTitle: "kems Magic Emperor",
-                  mangaUrl: "https://www.mangakakalot.gg/manga/magic-emperor",
-                  mangaCover: "https://mangako-page-image-proxy.manga-image-proxy.workers.dev/?url=https%3A%2F%2Fimg-r1.2xstorage.com%2Fthumb%2Fmagic-emperor.webp",
-                },
-              ],
-            },
-          ];
-          await saveMangaList(mangaListToSave);
-          setTabs(mangaListToSave);
-        } else {
-          setTabs(savedMangaList);
-        }
-
-        setIsLoading(false);
-      };
-      AsyncEffect();
-    }, [])
-  );
-
-  const keyExtractor = (item: TabItem): string => {
-    return item.title;
+  const handleShowModalAddTab = () => {
+    openModal("add");
   };
 
-  const handleShowAddTab = useCallback((): void => {
-    setShowModal(MODAL_MODES.ADD_TAB);
-  }, []);
-
-  const handleShowDeleteTab = useCallback((): void => {
-    setShowModal(MODAL_MODES.DELETE_TAB);
-  }, []);
-
-  const handleShowSortTab = useCallback((): void => {
-    setShowModal(MODAL_MODES.SORT_TABS);
-  }, []);
-
-  const handleAddTab = async (): Promise<void> => {
-    const validTabTitleToAdd = tabTitleToAdd.toUpperCase().trim();
-
-    const existingTabTiltes = new Set();
-    tabs.forEach((tab) => {
-      existingTabTiltes.add(tab.title);
-    });
-
-    console.log(existingTabTiltes);
-
-    if (validTabTitleToAdd === "") {
-      ToastAndroid.show("Provide a Tab title", ToastAndroid.SHORT);
-      return;
-    }
-
-    if (!existingTabTiltes.has(validTabTitleToAdd)) {
-      const savedMangaList = await readSavedMangaList();
-
-      const newTabObject: TabItem = {
-        title: validTabTitleToAdd,
-        data: [],
-      };
-
-      const mangaListToSave = [...savedMangaList, newTabObject];
-      console.log("mangaListToSave", mangaListToSave);
-      await saveMangaList(mangaListToSave);
-
-      setTabs(mangaListToSave);
-      setTabTitleToAdd("");
-    } else {
-      console.error("failed to add new tab");
-      ToastAndroid.show("Tab already exists", ToastAndroid.SHORT);
-    }
-    setShowModal(MODAL_MODES.HIDDEN);
+  const handleShowModalDeleteTabs = () => {
+    openModal("delete");
+    // deleteTab("favorites");
   };
 
-  const deleteTabConfirmed = useCallback(async (): Promise<void> => {
-    const retrievedMangaList = await readSavedMangaList();
-
-    const tabsToDeletedAsSet = new Set<string>(tabsToDelete);
-    const tabTitleToDataMap = new Map<string, Manga[]>();
-
-    retrievedMangaList.forEach((tab: TabItem) => {
-      if (tabsToDeletedAsSet.has(tab.title)) {
-        tabTitleToDataMap.set(tab.title, tab.data);
-      }
+  const handleShowModalEditTabs = async () => {
+    await addMangaToTab("favorites", {
+      mangaId: "c2e9c5eeeb6b5fdc078e161f2bad76fe",
+      mangaTitle: "kems Magic Emperor",
+      mangaUrl: "https://www.mangakakalot.gg/manga/magic-emperor",
+      mangaCover:
+        "https://mangako-page-image-proxy.manga-image-proxy.workers.dev/?url=https%3A%2F%2Fimg-r1.2xstorage.com%2Fthumb%2Fmagic-emperor.webp",
     });
+    openModal("edit");
+  };
 
-    console.log(tabTitleToDataMap);
+  const handleDeleteTab = async () => {
+    if (selectedItems.length === 0) return;
+    deleteSelectedTabs(selectedItems.map((item) => item.id || ""));
+    closeModal();
+  };
 
-    const mangaListToSave = retrievedMangaList.filter(
-      (tabListItem: TabItem) => !tabTitleToDataMap.has(tabListItem.title)
-    );
+  const handleSelectItem = (tab: Tab) => {
+    toggleItemSelection(tab);
+  };
 
-    console.log("mangaListToSave", mangaListToSave);
+  const handleAddTab = () => {
+    addTab(tabTitleToAdd);
+    closeModal();
+  };
 
-    for (let tabIndex = 0; tabIndex < tabsToDelete.length; tabIndex++) {
-      const tabTitle = tabsToDelete[tabIndex];
-      const tabData = tabTitleToDataMap.get(tabTitle); // this is a list
-
-      if (tabData) {
-        tabData.forEach(async (manga) => {
-          const retrievedMangaListItemConfig = await readMangaListItemConfig(
-            manga.mangaUrl
-          );
-          console.log(
-            `${tabTitle}-${manga.mangaUrl}-${retrievedMangaListItemConfig}`
-          );
-
-          const mangaListItemConfigToSave = retrievedMangaListItemConfig.filter(
-            (retrievedtabTitle: string) => retrievedtabTitle !== tabTitle
-          );
-
-          console.log("mangaListItemConfigToSave", mangaListItemConfigToSave);
-
-          await saveMangaListItemConfig(manga.mangaUrl, mangaListItemConfigToSave);
-        });
-      }
-    }
-
-    await saveMangaList(mangaListToSave);
-
-    setTabs(mangaListToSave);
-    setShowModal(MODAL_MODES.HIDDEN);
-    setTabsToDelete([]);
-  }, [tabsToDelete]);
-
-  const deleteTabCanceled = useCallback((): void => {
-    setShowModal(MODAL_MODES.HIDDEN);
-    setTabsToDelete([]);
-  }, []);
-
-  const handleDeleteTab = useCallback((): void => {
-    Alert.alert(
-      "Deleting tabs",
-      "All the mangas within the selected tabs will be removed from the list, do you still wish to proceed?",
-      [
-        {
-          text: "Yes",
-          onPress: deleteTabConfirmed,
-          style: "default",
-        },
-        {
-          text: "Cancel",
-          onPress: deleteTabCanceled,
-          style: "cancel",
-        },
-      ],
-      { cancelable: false }
-    );
-  }, [tabsToDelete]);
-
-  const handleReordered = async (
-    fromIndex: number,
-    toIndex: number
-  ): Promise<void> => {
+  const handleReordered = async (fromIndex: number, toIndex: number) => {
     setIsSorting(true);
-    const copy = [...tabs]; // Don't modify react data in-place
+    const copy = [...mangaList.tabs]; // Don't modify react data in-place
     const removed = copy.splice(fromIndex, 1);
     copy.splice(toIndex, 0, removed[0]); // Now insert at the new pos
-    await saveMangaList(copy);
-
-    setTabs(copy);
+    await updateTabOrder(copy);
     setIsSorting(false);
   };
 
-  const handleSelectItem = (selectedItem: TabItem): void => {
-    if (!tabsToDelete.includes(selectedItem.title)) {
-      setTabsToDelete((prev) => {
-        const newTabsToDelete = [...prev];
-        newTabsToDelete.push(selectedItem.title);
-        return newTabsToDelete;
-      });
-    } else {
-      console.log("called");
-      setTabsToDelete((prev) =>
-        prev.filter((item) => item !== selectedItem.title)
-      );
-    }
-  };
-
-  const draggableRenderItem = ({
-    item,
-    onDragStart,
-    onDragEnd,
-    isActive,
-  }: DragListRenderItemInfo<TabItem>) => {
-    return (
-      <View>
-        <TouchableOpacity
-          key={item.title}
-          onPressIn={() => {
-            console.log(onDragStart);
-            onDragStart();
-          }}
-          onPressOut={onDragEnd}
-          className="p-1 "
-        >
-          <Text
-            className="font-pregular text-white p-1 rounded-md text-xs capitalize"
-            style={{
-              backgroundColor: isActive ? colors.accent[100] : "transparent",
-            }}
-          >
-            {item.title}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
-  };
-
-  const handleHideModal = useCallback((): void => {
-    setShowModal(MODAL_MODES.HIDDEN);
-    setTabsToDelete([]);
-  }, []);
-
-  const renderItem = ({ item, index }: RenderItemProps) => {
-    return (
-      <TabListItem
-        item={item}
-        onSelectItem={handleSelectItem}
-        selected={false}
-        iconComponent={
-          <MaterialIcons
-            name="delete-outline"
-            size={18}
-            color={colors.accent.DEFAULT}
-          />
-        }
-      />
-    );
+  const handleRenameTab = async (tabId: string, newName: string) => {
+    await renameTab(tabId, newName);
+    closeModal();
   };
 
   return (
     <SafeAreaView className="flex-1 bg-primary">
-      <MangaListHeader />
+      <MangaListHeader
+        handleShowAddTab={handleShowModalAddTab}
+        handleShowDeleteTab={handleShowModalDeleteTabs}
+        handleShowSortTab={handleShowModalEditTabs}
+      />
       <ModalPopup
-        visible={showModal !== MODAL_MODES.HIDDEN}
-        handleClose={handleHideModal}
+        visible={activeModal !== null}
+        handleClose={closeModal}
         otherStyles={{ backgroundColor: "transparent", alignSelf: "center" }}
       >
         <View className="h-full w-full justify-center items-center px-3 bg-transparent self-center">
-          {showModal === MODAL_MODES.SORT_TABS && (
-            <View className="w-full bg-secondary rounded-md p-3 max-h-[420px]">
-              <Text className="text-white font-pregular text-center pb-2">
-                Sort the tabs however you like!
-              </Text>
-              <HorizontalRule displayText={""} otherStyles={""} />
-              {tabs.length >= 2 ? (
-                !isSorting ? (
-                  <DragList
-                    className="mt-3"
-                    data={tabs}
-                    keyExtractor={keyExtractor}
-                    onReordered={handleReordered}
-                    renderItem={draggableRenderItem}
-                  />
-                ) : (
-                  <View className="mt-2">
-                    <ActivityIndicator
-                      size={25}
-                      color={colors.accent.DEFAULT}
-                    />
-                  </View>
-                )
-              ) : (
-                <Text className="text-white font-pregular text-center text-xs mt-3">
-                  Please create 2 or more Tabs
-                </Text>
-              )}
-            </View>
-          )}
-          {showModal === MODAL_MODES.ADD_TAB && (
-            <View className="w-full bg-secondary rounded-md p-3 max-h-[420px]">
-              <View className="flex-row justify-between items-center">
-              <Text className="text-white font-pregular text-center">
-                Add a new Tab on the List!
-              </Text>
-              <TouchableOpacity 
-                  className="flex-1 items-end p-3" 
-                  onPress={handleHideModal}
-                >
-                  <MaterialIcons name="close" size={20} color="white" />
-                </TouchableOpacity>
-              </View>
-              <HorizontalRule displayText={""} otherStyles={""} />
-              <View className="flex-row px-4 pt-2 items-center mt-2">
-                <TextInput
-                  placeholder="ex: Completed, Ongoing, etc"
-                  placeholderTextColor={colors.secondary[100]}
-                  className="bg-white rounded-lg py-1 px-3 text-primary font-pregular text-sm w-full"
-                  autoFocus={true}
-                  selectTextOnFocus
-                  textAlignVertical="center"
-                  onEndEditing={handleAddTab}
-                  onChangeText={(text) => setTabTitleToAdd(text)}
-                  selectionColor={colors.accent.DEFAULT}
-                />
-              </View>
-              <TouchableOpacity
-                className="flex-row justify-between border-2 border-white py-1 px-2  rounded-md mt-3 self-center"
-                onPress={handleAddTab}
-              >
-                <View>
-                  <MaterialIcons
-                    name="add-circle-outline"
-                    size={15}
-                    color="white"
-                  />
-                </View>
-                <Text className=" text-center text-xs font-pregular text-white ml-1">
-                  Add Tab
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {showModal === MODAL_MODES.DELETE_TAB && (
-            <View className="w-full bg-secondary rounded-md p-3 max-h-[420px]">
-              <Text className="text-white font-pregular text-center pb-2">
-                Select the Tabs you want to delete
-              </Text>
-              <HorizontalRule displayText={""} otherStyles={""} />
-
-              {true ? (
-                <>
-                  <FlatList
-                    className="mt-3"
-                    data={tabs}
-                    keyExtractor={(item, index) => `${item.title}-${index}`}
-                    renderItem={renderItem}
-                  />
-                  <TouchableOpacity
-                    className="border-2 mt-3 border-accent rounded-md py-1 px-3 self-center flex-row justify-between"
-                    onPress={handleDeleteTab}
-                  >
-                    <View>
-                      <MaterialIcons
-                        name="delete-outline"
-                        size={15}
-                        color={colors.accent.DEFAULT}
-                      />
-                    </View>
-                    <Text className="text-accent text-xs text-center font-pregular ml-1">
-                      Delete
-                    </Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <Text className="text-white font-pregular text-center text-xs mt-3">
-                  No tabs available
-                </Text>
-              )}
-            </View>
-          )}
+          {isDeleteModalVisible ? (
+            <ModalDeleteTabs
+              onClose={closeModal}
+              tabs={mangaList.tabs}
+              handleDeleteTab={handleDeleteTab}
+              handleSelectItem={handleSelectItem}
+            />
+          ) : isAddModalVisible ? (
+            <ModalAddTab
+              onClose={closeModal}
+              handleAddTab={handleAddTab}
+              setTabTitleToAdd={setTabTitleToAdd}
+            />
+          ) : isEditModalVisible ? (
+            <ModalEditTabs
+              onClose={closeModal}
+              tabs={mangaList.tabs}
+              isSorting={isSorting}
+              renamingTabId={renamingTabId}
+              setRenamingTabId={setRenamingTabId}
+              handleReordered={handleReordered}
+              handleRenameTab={handleRenameTab}
+            />
+          ) : null}
         </View>
       </ModalPopup>
+
       <TabsView
-        tabs={tabs}
-        onAddTab={() => setShowModal(MODAL_MODES.ADD_TAB)}
-        isLoading={isLoading}
+        key={mangaList.tabs.length + isSorting.toString()}
+        tabs={mangaList.tabs}
+        mangaData={Object.values(mangaList.manga)}
+        onAddTab={() => handleShowModalAddTab()}
+        isLoading={!isReady}
       />
     </SafeAreaView>
   );
 };
 
-// Define styles for components
-
-export default Index;
+export default MangaListScreen;

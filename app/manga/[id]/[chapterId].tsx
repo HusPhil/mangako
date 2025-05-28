@@ -7,15 +7,14 @@ import { ActivityIndicator, Text, View, ViewToken } from "react-native";
 import { ReaderMode } from "@/services/cache/types";
 import { useLastRead } from "@/services/cache/useLastRead";
 import { useReadingOptions } from "@/services/cache/useReadingOptions";
+import { MangaChapterPage } from "@/services/ResponseTypes";
 import {
-  MangaChapterPage,
   useGetChapterPages,
 } from "@/services/useGetChapterPages";
 import ReaderOptionsSheet from "./components/manga_reader/ReaderOptionsSheet";
 import useReaderWrapperHandler from "./components/manga_reader/useReaderWrapperHandler";
 import useZoomableViewHandlers from "./components/manga_reader/useZoomableViewHandlers";
 import MangaZoomableReader from "./components/MangaZoomableReader";
-
 
 const MangaReaderScreen = () => {
   const router = useRouter();

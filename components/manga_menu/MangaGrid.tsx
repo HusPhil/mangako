@@ -1,8 +1,17 @@
-import { FlashList } from "@shopify/flash-list";
-import React, { memo, useCallback, useMemo } from "react";
+import { Manga } from "@/services/ResponseTypes";
+import { ContentStyle, FlashList } from "@shopify/flash-list";
+import React, { memo, ReactElement, useCallback, useMemo } from "react";
 import { Text, View } from "react-native";
-import MangaCard from "./MangaCard";
+import MangaCard from './MangaCard';
 
+interface MangaGridProps {
+  mangaData: Manga[];
+  numColumns: number;
+  listStyles?: ContentStyle;
+  isLoading?: boolean;
+  listEmptyComponent?: ReactElement;
+  onEndReached?: () => void;
+}
 const MangaGrid = ({
   mangaData,
   numColumns,
@@ -10,7 +19,7 @@ const MangaGrid = ({
   isLoading,
   listEmptyComponent,
   onEndReached,
-}) => {
+}: MangaGridProps) => {
   const placeholderData = useMemo(
     () =>
       new Array(30).fill(null).map((_, index) => ({
@@ -22,7 +31,7 @@ const MangaGrid = ({
     []
   );
 
-  const MangaText = ({ mangaTitle }) => {
+  const MangaText = ({ mangaTitle }: { mangaTitle: string }) => {
     return (
       <View className="absolute  bg-opacity-0 bottom-0 w-full justify-end py-1 bg-secondary-100">
         <Text
@@ -36,7 +45,7 @@ const MangaGrid = ({
   };
 
   const renderItem = useCallback(
-    ({ item }) => (
+    ({ item }: { item: Manga }) => (
       <View
         className={`w-full px-2 mt-3 h-[150] ${
           isLoading ? "animate-pulse" : ""

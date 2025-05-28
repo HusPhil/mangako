@@ -1,4 +1,4 @@
-import { MangaChapterPage } from "@/services/useGetChapterPages";
+import { MangaChapterPage } from "@/services/ResponseTypes";
 import {
   ReactNativeZoomableView,
   ZoomableViewEvent,
@@ -44,6 +44,8 @@ interface MangaReaderProps {
 const screenWidth = Dimensions.get("window").width;
 const screenHeight = Dimensions.get("window").height;
 
+const blurhash = "LJFFaY^-ENpJ.ANFROn%Ioa#xDoJ";
+
 const MangaZoomableReader = ({
   handleOnTouchStart,
   handleOnTouchEnd,
@@ -70,9 +72,9 @@ const MangaZoomableReader = ({
           aspectRatio: item.pageWidth / item.pageHeight,
         }}
         contentFit="contain" // This makes the image scale to fit inside width & height without cropping
-        recyclingKey={item.pageId}
+        recyclingKey={item.pageId}  
         allowDownscaling={false}
-        placeholder="loading the image yet"
+        placeholder={{blurhash}}
         onError={(error) => {
           console.error("CHAPTER PAGE ERROR: " + error.error);
         }}

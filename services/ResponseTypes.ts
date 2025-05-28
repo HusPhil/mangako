@@ -1,18 +1,27 @@
 export interface Manga {
-    mangaId: string;
-    mangaTitle: string;
-    mangaUrl: string;
-    mangaCover: string;
-  }
-  
+  mangaId: string;
+  mangaTitle: string;
+  mangaUrl: string;
+  mangaCover: string;
+}
+
+
+export interface MangaChapterPage {
+  pageId: string;
+  pageUrl: string;
+  pageImageUrl: string;
+  pageHeight: number;
+  pageWidth: number;
+}
+
 export interface LatestMangaListResponse {
-source: string;
-latest_manga: Manga[];
+  source: string;
+  latest_manga: Manga[];
 }
 
 export interface PopularMangaListResponse {
-source: string;
-popular_manga: Manga[];
+  source: string;
+  popular_manga: Manga[];
 }
 
 export interface MangaDetails {
@@ -36,8 +45,7 @@ export interface MangaInfoResponse {
   mangaChapters: MangaChapter[];
 }
 
-
 export interface MangaSearchResponse {
-    source: string;
-    results: Manga[];
+  source: string;
+  results: Manga[];
 }

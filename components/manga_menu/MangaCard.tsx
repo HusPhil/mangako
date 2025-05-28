@@ -2,6 +2,17 @@ import { ImageBackground } from "expo-image";
 import { router } from "expo-router";
 import { TouchableOpacity, View } from "react-native";
 
+interface MangaCardProps {
+  mangaId: string;
+  mangaUrl: string;
+  mangaTitle: string; 
+  mangaCover: string;
+  children: React.ReactNode;
+  containerStyles?: string;
+  coverStyles?: string;
+  autoload?: boolean;
+  disabled?: boolean;
+}
 
 const MangaCard = ({
   mangaId,
@@ -10,26 +21,20 @@ const MangaCard = ({
   coverStyles,
   mangaTitle,
   mangaCover,
-  mangaDetails,
   autoload,
   children,
   disabled,
-}) => {
+}: MangaCardProps) => {
   const handlePress = () => {
-    
-    if (!mangaDetails) {
-      
-      const query = new URLSearchParams({
-        mangaCover: mangaCover ?? "",
-        mangaTitle: mangaTitle ?? "",
-        mangaUrl: mangaUrl ?? "NONE",
-      }).toString();
+    const query = new URLSearchParams({
+      mangaCover: mangaCover ?? "",
+      mangaTitle: mangaTitle ?? "",
+      mangaUrl: mangaUrl ?? "NONE",
+    }).toString();
 
-      router.push(
-        `/manga/${mangaId}?${query}`
-      );
-      
-    }
+    router.push(
+      `/manga/${mangaId}?${query}`
+    );
   };
 
   const source = autoload ? null : mangaCover;

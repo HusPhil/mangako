@@ -1,14 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { axiosInstance, BASE_URL } from "./axios/axiosInstance";
+import { MangaChapterPage } from "./ResponseTypes";
 
 // Schema for a single manga chapter page
-export interface MangaChapterPage {
-  pageId: string;
-  pageUrl: string;
-  pageImageUrl: string;
-  pageHeight: number;
-  pageWidth: number;
-}
 
 // Fetcher function that calls your backend endpoint
 const fetchChapterPages = async (source: string, url: string): Promise<MangaChapterPage[]> => {

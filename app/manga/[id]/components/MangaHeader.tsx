@@ -1,3 +1,4 @@
+import { useMangaList } from '@/services/manga_list/useMangaList';
 import { Image } from 'expo-image';
 import { BookOpen, CopyPlus, Trash2 } from 'lucide-react-native';
 import React, { useState } from 'react';
@@ -40,13 +41,23 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
 }) => {
   const imageWidth = width * 0.3;
   const imageHeight = imageWidth * 1.5;
-  const [isFavorite, setIsFavorite] = useState(false);
+  
+  const { addToMangaFavorites, isMangaFavorite } = useMangaList();
+  const [isFavorite, setIsFavorite] = useState(isMangaFavorite(mangaId));
 
   const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
+    console.log("toggleFavorite", mangaId);
+    addToMangaFavorites({
+      mangaId,
+      mangaTitle: mangaTitle || "",
+      mangaUrl: mangaUrl || "",
+      mangaCover: mangaCover || "",
+    });
+    setIsFavorite(isMangaFavorite(mangaId));
   };
 
   return (
+    
     <View className="px-4 rounded-lg shadow-md mt-2 mb-4" pointerEvents={isError ? 'none' : 'auto'}>
       <View className="flex-row">
     
