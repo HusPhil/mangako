@@ -29,6 +29,7 @@ export function useMangaList() {
   };
 
   const addTab = async (name: string) => {
+    console.log("addTab", name);
     const normalizedName = name.trim().toLowerCase();
   
     const tabExists = mangaList.tabs.some(
@@ -50,6 +51,7 @@ export function useMangaList() {
     const updated = { ...mangaList, tabs: [...mangaList.tabs, newTab] };
     await saveMangaList(updated);
     setMangaList(updated);
+    console.log("updated", updated);
   };
   
 
@@ -74,20 +76,23 @@ export function useMangaList() {
     const favoritesTab = mangaList.tabs.find((tab) => tab.id === "favorites");
     
     if (!favoritesTab) {
-      await addTab("favorites");
+      const newTab: Tab = {
+        id: "favorites",
+        name: "Favorites",
+        order: mangaList.tabs.length,
+        mangaIds: [manga.mangaId],
+      };
+    
+      const updated: MangaList = {
+        tabs: [...mangaList.tabs, newTab],
+        manga: mangaExists ? mangaList.manga : { ...mangaList.manga, [manga.mangaId]: manga },
+      };
+      await saveMangaList(updated);
+      setMangaList(updated);
     }
-
-    const updatedTabs = mangaList.tabs.map((tab) =>
-      tab.id === favoritesTab?.id
-        ? { ...tab, mangaIds: [...new Set([...tab.mangaIds, manga.mangaId])] }
-        : tab
-    );
-    const updated: MangaList = {
-      tabs: updatedTabs,
-      manga: mangaExists ? mangaList.manga : { ...mangaList.manga, [manga.mangaId]: manga },
-    };
-    await saveMangaList(updated);
-    setMangaList(updated);
+    else {
+      await addMangaToTab(favoritesTab.id, manga);
+    }
   };
 
   const isMangaFavorite = (mangaId: string) => {
@@ -127,8 +132,9 @@ export function useMangaList() {
   };
 
   const renameTab = async (tabId: string, newName: string) => {
+    const normalizedName = newName.trim().toLowerCase();
     const updatedTabs = mangaList.tabs.map((tab) =>
-      tab.id === tabId ? { ...tab, name: newName } : tab
+      tab.id === tabId ? { ...tab, name: newName, id: normalizedName } : tab
     );
     const updated: MangaList = {
       tabs: updatedTabs,
