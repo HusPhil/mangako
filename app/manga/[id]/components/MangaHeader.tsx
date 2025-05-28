@@ -19,6 +19,7 @@ interface MangaHeaderProps {
   hasStartedReading: boolean;
   numberOfReadChapters: number;
   chapterCount: number;
+  onShowModalAddMangaToList: () => void;
   onReadingResume: () => void;
   onClearCache?: () => void;
 }
@@ -33,17 +34,15 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
   isError,
   hasStartedReading,
   numberOfReadChapters,
-  onReadingResume,
   chapterCount,
+  onShowModalAddMangaToList,
+  onReadingResume,
   onClearCache,
 
 }) => {
   const imageWidth = width * 0.3;
   const imageHeight = imageWidth * 1.5;
   
-  const handleShowAddToMangaListModal = () => {
-    console.log("handleShowAddToMangaListModal", mangaId);
-  };
 
   return (
     
@@ -99,7 +98,7 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={handleShowAddToMangaListModal}
+              onPress={onShowModalAddMangaToList}
               className="w-10 h-10 items-center justify-center bg-gray-200 rounded-lg"
             >
               <CopyPlus
@@ -131,7 +130,7 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
             </View>
           </View>
         </View>
-    
+        
       </View>
     </View>
   );

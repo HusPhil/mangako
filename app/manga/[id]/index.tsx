@@ -1,9 +1,14 @@
 import HorizontalRule from '@/components/HorizontalRule';
+import ModalMangaTabsEditor from '@/components/manga_home/ModalMangaTabsEditor';
+import ModalPopup from '@/components/modal/ModalPopup';
 import { colors } from '@/constants';
+import { Manga } from '@/services/ResponseTypes';
 import { saveMangaData } from '@/services/cache/mangaCacheUtils';
 import { useLastRead } from '@/services/cache/useLastRead';
 import { useReadChapters } from '@/services/cache/useReadChapters';
+import { Tab } from '@/services/manga_list/types';
 import { useMangaList } from '@/services/manga_list/useMangaList';
+import useMangaTabsEditor from '@/services/manga_list/useMangaTabsEditor';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -57,11 +62,12 @@ const MangaInfoScreen = () => {
 
 	const { loadLastRead, hasStartedReading } = useLastRead(mangaId!);
 
-	// const [numberOfReadChapters, setNumberOfReadChapters] = useState<number>(readChapters.length);
-	// const { data: mangaInfo, isLoading: isMangaInfoLoading, error: errorData } = useGetMangaInfo("mangakakalot", mangaUrl!);
+  const { addToMangaFavorites, checkIfMangaIsFavorite, removeMangaFromTab, mangaList, getMangaListings } =
+  useMangaList();
+
+  const { isModalVisible, setIsModalVisible } = useMangaTabsEditor();
 
 	const handleRefresh = async () => {
-		// setTimeout(() => setIsLoading(false), 1000); // Simulated loading
 		await clearReadChapters();
 	};
 
@@ -119,6 +125,11 @@ const MangaInfoScreen = () => {
 		router.push(`/manga/${mangaId}/${chapterId}?${query}`);
 	};
 
+  const handleSaveMangaListings = (mangaListings: Tab[]) => {
+    console.log('Manga listings:', mangaListings);
+    setIsModalVisible(false);
+  }
+
 	return (
 		<SafeAreaView className="h-full w-full bg-primary">
 			<StatusBar
@@ -131,11 +142,10 @@ const MangaInfoScreen = () => {
 					mangaTitle: mangaTitle || '',
 					mangaUrl: mangaUrl || '',
 					mangaCover: mangaCover || '',
+					checkIfMangaIsFavorite,
+					addToMangaFavorites,
+					removeMangaFromTab,
 				})}
-				{/* {!isMangaDetailsLoading && (
-          // <Text>{mangaDetails?.mangaDescription}</Text>
-        )} */}
-
 				<MangaHeader
 					isError={errorData !== null}
 					mangaCover={mangaCover}
@@ -150,6 +160,7 @@ const MangaInfoScreen = () => {
 					hasStartedReading={hasStartedReading}
 					numberOfReadChapters={readChapters.length}
 					chapterCount={mangaInfo?.mangaChapters.length || 0}
+					onShowModalAddMangaToList={() => setIsModalVisible(true)}
 					onReadingResume={handleReadingResume}
 					onClearCache={handleClearMangaCache}
 				/>
@@ -284,6 +295,24 @@ const MangaInfoScreen = () => {
 								)}
 							</View>
 						)}
+						<ModalPopup
+							visible={isModalVisible}
+							handleClose={() => {}}
+							otherStyles={{
+								backgroundColor: 'transparent',
+								alignSelf: 'center',
+							}}
+						>
+							<View className="h-full w-full justify-center items-center px-3 bg-transparent self-center">
+                <ModalMangaTabsEditor
+                  mangaId={mangaId || ''}
+                  mangaListTabs={mangaList.tabs}
+                  findMangaListings={getMangaListings}
+                  onClose={() => setIsModalVisible(false)}
+                  onSaveMangaListings={handleSaveMangaListings}
+                />
+              </View>
+						</ModalPopup>
 					</View>
 				)}
 			</View>
@@ -298,6 +327,9 @@ interface RenderHeaderProps {
 	mangaTitle: string;
 	mangaUrl: string;
 	mangaCover: string;
+  checkIfMangaIsFavorite: (mangaId: string) => Promise<boolean>;
+  addToMangaFavorites: (manga: Manga) => Promise<void>;
+  removeMangaFromTab: (tabName: string, mangaId: string) => Promise<void>;
 }
 
 const renderHeader = ({
@@ -305,72 +337,89 @@ const renderHeader = ({
 	mangaTitle,
 	mangaUrl,
 	mangaCover,
+  checkIfMangaIsFavorite,
+  addToMangaFavorites,
+  removeMangaFromTab,
 }: RenderHeaderProps) => {
 	const handleBackPress = () => {
 		router.back();
 	};
 
-  const { addToMangaFavorites, checkIfMangaIsFavorite, removeMangaFromTab } = useMangaList();
-  const [isFavorite, setIsFavorite] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+	const [isFavorite, setIsFavorite] = useState<boolean>(false);
+	const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    const checkFavorite = async () => {
-      const isFav = await checkIfMangaIsFavorite(mangaId);
-      setIsFavorite(isFav);
-      setIsLoading(false);
-    };
-    setIsLoading(true);
-    checkFavorite();
-  }, [mangaId]);
+	useEffect(() => {
+		const checkFavorite = async () => {
+			const isFav = await checkIfMangaIsFavorite(mangaId);
+			setIsFavorite(isFav);
+			setIsLoading(false);
+		};
+		setIsLoading(true);
+		checkFavorite();
+	}, [mangaId]);
 
 	const handleAddToFavorites = async () => {
 		console.log('addToFavorites', mangaId);
-    if(isFavorite) {
-      await removeMangaFromTab('favorites', mangaId);
-      setIsFavorite(false);
-    }
-    else {
-      await addToMangaFavorites({mangaId, mangaTitle, mangaUrl, mangaCover});
-      setIsFavorite(true);
-    }
+		if (isFavorite) {
+			await removeMangaFromTab('favorites', mangaId);
+			setIsFavorite(false);
+		} else {
+			await addToMangaFavorites({
+				mangaId,
+				mangaTitle,
+				mangaUrl,
+				mangaCover,
+			});
+			setIsFavorite(true);
+		}
 	};
 
 	return (
 		<>
-      {!isLoading && (
-        <View className="bg-primary">
-        <View className="flex-row justify-between items-center pt-3 mb-5 border-b border-gray-300 mx-4 rounded-lg">
-          <TouchableOpacity
-            onPress={handleBackPress}
-            className="p-3 pr-5"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="arrow-back" size={26} color="white" />
-          </TouchableOpacity>
-  
-          <View className="flex-1">
-            <Text className="text-white text-lg font-semibold line-clamp-1">
-              {mangaTitle}
-            </Text>
-          </View>
-  
-          <View className="flex-row items-center">
-            <TouchableOpacity
-              className="p-3 mr-1"
-              onPress={handleAddToFavorites}
-            >
-              <Ionicons
-                name={isFavorite ? "heart" : "heart-outline"}
-                size={24}
-                color="white"
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-      )}
-    </>
+			{!isLoading && (
+				<View className="bg-primary">
+					<View className="flex-row justify-between items-center pt-3 mb-5 border-b border-gray-300 mx-4 rounded-lg">
+						<TouchableOpacity
+							onPress={handleBackPress}
+							className="p-3 pr-5"
+							hitSlop={{
+								top: 10,
+								bottom: 10,
+								left: 10,
+								right: 10,
+							}}
+						>
+							<Ionicons
+								name="arrow-back"
+								size={26}
+								color="white"
+							/>
+						</TouchableOpacity>
+
+						<View className="flex-1">
+							<Text className="text-white text-lg font-semibold line-clamp-1">
+								{mangaTitle}
+							</Text>
+						</View>
+
+						<View className="flex-row items-center">
+							<TouchableOpacity
+								className="p-3 mr-1"
+								onPress={handleAddToFavorites}
+							>
+								<Ionicons
+									name={
+										isFavorite ? 'heart' : 'heart-outline'
+									}
+									size={24}
+									color="white"
+								/>
+							</TouchableOpacity>
+						</View>
+					</View>
+				</View>
+			)}
+		</>
 	);
 };
 

@@ -74,6 +74,7 @@ export function useMangaList() {
     const updatedTabs = mangaList.tabs.map((tab) =>
       tab.id === tabId ? { ...tab, mangaIds: tab.mangaIds.filter((id) => id !== mangaId) } : tab
     );
+    console.log("Manga list", mangaList);
     await saveMangaList({ ...mangaList, tabs: updatedTabs });
     setMangaList({ ...mangaList, tabs: updatedTabs });
   };
@@ -154,10 +155,18 @@ export function useMangaList() {
     setMangaList(updated);
   };
 
+
+  const getMangaListings = async (mangaId: string) => {
+    const currentMangaList = await readMangaListFile();
+    if (!currentMangaList) return [];
+    return currentMangaList.tabs.filter((tab) => tab.mangaIds.includes(mangaId));
+  };
+
   
   return {
     mangaList,
     isReady,
+    getMangaListings,
     checkIfMangaIsFavorite,
     addTab,
     addMangaToTab,
