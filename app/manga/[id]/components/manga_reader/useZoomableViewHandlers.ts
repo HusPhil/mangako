@@ -29,6 +29,12 @@ const useZoomableViewHandlers = ({
   horizontal
 }: UseZoomableViewHandlersProps) => {
 
+  const handleOnZoomEnd = (event: GestureResponderEvent, gestureState: PanResponderGestureState, zoomableViewEventObject: ZoomableViewEvent) => {
+    if(zoomableViewEventObject.zoomLevel === 1){
+      zoomableViewRef.current?.zoomTo(1, { x: 0, y: 0 });
+    }
+  }
+
   const handleOnTransform = ({ zoomLevel }: { zoomLevel: number }) => {
     if (zoomLevel === 1) setPanEnabled(false);
     else setPanEnabled(true);
@@ -88,6 +94,7 @@ const useZoomableViewHandlers = ({
   };
 
   return {
+    handleOnZoomEnd,
     handleOnTransform,
     handleOnDoubleTapAfter,
     handleOnShiftingEnd,

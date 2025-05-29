@@ -27,8 +27,7 @@ interface MangaReaderProps {
 	currentPage: number;
 	onSingleTap: () => void;
 	onDoubleTap: () => void;
-	handleOnTouchStart: (event: GestureResponderEvent) => void;
-	handleOnTouchEnd: (event: GestureResponderEvent) => void;
+	handleOnZoomEnd: (event: GestureResponderEvent, gestureState: PanResponderGestureState, zoomableViewEventObject: ZoomableViewEvent) => void;
 	handleOnTransform: (zoomableViewEventObject: ZoomableViewEvent) => void;
 	handleOnDoubleTapAfter: (event: GestureResponderEvent) => void;
 	handleOnStartShouldSetPanResponderCapture: (
@@ -61,9 +60,8 @@ const MangaZoomableReader = ({
 	currentPage,
 	onSingleTap,
 	onDoubleTap,
-	handleOnTouchStart,
-	handleOnTouchEnd,
 	handleOnStartShouldSetPanResponderCapture,
+	handleOnZoomEnd,
 	handleOnTransform,
 	handleOnDoubleTapAfter,
 	handleOnShiftingEnd,
@@ -125,7 +123,10 @@ const MangaZoomableReader = ({
 		[handleScrollSingleTap, handleScrollDoubleTap, handleScrollLongPress]
 	  );
 	
-	
+
+	const getMangaReaderFlashListKey = () => {
+		return horizontal ? 'horizontal, inverted: ' + inverted : 'vertical, inverted: ' + inverted;
+	}
 
 	return (
 		<GestureHandlerRootView style={{ flex: 1 }}>
@@ -140,11 +141,7 @@ const MangaZoomableReader = ({
 			contentWidth={screenWidth}
 			contentHeight={screenHeight}
 			bindToBorders
-			onZoomEnd={(e,g,z)=>{
-				if(z.zoomLevel === 1){
-					zoomableViewRef.current?.zoomTo(1, { x: 0, y: 0 });
-				}
-			}}
+			onZoomEnd={handleOnZoomEnd}
 			onLongPress={handleScrollLongPress}
 			onSingleTap={handleScrollSingleTap}
 			doubleTapZoomToCenter={false}
@@ -156,15 +153,15 @@ const MangaZoomableReader = ({
 			}
 		>
 			<FlashList
-			
 				className="w-screen h-screen"
+				ref={flashListRef}
 				data={pages}
+				key={getMangaReaderFlashListKey()}
 				initialScrollIndex={currentPage}
 				keyExtractor={(item) => item.pageId}
 				renderItem={renderItem}
 				showsHorizontalScrollIndicator={false}
 				pointerEvents={panEnabled ? 'none' : 'auto'}
-				ref={flashListRef}
 				estimatedItemSize={horizontal ? screenWidth : screenHeight}
 				onViewableItemsChanged={handleViewableItemsChanged}
 				viewabilityConfig={viewabilityConfig}
@@ -173,11 +170,6 @@ const MangaZoomableReader = ({
 				horizontal={horizontal}
 				inverted={inverted}
 				renderScrollComponent={MangaReaderScrollComponent}
-				onEndReached={() => {
-					// Snackbar.show({
-					//     text: "End reached",
-					// });
-				}}
 			/>
 		</ReactNativeZoomableView>
 		</GestureHandlerRootView>
