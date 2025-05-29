@@ -18,7 +18,6 @@ export const useLastRead = (mangaId: string) => {
     lastRead: MangaLastRead
   ): Promise<void> => {
     const existingData = await loadMangaData(mangaId) || {};
-    console.log("Existing data:", existingData);
     const updatedData = {
       ...existingData,
       lastRead,

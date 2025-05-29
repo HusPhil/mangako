@@ -37,7 +37,7 @@ const useZoomableViewHandlers = ({
 
   const handleOnDoubleTapAfter = () => {
     if (currentZoomLevel.current > 1) {
-      zoomableViewRef.current?.zoomTo(1);
+      zoomableViewRef.current?.zoomTo(1, { x: 0, y: 0 });
     }
   };
 

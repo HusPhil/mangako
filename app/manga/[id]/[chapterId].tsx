@@ -1,7 +1,7 @@
 import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
 import { FlashList } from "@shopify/flash-list";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, Text, View, ViewToken } from "react-native";
 
 import { ReaderMode } from "@/services/cache/types";
@@ -119,18 +119,18 @@ const MangaReaderScreen = () => {
     horizontal: readingMode.value.horizontal,
   });
 
-  const onDoubleTap = () => {
+  const onDoubleTap = useCallback(() => {
     if (currentZoomLevel.current <= 1) {
       zoomableViewRef?.current?.zoomBy(0.5);
       return;
     } else {
       zoomableViewRef?.current?.zoomTo(1, { x: 0, y: 0 });
     }
-  };
+  }, [])
 
-  const onTap = () => {
+  const onTap = useCallback(() => {
     setShowOptions(true);
-  };
+  }, []);
 
   const { handleOnTouchStart, handleOnTouchEnd } = useReaderWrapperHandler({
     onDoubleTap,
@@ -145,10 +145,12 @@ const MangaReaderScreen = () => {
     // Update the current page reference
     readerCurrentPage.current = currentPageNum;
 
-    // updateLastRead(chapterId as string, currentPageNum);
+    updateLastRead(mangaId as string, {
+      chapterId: chapterId as string,
+      chapterUrl: chapterUrl as string,
+      page: currentPageNum,
+    });
 
-    // Log the current page for debugging
-    console.log(`Current page: ${currentPageNum + 1} of ${pages?.length || 0}`);
   };
 
   const handleViewableItemsChanged = async ({
@@ -178,15 +180,6 @@ const MangaReaderScreen = () => {
     setShowOptions(false);
   };
 
-  const handleToggleInverted = () => {
-    // Toggle inverted mode
-    updateReadingMode({...readingMode, value: {...readingMode.value, inverted: !readingMode.value.inverted}});
-    // updateOptions({ inverted: !invertedMode });
-    
-    // Close options sheet
-    setShowOptions(false);
-  };
-
   return (
     <View className="h-full w-full bg-black">
       {isLoading ? (
@@ -206,12 +199,8 @@ const MangaReaderScreen = () => {
             horizontal={readingMode.value.horizontal}
             inverted={readingMode.value.inverted}
 
-            onSingleTap={() => {
-              console.log("Single tap");
-            }}
-            onDoubleTap={() => {
-              console.log("Double tap");
-            }}
+            onSingleTap={onTap}
+            onDoubleTap={onDoubleTap}
             
             handleOnTouchStart={handleOnTouchStart}
             handleOnTouchEnd={handleOnTouchEnd}

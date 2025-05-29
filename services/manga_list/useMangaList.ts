@@ -27,8 +27,6 @@ export function useMangaList() {
         else {
           
         }
-        console.log("mangalistTabs", data?.tabs);
-        console.log("mangalistManga", data?.manga);
         setIsReady(true);
       })();
     }, [])
