@@ -7,6 +7,8 @@ import { MangaLastRead } from "./types";
 
 export const useLastRead = (mangaId: string) => {
   const [hasStartedReading, setHasStartedReading] = useState<boolean>(false);
+  const [lastRead, setLastRead] = useState<MangaLastRead | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const loadLastRead = useCallback(async () => {
     const data = await loadMangaData(mangaId);
@@ -27,16 +29,22 @@ export const useLastRead = (mangaId: string) => {
 
   useFocusEffect(
     useCallback(() => {
+      setIsLoading(true);
       loadLastRead().then((data) => {
         if (data) {
+          console.log('Last read data:', data);
+          setLastRead(data);
           setHasStartedReading(true);
         }
+        setIsLoading(false);
       });
     }, [loadLastRead])
   );
 
   return {
     hasStartedReading,
+    lastRead,
+    isLoading,
     loadLastRead,
     updateLastRead,
   };

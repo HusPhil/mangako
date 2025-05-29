@@ -1,6 +1,7 @@
 import { useReadChapters } from "@/services/cache/useReadChapters";
 import { MangaChapter } from "@/services/ResponseTypes";
 import { useGetMangaInfo } from "@/services/useGetMangaInfo";
+import { useChapterNavigationStore } from "@/stores/chapterNavigationStore";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 
@@ -18,12 +19,11 @@ export const useChaptersWithReadStatus = (mangaUrl: string, mangaId: string) => 
 
   const [chapters, setChapters] = useState<MangaChapter[]>([]);
   const [readChapters, setReadChapters] = useState<string[]>([]);
-
+  const setNavigationMap = useChapterNavigationStore((state) => state.setNavigationMap);
   // Update chapters initially when mangaInfo or readChapters are ready
   // Refresh read status on screen focus
   useFocusEffect(
     useCallback(() => {
-        
         if(!isMangaInfoLoading) {
             loadReadChapters().then((readChapters) => {
                 setReadChapters(readChapters);
@@ -31,6 +31,7 @@ export const useChaptersWithReadStatus = (mangaUrl: string, mangaId: string) => 
                     ...chapter,
                     isRead: readChapters.includes(chapter.chapterId) || false
                 })) ?? []);
+                setNavigationMap(mangaInfo?.chaptersNavigationMap || {});
             });
         }
     }, [isMangaInfoLoading])
@@ -38,7 +39,6 @@ export const useChaptersWithReadStatus = (mangaUrl: string, mangaId: string) => 
 
   return {
     chapters,
-    setChapters,
     readChapters,
     mangaInfo,
     isLoading: isMangaInfoLoading   ,

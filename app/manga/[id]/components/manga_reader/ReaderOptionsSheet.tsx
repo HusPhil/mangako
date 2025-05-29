@@ -22,6 +22,8 @@ interface ReaderOptionsSheetProps {
   onShow?: () => void;
   onNavigate: (mode: { mode: string; jumpIndex?: number }) => void;
   onToggleReadingMode: (readingMode: ReaderMode) => void;
+  onNavigateToNextChapter: () => void;
+  onNavigateToPrevChapter: () => void;
 }
 
 const ReaderOptionsSheet: React.FC<ReaderOptionsSheetProps> = ({
@@ -36,6 +38,8 @@ const ReaderOptionsSheet: React.FC<ReaderOptionsSheetProps> = ({
   onNavigate,
   onToggleReadingMode,
   flashListRef,
+  onNavigateToNextChapter,
+  onNavigateToPrevChapter,
 }) => {
   const [pageInput, setPageInput] = useState("");
   const [isChapterRead, setIsChapterRead] = useState(false);
@@ -175,6 +179,18 @@ const ReaderOptionsSheet: React.FC<ReaderOptionsSheetProps> = ({
               Mark Chapter as Read
             </Text>
           </TouchableOpacity>
+          <View className="flex-row justify-between items-center">
+            <TouchableOpacity onPress={onNavigateToPrevChapter}>
+              <Text className="text-white font-pregular text-center">
+                Prev Chapter
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onNavigateToNextChapter}>
+              <Text className="text-white font-pregular text-center">
+                Next Chapter
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
       {/* )} */}

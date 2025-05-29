@@ -40,7 +40,7 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
+        </Stack>
       {/* <View>
         <ReactQueryDevtools />
       </View> */}

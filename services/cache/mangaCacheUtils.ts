@@ -1,6 +1,6 @@
 // mangaCacheUtils.ts
 import * as FileSystem from 'expo-file-system';
-import { MangaCache, MangaOptions } from './types';
+import { MangaCache, MangaLastRead, MangaOptions } from './types';
 
 const CACHE_DIR = `${FileSystem.documentDirectory}manga_cache`;
 
@@ -25,12 +25,10 @@ export const loadMangaData = async (mangaId: string): Promise<MangaCache | null>
 };
 
 export const saveMangaData = async (mangaId: string, data: MangaCache) => {
-  console.log("Saving manga data:", data);
   await ensureMangaDir(mangaId);
   const path = getMangaDataPath(mangaId);
   await FileSystem.writeAsStringAsync(path, JSON.stringify(data));
 };
-
 
 export const updateMangaData = async (
   mangaId: string,
@@ -67,10 +65,6 @@ export const updateMangaData = async (
   await saveMangaData(mangaId, mergedData);
 };
 
-
-
-
-
 export const updateReadChapters = async (
   mangaId: string,
   newChapters: string[]
@@ -87,7 +81,6 @@ export const updateReadChapters = async (
 
   await saveMangaData(mangaId, updatedData);
 };
-
 
 export const updateMangaOptions = async (
   mangaId: string,
@@ -107,6 +100,37 @@ export const updateMangaOptions = async (
           }
         : existingData.options?.readingMode,
     },
+  };
+
+  await saveMangaData(mangaId, updatedData);
+};
+
+export const updateMangaLastRead = async (
+  mangaId: string,
+  newLastRead: Partial<MangaLastRead>
+): Promise<void> => {
+  const existingData = await loadMangaData(mangaId) || {};
+
+  // Only update if we have all required fields or can combine with existing data to make a valid MangaLastRead
+  const updatedData: MangaCache = {
+    ...existingData,
+    lastRead: newLastRead && (
+      // Either all required fields are present in newLastRead
+      (newLastRead.chapterId !== undefined && 
+       newLastRead.chapterUrl !== undefined && 
+       newLastRead.page !== undefined)
+      // Or we can combine with existing data to ensure all fields are present
+      || (existingData.lastRead && 
+          newLastRead.chapterId !== undefined && 
+          newLastRead.chapterUrl !== undefined && 
+          newLastRead.page !== undefined)
+    )
+      ? {
+          chapterId: newLastRead.chapterId || existingData.lastRead?.chapterId || '',
+          chapterUrl: newLastRead.chapterUrl || existingData.lastRead?.chapterUrl || '',
+          page: newLastRead.page ?? existingData.lastRead?.page ?? 0,
+        }
+      : existingData.lastRead,
   };
 
   await saveMangaData(mangaId, updatedData);

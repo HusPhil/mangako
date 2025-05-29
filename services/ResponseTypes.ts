@@ -40,10 +40,21 @@ export interface MangaChapter {
   isRead?: boolean;
 }
 
-export interface MangaInfoResponse {
-  mangaDetails: MangaDetails;
-  mangaChapters: MangaChapter[];
+export interface ChapterNavigation {
+  prev?: MangaChapter;
+  next?: MangaChapter;
 }
+
+export interface ChapterNavigationMap {
+  [chapterId: string]: ChapterNavigation;
+}
+
+export interface MangaInfoResponse {
+  mangaChapters: MangaChapter[];
+  mangaDetails: MangaDetails;
+  chaptersNavigationMap: ChapterNavigationMap;
+}
+
 
 export interface MangaSearchResponse {
   source: string;

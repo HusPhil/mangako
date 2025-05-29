@@ -7,17 +7,16 @@ export interface MangaLastRead {
 }
 
 export interface ReaderMode {
-  label: string; // Required string
+  label: string; 
   value: {
     inverted: boolean;
     horizontal: boolean;
   };
-  desc: string; // Required string
+  desc: string; 
 }
 
 export interface MangaOptions {
   readingMode?: ReaderMode;
-  // Add more options here in the future
 }
 
 export interface MangaCache {

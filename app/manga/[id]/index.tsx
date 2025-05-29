@@ -5,22 +5,21 @@ import { colors } from '@/constants';
 import { Manga } from '@/services/ResponseTypes';
 import { saveMangaData } from '@/services/cache/mangaCacheUtils';
 import { useLastRead } from '@/services/cache/useLastRead';
-import { useReadChapters } from '@/services/cache/useReadChapters';
 import { Tab } from '@/services/manga_list/types';
 import { useMangaList } from '@/services/manga_list/useMangaList';
 import useMangaTabsEditor from '@/services/manga_list/useMangaTabsEditor';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { router, useLocalSearchParams, useRouter } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StatusBar,
-  Text,
-  TouchableOpacity,
-  View,
+	ActivityIndicator,
+	Alert,
+	Pressable,
+	ScrollView,
+	StatusBar,
+	Text,
+	TouchableOpacity,
+	View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ChapterList from './components/ChapterList';
@@ -36,7 +35,6 @@ type LocalSearchParams = {
 };
 
 const MangaInfoScreen = () => {
-	const router = useRouter();
 	const {
 		id: mangaId,
 		mangaCover,
@@ -49,26 +47,29 @@ const MangaInfoScreen = () => {
 		'Details'
 	);
 
-	const { clearReadChapters } = useReadChapters(mangaId!);
-
 	const {
 		chapters,
 		isLoading: isMangaInfoLoading,
 		error: errorData,
 		mangaInfo,
-		setChapters,
 		readChapters,
 	} = useChaptersWithReadStatus(mangaUrl!, mangaId!);
 
-	const { loadLastRead, hasStartedReading } = useLastRead(mangaId!);
+	const { lastRead, hasStartedReading } = useLastRead(mangaId!);
+	const {
+		addToMangaFavorites,
+		checkIfMangaIsFavorite,
+		removeMangaFromTab,
+		mangaList,
+		getMangaListings,
+		updateMangaListings,
+	} = useMangaList();
 
-  const { addToMangaFavorites, checkIfMangaIsFavorite, removeMangaFromTab, mangaList, getMangaListings, updateMangaListings } =
-  useMangaList();
-
-  const { isModalVisible, setIsModalVisible } = useMangaTabsEditor();
+	const { isModalVisible, setIsModalVisible } = useMangaTabsEditor();
 
 	const handleRefresh = async () => {
-		await clearReadChapters();
+		console.log('Refreshing manga info...');
+		router.reload();
 	};
 
 	const handleSetLastReadChapterIndex = (index: number) => {
@@ -80,7 +81,6 @@ const MangaInfoScreen = () => {
 
 		if (!mangaId || chapters.length === 0) return;
 
-		const lastRead = await loadLastRead();
 		const fallbackChapter = chapters[chapters.length - 1];
 
 		const chapterId = lastRead?.chapterId ?? fallbackChapter.chapterId;
@@ -115,8 +115,6 @@ const MangaInfoScreen = () => {
 	};
 
 	const handleChapterPress = (chapterId: string, chapterUrl: string) => {
-		console.log('Chapter pressed:', chapterId);
-		console.log('Manga ID:', mangaId);
 		const query = new URLSearchParams({
 			chapterUrl: chapterUrl ?? '',
 		}).toString();
@@ -125,15 +123,18 @@ const MangaInfoScreen = () => {
 		router.push(`/manga/${mangaId}/${chapterId}?${query}`);
 	};
 
-  const handleSaveMangaListings = async (mangaListings: Tab[]) => {
-    await updateMangaListings( {
-      mangaId: mangaId!,
-      mangaTitle: mangaTitle!,
-      mangaUrl: mangaUrl!,
-      mangaCover: mangaCover!,
-    }, mangaListings);
-    setIsModalVisible(false);
-  }
+	const handleSaveMangaListings = async (mangaListings: Tab[]) => {
+		await updateMangaListings(
+			{
+				mangaId: mangaId!,
+				mangaTitle: mangaTitle!,
+				mangaUrl: mangaUrl!,
+				mangaCover: mangaCover!,
+			},
+			mangaListings
+		);
+		setIsModalVisible(false);
+	};
 
 	return (
 		<SafeAreaView className="h-full w-full bg-primary">
@@ -309,14 +310,16 @@ const MangaInfoScreen = () => {
 							}}
 						>
 							<View className="h-full w-full justify-center items-center px-3 bg-transparent self-center">
-                <ModalMangaTabsEditor
-                  mangaId={mangaId || ''}
-                  mangaListTabs={mangaList.tabs}
-                  findMangaListings={getMangaListings}
-                  onClose={() => setIsModalVisible(false)}
-                  onSaveMangaListings={handleSaveMangaListings}
-                />
-              </View>
+								<ModalMangaTabsEditor
+									mangaId={mangaId || ''}
+									mangaListTabs={mangaList.tabs}
+									findMangaListings={getMangaListings}
+									onClose={() => setIsModalVisible(false)}
+									onSaveMangaListings={
+										handleSaveMangaListings
+									}
+								/>
+							</View>
 						</ModalPopup>
 					</View>
 				)}
@@ -332,9 +335,9 @@ interface RenderHeaderProps {
 	mangaTitle: string;
 	mangaUrl: string;
 	mangaCover: string;
-  checkIfMangaIsFavorite: (mangaId: string) => Promise<boolean>;
-  addToMangaFavorites: (manga: Manga) => Promise<void>;
-  removeMangaFromTab: (tabName: string, mangaId: string) => Promise<void>;
+	checkIfMangaIsFavorite: (mangaId: string) => Promise<boolean>;
+	addToMangaFavorites: (manga: Manga) => Promise<void>;
+	removeMangaFromTab: (tabName: string, mangaId: string) => Promise<void>;
 }
 
 const renderHeader = ({
@@ -342,9 +345,9 @@ const renderHeader = ({
 	mangaTitle,
 	mangaUrl,
 	mangaCover,
-  checkIfMangaIsFavorite,
-  addToMangaFavorites,
-  removeMangaFromTab,
+	checkIfMangaIsFavorite,
+	addToMangaFavorites,
+	removeMangaFromTab,
 }: RenderHeaderProps) => {
 	const handleBackPress = () => {
 		router.back();

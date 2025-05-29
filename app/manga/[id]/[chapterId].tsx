@@ -1,9 +1,3 @@
-import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
-import { FlashList } from "@shopify/flash-list";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useRef, useState } from "react";
-import { ActivityIndicator, Text, View, ViewToken } from "react-native";
-
 import { ReaderMode } from "@/services/cache/types";
 import { useLastRead } from "@/services/cache/useLastRead";
 import { useReadingOptions } from "@/services/cache/useReadingOptions";
@@ -11,11 +5,17 @@ import { MangaChapterPage } from "@/services/ResponseTypes";
 import {
   useGetChapterPages,
 } from "@/services/useGetChapterPages";
+import { useChapterNavigationStore } from "@/stores/chapterNavigationStore";
+import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
+import { FlashList } from "@shopify/flash-list";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import debounce from "just-debounce-it";
+import React, { useCallback, useRef, useState } from "react";
+import { ActivityIndicator, Text, View, ViewToken } from "react-native";
 import ReaderOptionsSheet from "./components/manga_reader/ReaderOptionsSheet";
 import useReaderWrapperHandler from "./components/manga_reader/useReaderWrapperHandler";
 import useZoomableViewHandlers from "./components/manga_reader/useZoomableViewHandlers";
 import MangaZoomableReader from "./components/MangaZoomableReader";
-
 const MangaReaderScreen = () => {
   const router = useRouter();
   const { id: mangaId, chapterId, chapterUrl } = useLocalSearchParams();
@@ -25,6 +25,8 @@ const MangaReaderScreen = () => {
     isError,
     error,
   } = useGetChapterPages("mangakakalot", chapterUrl as string | undefined);
+
+  const navigationMap = useChapterNavigationStore((state) => state.navigationMap)
 
   const [panEnabled, setPanEnabled] = useState(false);
   const zoomableViewRef = useRef<ReactNativeZoomableView>(null);
@@ -137,19 +139,22 @@ const MangaReaderScreen = () => {
     onTap,
   });
 
-  const { updateLastRead } = useLastRead(mangaId as string);
+  const { updateLastRead, lastRead, isLoading: isLastReadLoading } = useLastRead(mangaId as string);
 
-  const onPageChange = (currentPageNum: number | null) => {
-    if (currentPageNum === null) return;
-
-    // Update the current page reference
+  const debouncedUpdateLastRead = useCallback(debounce((currentPageNum: number) => {
     readerCurrentPage.current = currentPageNum;
-
+    console.log("Updating last read for page:", currentPageNum);
     updateLastRead(mangaId as string, {
       chapterId: chapterId as string,
       chapterUrl: chapterUrl as string,
       page: currentPageNum,
     });
+  }, 300), [mangaId, chapterId, chapterUrl, updateLastRead]);
+
+  const onPageChange = (currentPageNum: number | null) => {
+    if (currentPageNum === null) return;
+    // Update the current page reference
+    debouncedUpdateLastRead(currentPageNum)
 
   };
 
@@ -180,6 +185,31 @@ const MangaReaderScreen = () => {
     setShowOptions(false);
   };
 
+  const handleNavigateToNextChapter = () => {
+    const nextChapterId = navigationMap[chapterId as string]?.next?.chapterId;
+    const nextChapterUrl = navigationMap[chapterId as string]?.next?.chapterUrl;
+
+    const query = new URLSearchParams({
+			chapterUrl: nextChapterUrl ?? '',
+		}).toString();
+
+		if (!mangaId) return;
+		router.replace(`/manga/${mangaId}/${nextChapterId}?${query}`);
+    setShowOptions(false);
+  }
+
+  const handleNavigateToPrevChapter = () => {
+    const prevChapterId = navigationMap[chapterId as string]?.prev?.chapterId;
+    const prevChapterUrl = navigationMap[chapterId as string]?.prev?.chapterUrl;
+
+    const query = new URLSearchParams({
+			chapterUrl: prevChapterUrl ?? '',
+		}).toString();
+
+		if (!mangaId) return;
+		router.replace(`/manga/${mangaId}/${prevChapterId}?${query}`);
+  }
+
   return (
     <View className="h-full w-full bg-black">
       {isLoading ? (
@@ -188,11 +218,11 @@ const MangaReaderScreen = () => {
         <MangaReaderError error={error} />
       ) : !pages || pages.length === 0 ? (
         <MangaReaderEmpty />
-      ) : (
+      ) : !isLastReadLoading && lastRead && (
         <View className="h-full w-full">
           <MangaZoomableReader
             pages={pages}
-            currentPage={readerCurrentPage.current}
+            currentPage={lastRead.page}
             flashListRef={flashListRef}
             zoomableViewRef={zoomableViewRef}
             panEnabled={panEnabled}
@@ -227,6 +257,8 @@ const MangaReaderScreen = () => {
             totalPages={pages.length}
             onNavigate={handleReaderNavigation}
             onToggleReadingMode={handleToggleReadingMode}
+            onNavigateToNextChapter={handleNavigateToNextChapter}
+            onNavigateToPrevChapter={handleNavigateToPrevChapter}
           />
         </View>
       )}
