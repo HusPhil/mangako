@@ -12,7 +12,13 @@ import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import debounce from 'just-debounce-it';
 import React, { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Text, View, ViewToken } from 'react-native';
+import {
+	ActivityIndicator,
+	StatusBar,
+	Text,
+	View,
+	ViewToken,
+} from 'react-native';
 import { Portal, Snackbar } from 'react-native-paper';
 import ReaderOptionsSheet from './components/manga_reader/ReaderOptionsSheet';
 import useZoomableViewHandlers from './components/manga_reader/useZoomableViewHandlers';
@@ -45,7 +51,12 @@ const MangaReaderScreen = () => {
 		mangaId as string
 	);
 
-	const { addEntryToReadingProgress, isReadingProgressLoading, readingProgress } = useReadingProgress(mangaId as string);
+
+	const {
+		addEntryToReadingProgress,
+		isReadingProgressLoading,
+		readingProgress,
+	} = useReadingProgress(mangaId as string);
 
 	const { markChapterAsRead } = useReadChapters(mangaId as string);
 
@@ -148,19 +159,23 @@ const MangaReaderScreen = () => {
 	}, []);
 
 	const onTap = useCallback(() => {
-		setShowOptions(true);	}, []);
-
+		setShowOptions(true);
+		StatusBar.setHidden(false);
+	}, []);
 
 	const debouncedUpdateLastRead = useCallback(
 		debounce((currentPageNum: number) => {
 			const lastPageUrl = pages?.[currentPageNum]?.pageUrl;
 			readerCurrentPage.current = currentPageNum;
 			console.log('Updating last read for page:', currentPageNum);
-			addEntryToReadingProgress({
-				chapterId: chapterId as string,
-				chapterUrl: chapterUrl as string,
-				page: currentPageNum
-			}, lastPageUrl ?? '')
+			addEntryToReadingProgress(
+				{
+					chapterId: chapterId as string,
+					chapterUrl: chapterUrl as string,
+					page: currentPageNum,
+				},
+				lastPageUrl ?? ''
+			);
 		}, 300),
 		[]
 	);
@@ -180,7 +195,7 @@ const MangaReaderScreen = () => {
 			const currentPageNum = readingMode.value.horizontal
 				? viewableItems[0].index
 				: viewableItems.splice(-1)[0].index;
-				
+
 			// call the callback func to update the ui back in the parent component
 			onPageChange(currentPageNum);
 
@@ -211,8 +226,8 @@ const MangaReaderScreen = () => {
 			chapterUrl: nextChapterUrl ?? '',
 		}).toString();
 
-		console.log('nextChapterId', nextChapterId)
-		console.log('nextChapterUrl', nextChapterUrl)
+		console.log('nextChapterId', nextChapterId);
+		console.log('nextChapterUrl', nextChapterUrl);
 
 		if (!mangaId) return;
 		router.replace(`/manga/${mangaId}/${nextChapterId}?${query}`);
@@ -233,9 +248,15 @@ const MangaReaderScreen = () => {
 		router.replace(`/manga/${mangaId}/${prevChapterId}?${query}`);
 	};
 
+	const handleCloseOptions = () => {
+		setShowOptions(false);
+		StatusBar.setHidden(true);
+	}
+
 	return (
 		<View className="h-full w-full bg-black">
-			{isLoading || isReadingProgressLoading? (
+			<StatusBar hidden/>
+			{isLoading || isReadingProgressLoading ? (
 				<MangaReaderLoader />
 			) : isError ? (
 				<MangaReaderError error={error} />
@@ -244,77 +265,77 @@ const MangaReaderScreen = () => {
 			) : (
 				<View className="h-full w-full">
 					<MangaZoomableReader
-							pages={pages}
-							currentPage={readingProgress?.progress[chapterId as string]?.lastPage ?? 0}
-							flashListRef={flashListRef}
-							zoomableViewRef={zoomableViewRef}
-							panEnabled={panEnabled}
-							horizontal={readingMode.value.horizontal}
-							inverted={readingMode.value.inverted}
-							onSingleTap={onTap}
-							onDoubleTap={onDoubleTap}
-							handleOnZoomEnd={handleOnZoomEnd}
-							handleViewableItemsChanged={
-								handleViewableItemsChanged
-							}
-							handleOnShiftingEnd={handleOnShiftingEnd}
-							handleOnTransform={handleOnTransform}
-							handleOnDoubleTapAfter={handleOnDoubleTapAfter}
-							handleOnStartShouldSetPanResponderCapture={
-								handleOnStartShouldSetPanResponderCapture
-							}
-						/>
-						<ReaderOptionsSheet
-							flashListRef={flashListRef}
-							visible={showOptions}
-							readingMode={readingMode}
-							onClose={() => setShowOptions(false)}
-							mangaId={mangaId as string}
-							chapterId={chapterId as string}
-							currentPage={readerCurrentPage.current}
-							totalPages={pages.length}
-							onNavigate={handleReaderNavigation}
-							onToggleReadingMode={handleToggleReadingMode}
-							onNavigateToNextChapter={
-								handleNavigateToNextChapter
-							}
-							onNavigateToPrevChapter={
-								handleNavigateToPrevChapter
-							}
-						/>
+						pages={pages}
+						currentPage={
+							readingProgress?.progress[chapterId as string]
+								?.lastPage ?? 0
+						}
+						flashListRef={flashListRef}
+						zoomableViewRef={zoomableViewRef}
+						panEnabled={panEnabled}
+						horizontal={readingMode.value.horizontal}
+						inverted={readingMode.value.inverted}
+						onSingleTap={onTap}
+						onDoubleTap={onDoubleTap}
+						handleOnZoomEnd={handleOnZoomEnd}
+						handleViewableItemsChanged={handleViewableItemsChanged}
+						handleOnShiftingEnd={handleOnShiftingEnd}
+						handleOnTransform={handleOnTransform}
+						handleOnDoubleTapAfter={handleOnDoubleTapAfter}
+						handleOnStartShouldSetPanResponderCapture={
+							handleOnStartShouldSetPanResponderCapture
+						}
+					/>
+					<ReaderOptionsSheet
+						flashListRef={flashListRef}
+						visible={showOptions}
+						readingMode={readingMode}
+						onClose={handleCloseOptions}
+						mangaId={mangaId as string}
+						chapterId={chapterId as string}
+						currentPage={readerCurrentPage.current}
+						totalPages={pages.length}
+						onNavigate={handleReaderNavigation}
+						onToggleReadingMode={handleToggleReadingMode}
+						onNavigateToNextChapter={handleNavigateToNextChapter}
+						onNavigateToPrevChapter={handleNavigateToPrevChapter}
+					/>
 
-						<Portal>
-							<Snackbar
-								style={{
-									backgroundColor: colors.primary.DEFAULT,
-								}}
-								icon={'close'}
-								onIconPress={() => {
-									setSnackbarVisible(false);
-								}}
-								visible={snackbarVisible}
-								duration={Snackbar.DURATION_LONG}
-								onDismiss={() => {
-									setSnackbarVisible(false);
-								}}
-                action={{
-                  label: 'Next',
-                  onPress: () => {
-                    handleNavigateToNextChapter();
-                  },
-                }}
-							>
-                <View className="flex-row items-center gap-2">
-                  <Ionicons name="information-circle" size={24} color="white" />
-                  <Text className="text-white font-pregular">
-                    End of chapter!
-                  </Text>
-                </View>
-							</Snackbar>
-						</Portal>
-					</View>
-				)
-			}
+					<Portal>
+						<Snackbar
+							style={{
+								backgroundColor: colors.primary.DEFAULT,
+							}}
+							icon={'close'}
+							onIconPress={() => {
+								setSnackbarVisible(false);
+							}}
+							visible={snackbarVisible}
+							duration={Snackbar.DURATION_LONG}
+							onDismiss={() => {
+								setSnackbarVisible(false);
+							}}
+							action={{
+								label: 'Next',
+								onPress: () => {
+									handleNavigateToNextChapter();
+								},
+							}}
+						>
+							<View className="flex-row items-center gap-2">
+								<Ionicons
+									name="information-circle"
+									size={24}
+									color="white"
+								/>
+								<Text className="text-white font-pregular">
+									End of chapter!
+								</Text>
+							</View>
+						</Snackbar>
+					</Portal>
+				</View>
+			)}
 		</View>
 	);
 };

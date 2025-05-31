@@ -9,6 +9,7 @@ import { Tab } from '@/services/manga_list/types';
 import { useMangaList } from '@/services/manga_list/useMangaList';
 import useMangaTabsEditor from '@/services/manga_list/useMangaTabsEditor';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import * as Haptic from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Book, BookOpen, X } from 'lucide-react-native';
@@ -23,13 +24,11 @@ import {
 	TouchableOpacity,
 	View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import ChapterList from './components/ChapterList';
 import MangaDetailsContent from './components/MangaDetailsContent';
 import MangaHeader from './components/MangaHeader';
 import useChapterSelection from './components/manga_reader/useChapterSelection';
 import { useChaptersWithReadStatus } from './components/manga_reader/useChaptersWithReadStatus';
-
 type LocalSearchParams = {
 	id?: string;
 	mangaCover?: string;
@@ -92,7 +91,15 @@ const MangaInfoScreen = () => {
 
 	const handleRefresh = async () => {
 		console.log('Refreshing manga info...');
-		router.reload();
+		const query = new URLSearchParams({
+			mangaCover: mangaCover ?? "",
+			mangaTitle: mangaTitle ?? "",
+			mangaUrl: mangaUrl ?? "NONE",
+		  }).toString();
+	  
+		router.replace(
+		`/manga/${mangaId}?${query}`
+		);
 	};
 
 	const handleSetLastReadChapterIndex = (index: number) => {
@@ -199,11 +206,8 @@ const MangaInfoScreen = () => {
 	};
 
 	return (
-		<SafeAreaView className="h-full w-full bg-primary">
-			<StatusBar
-				backgroundColor={'transparent'}
-				barStyle={'light-content'}
-			/>
+		<View className="h-full w-full bg-primary" style={{ paddingTop: Constants.statusBarHeight }}>
+			<StatusBar translucent hidden/>
 			<View className="h-full w-full">
 				{renderHeader({
 					mangaId: mangaId || '',
@@ -369,7 +373,7 @@ const MangaInfoScreen = () => {
 					</View>
 				)}
 			</View>
-		</SafeAreaView>
+		</View>
 	);
 };
 
@@ -516,7 +520,7 @@ const renderHeader = ({
 		<>
 			{!isLoading && (
 				<View className="bg-primary">
-					<View className="flex-row justify-between items-center pt-3 mb-5 border-b border-gray-300 mx-4 rounded-lg">
+					<View className="flex-row justify-between items-center mb-5 border-b border-gray-300 mx-4 rounded-lg">
 						<TouchableOpacity
 							onPress={handleBackPress}
 							className="p-3 pr-5"

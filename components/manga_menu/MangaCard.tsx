@@ -37,7 +37,6 @@ const MangaCard = ({
     );
   };
 
-  const source = autoload ? null : mangaCover;
 
   return (
     <TouchableOpacity

@@ -1,10 +1,10 @@
 import { colors } from "@/constants";
 import { MaterialIcons } from "@expo/vector-icons";
+import Constants from 'expo-constants';
 import { router } from "expo-router";
 import { useMemo, useRef, useState } from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Image, SafeAreaView, Text, TouchableOpacity, View } from "react-native";
 import { Portal, Snackbar } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
 import HorizontalRule from "../../components/HorizontalRule";
 import { MangaGrid, MangaSlide } from "../../components/manga_menu";
 import icons from "../../constants/icons";
@@ -12,7 +12,6 @@ import {
   useGetLatestMangaList,
   useGetPopularMangaList,
 } from "../../services/useGetMangaList";
-
 
 const BrowseTab = () => {
   // const [newestManga, setNewestManga] = useState([]);
@@ -83,7 +82,7 @@ const BrowseTab = () => {
   };
 
   return (
-    <SafeAreaView className="h-full w-full bg-primary">
+    <SafeAreaView className="flex-1 bg-primary" style={{ paddingTop: Constants.statusBarHeight }}>
       <View className="px-4 py-3 pt-4">
         <TouchableOpacity
           className="flex-row justify-between  bg-secondary-100 rounded-lg p-2"

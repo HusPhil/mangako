@@ -7,6 +7,7 @@ import ModalPopup from "@/components/modal/ModalPopup";
 import { Tab } from "@/services/manga_list/types";
 import { useMangaList } from "@/services/manga_list/useMangaList";
 import useMangaListModal from "@/services/manga_list/useMangaListModal";
+import Constants from 'expo-constants';
 import { SafeAreaView, View } from "react-native";
 
 const MangaListScreen = () => {
@@ -88,7 +89,7 @@ const MangaListScreen = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-primary">
+    <SafeAreaView className="flex-1 bg-primary" style={{ paddingTop: Constants.statusBarHeight }}>
       <MangaListHeader
         handleShowAddTab={handleShowModalAddTab}
         handleShowDeleteTab={handleShowModalDeleteTabs}

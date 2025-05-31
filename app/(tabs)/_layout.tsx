@@ -3,7 +3,7 @@ import { Tabs } from "expo-router";
 import React from "react";
 import {
   ImageSourcePropType,
-  StatusBar,
+  SafeAreaView,
   Text,
   View
 } from "react-native";
@@ -45,11 +45,7 @@ const TabIcon = ({ icon, color, name, focused }: TabIconProps) => {
 
 const TabsLayout = () => {
   return (
-    <>
-      <StatusBar
-        backgroundColor={colors.secondary.DEFAULT}
-        barStyle={"light-content"}
-      />
+    <SafeAreaView className="flex-1 bg-primary">
       <Tabs
         screenOptions={{
           tabBarShowLabel: false,
@@ -58,9 +54,11 @@ const TabsLayout = () => {
           tabBarStyle: {
             backgroundColor: colors.secondary.DEFAULT,
             borderTopWidth: 1,
-            borderTopColor: colors.accent[100],
-            height: 80,
+            borderColor: colors.accent[100],
+            height: 65,
           },
+          animation: 'shift',
+
         }}
       >
         <Tabs.Screen
@@ -78,6 +76,7 @@ const TabsLayout = () => {
             ),
           }}
         />
+         
         <Tabs.Screen
           name="browse"
           options={{
@@ -109,7 +108,7 @@ const TabsLayout = () => {
           }}
         /> */}
       </Tabs>
-    </>
+    </SafeAreaView>
   );
 };
 

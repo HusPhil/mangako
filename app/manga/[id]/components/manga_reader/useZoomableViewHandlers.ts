@@ -2,7 +2,10 @@ import {
   ReactNativeZoomableView,
   ZoomableViewEvent
 } from "@openspacelabs/react-native-zoomable-view";
-import { Dimensions, GestureResponderEvent, PanResponderGestureState } from "react-native";
+import * as NavigationBar from 'expo-navigation-bar';
+import { useEffect } from "react";
+import { Dimensions, GestureResponderEvent, PanResponderGestureState, StatusBar } from "react-native";
+
 
 interface UseZoomableViewHandlersProps {
   setPanEnabled: (panEnabled: boolean) => void,
@@ -92,6 +95,21 @@ const useZoomableViewHandlers = ({
     }
     return true;
   };
+
+
+  useEffect(() => {
+    const setUpNavigationBar = async () => {
+      await NavigationBar.setPositionAsync("absolute");
+      await NavigationBar.setVisibilityAsync("hidden");
+      await NavigationBar.setBehaviorAsync("overlay-swipe");
+      StatusBar.setHidden(true);
+    }
+    setUpNavigationBar();
+
+    return () => {
+      StatusBar.setHidden(false);
+    }
+  }, []);
 
   return {
     handleOnZoomEnd,
