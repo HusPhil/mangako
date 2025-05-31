@@ -1,7 +1,7 @@
 import { colors } from '@/constants';
 import { ReaderMode } from '@/services/cache/types';
-import { useLastRead } from '@/services/cache/useLastRead';
 import { useReadingOptions } from '@/services/cache/useReadingOptions';
+import useReadingProgress from '@/services/cache/useReadingProgress';
 import { MangaChapterPage } from '@/services/ResponseTypes';
 import { useGetChapterPages } from '@/services/useGetChapterPages';
 import { useChapterNavigationStore } from '@/stores/chapterNavigationStore';
@@ -43,6 +43,8 @@ const MangaReaderScreen = () => {
 	const { readingMode, updateReadingMode } = useReadingOptions(
 		mangaId as string
 	);
+
+	const { addEntryToReadingProgress } = useReadingProgress(mangaId as string);
 
 	const handleReaderNavigation = (navigationMode: {
 		mode: string;
@@ -143,26 +145,20 @@ const MangaReaderScreen = () => {
 	}, []);
 
 	const onTap = useCallback(() => {
-		setShowOptions(true);
-	}, []);
+		setShowOptions(true);	}, []);
 
-	const {
-		updateLastRead,
-		lastRead,
-		isLoading: isLastReadLoading,
-	} = useLastRead(mangaId as string);
 
 	const debouncedUpdateLastRead = useCallback(
 		debounce((currentPageNum: number) => {
 			readerCurrentPage.current = currentPageNum;
 			console.log('Updating last read for page:', currentPageNum);
-			updateLastRead(mangaId as string, {
-				chapterId: chapterId as string,
-				chapterUrl: chapterUrl as string,
-				page: currentPageNum,
-			});
+			// updateLastRead(mangaId as string, {
+			// 	chapterId: chapterId as string,
+			// 	chapterUrl: chapterUrl as string,
+			// 	page: currentPageNum,
+			// });
 		}, 300),
-		[mangaId, chapterId, chapterUrl, updateLastRead]
+		[]
 	);
 
 	const onPageChange = (currentPageNum: number | null) => {
@@ -238,9 +234,7 @@ const MangaReaderScreen = () => {
 				<MangaReaderError error={error} />
 			) : !pages || pages.length === 0 ? (
 				<MangaReaderEmpty />
-			) : (
-				!isLastReadLoading &&
-				lastRead && (
+			) : ((
 					<View className="h-full w-full">
 						<MangaZoomableReader
 							pages={pages}
@@ -263,9 +257,6 @@ const MangaReaderScreen = () => {
 								handleOnStartShouldSetPanResponderCapture
 							}
 						/>
-
-						{/* <Text>{JSON.stringify(lastRead)}</Text> */}
-
 						<ReaderOptionsSheet
 							flashListRef={flashListRef}
 							visible={showOptions}
