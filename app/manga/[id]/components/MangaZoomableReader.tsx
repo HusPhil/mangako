@@ -5,12 +5,11 @@ import {
 } from '@openspacelabs/react-native-zoomable-view';
 import { FlashList } from '@shopify/flash-list';
 import * as Haptics from 'expo-haptics';
-// import { Image } from 'expo-image';
+import { Image } from 'expo-image';
 import React, { useCallback } from 'react';
 import {
 	Dimensions,
 	GestureResponderEvent,
-	Image,
 	PanResponderGestureState,
 	ScrollViewProps,
 	View,
@@ -83,16 +82,16 @@ const MangaZoomableReader = ({
 					height: undefined,
 					aspectRatio: item.pageWidth / item.pageHeight,
 				}}
-				// contentFit="contain" // This makes the image scale to fit inside width & height without cropping
-				// recyclingKey={item.pageId}
-				// allowDownscaling={false}
+				contentFit="contain" // This makes the image scale to fit inside width & height without cropping
+				recyclingKey={item.pageId}
+				allowDownscaling={false}
 				onLoad={()=>{
 					console.log('onLoad');
 				}}
-				// placeholder={{ blurhash }}
-				// onError={(error) => {
-				// 	console.error('CHAPTER PAGE ERROR: ' + error.error);
-				// }}
+				placeholder={{ blurhash }}
+				onError={(error) => {
+					console.error('CHAPTER PAGE ERROR: ' + error.error);
+				}}
 			/>
 		</View>
 	);

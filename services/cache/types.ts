@@ -19,8 +19,19 @@ export interface MangaOptions {
   readingMode?: ReaderMode;
 }
 
+export interface MangaLastReadProgress {
+  lastRead: MangaLastRead;
+  progress: {
+    [chapterId: string]: {
+      lastPage: number;
+      lastPageUrl: string;
+    };
+  }
+}
+
 export interface MangaCache {
   lastRead?: MangaLastRead;
+  readingProgress?: MangaLastReadProgress;
   readChapters?: string[];
   options?: MangaOptions;
 }

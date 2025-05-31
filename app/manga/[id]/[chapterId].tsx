@@ -44,7 +44,7 @@ const MangaReaderScreen = () => {
 		mangaId as string
 	);
 
-	const { addEntryToReadingProgress } = useReadingProgress(mangaId as string);
+	const { addEntryToReadingProgress, isReadingProgressLoading, readingProgress } = useReadingProgress(mangaId as string);
 
 	const handleReaderNavigation = (navigationMode: {
 		mode: string;
@@ -150,13 +150,14 @@ const MangaReaderScreen = () => {
 
 	const debouncedUpdateLastRead = useCallback(
 		debounce((currentPageNum: number) => {
+			const lastPageUrl = pages?.[currentPageNum]?.pageUrl;
 			readerCurrentPage.current = currentPageNum;
 			console.log('Updating last read for page:', currentPageNum);
-			// updateLastRead(mangaId as string, {
-			// 	chapterId: chapterId as string,
-			// 	chapterUrl: chapterUrl as string,
-			// 	page: currentPageNum,
-			// });
+			addEntryToReadingProgress({
+				chapterId: chapterId as string,
+				chapterUrl: chapterUrl as string,
+				page: currentPageNum
+			}, lastPageUrl ?? '')
 		}, 300),
 		[]
 	);
@@ -207,6 +208,9 @@ const MangaReaderScreen = () => {
 			chapterUrl: nextChapterUrl ?? '',
 		}).toString();
 
+		console.log('nextChapterId', nextChapterId)
+		console.log('nextChapterUrl', nextChapterUrl)
+
 		if (!mangaId) return;
 		router.replace(`/manga/${mangaId}/${nextChapterId}?${query}`);
 		setShowOptions(false);
@@ -228,7 +232,7 @@ const MangaReaderScreen = () => {
 
 	return (
 		<View className="h-full w-full bg-black">
-			{isLoading ? (
+			{isLoading || isReadingProgressLoading? (
 				<MangaReaderLoader />
 			) : isError ? (
 				<MangaReaderError error={error} />
@@ -238,7 +242,7 @@ const MangaReaderScreen = () => {
 				<View className="h-full w-full">
 					<MangaZoomableReader
 							pages={pages}
-							currentPage={1}
+							currentPage={readingProgress?.progress[chapterId as string]?.lastPage ?? 0}
 							flashListRef={flashListRef}
 							zoomableViewRef={zoomableViewRef}
 							panEnabled={panEnabled}
@@ -308,7 +312,7 @@ const MangaReaderScreen = () => {
 						</Portal>
 					</View>
 				)
-			)}
+			}
 		</View>
 	);
 };

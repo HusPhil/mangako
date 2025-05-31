@@ -78,6 +78,7 @@ const ModalMangaTabsEditor = ({
     // setMangaListings(prevMangaListings);
   }
 
+
 	return (
 		<>
 			{!isLoading && (

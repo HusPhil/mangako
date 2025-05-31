@@ -42,7 +42,6 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
 }) => {
   const imageWidth = width * 0.3;
   const imageHeight = imageWidth * 1.5;
-  
 
   return (
     

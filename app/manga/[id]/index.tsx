@@ -4,7 +4,7 @@ import ModalPopup from '@/components/modal/ModalPopup';
 import { colors } from '@/constants';
 import { Manga } from '@/services/ResponseTypes';
 import { saveMangaData } from '@/services/cache/mangaCacheUtils';
-import { useLastRead } from '@/services/cache/useLastRead';
+import useReadingProgress from '@/services/cache/useReadingProgress';
 import { Tab } from '@/services/manga_list/types';
 import { useMangaList } from '@/services/manga_list/useMangaList';
 import useMangaTabsEditor from '@/services/manga_list/useMangaTabsEditor';
@@ -55,7 +55,6 @@ const MangaInfoScreen = () => {
 		readChapters,
 	} = useChaptersWithReadStatus(mangaUrl!, mangaId!);
 
-	const { lastRead, hasStartedReading } = useLastRead(mangaId!);
 	const {
 		addToMangaFavorites,
 		checkIfMangaIsFavorite,
@@ -64,6 +63,11 @@ const MangaInfoScreen = () => {
 		getMangaListings,
 		updateMangaListings,
 	} = useMangaList();
+
+	const { readingProgress, isReadingProgressLoading } = useReadingProgress(
+		mangaId!
+	);
+	console.log('readingProgress', readingProgress);
 
 	const { isModalVisible, setIsModalVisible } = useMangaTabsEditor();
 
@@ -83,9 +87,12 @@ const MangaInfoScreen = () => {
 
 		const fallbackChapter = chapters[chapters.length - 1];
 
-		const chapterId = lastRead?.chapterId ?? fallbackChapter.chapterId;
+		const chapterId =
+			readingProgress?.lastRead?.chapterId ?? fallbackChapter.chapterId;
 		const chapterUrl =
-			lastRead?.chapterUrl ?? fallbackChapter.chapterUrl ?? '';
+			readingProgress?.lastRead?.chapterUrl ??
+			fallbackChapter.chapterUrl ??
+			'';
 
 		const query = new URLSearchParams({ chapterUrl }).toString();
 		router.push(`/manga/${mangaId}/${chapterId}?${query}`);
@@ -163,7 +170,7 @@ const MangaInfoScreen = () => {
 						author: mangaInfo?.mangaDetails.mangaAuthor,
 						status: mangaInfo?.mangaDetails.mangaStatus,
 					}}
-					hasStartedReading={hasStartedReading}
+					hasStartedReading={readingProgress?.lastRead != null}
 					numberOfReadChapters={readChapters.length}
 					chapterCount={mangaInfo?.mangaChapters.length || 0}
 					onShowModalAddMangaToList={() => setIsModalVisible(true)}
@@ -171,7 +178,7 @@ const MangaInfoScreen = () => {
 					onClearCache={handleClearMangaCache}
 				/>
 
-				{isMangaInfoLoading ? (
+				{isMangaInfoLoading || isReadingProgressLoading ? (
 					<>
 						<HorizontalRule
 							displayText="Loading..."
@@ -258,7 +265,6 @@ const MangaInfoScreen = () => {
 												console.log('Mark as Read')
 											}
 										>
-												
 											<MaterialIcons
 												name="check-circle"
 												size={24}
