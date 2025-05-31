@@ -9,6 +9,7 @@ import { Tab } from '@/services/manga_list/types';
 import { useMangaList } from '@/services/manga_list/useMangaList';
 import useMangaTabsEditor from '@/services/manga_list/useMangaTabsEditor';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import * as Haptic from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -25,7 +26,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ChapterList from './components/ChapterList';
 import MangaDetailsContent from './components/MangaDetailsContent';
 import MangaHeader from './components/MangaHeader';
+import useChapterSelection from './components/manga_reader/useChapterSelection';
 import { useChaptersWithReadStatus } from './components/manga_reader/useChaptersWithReadStatus';
+
 
 type LocalSearchParams = {
 	id?: string;
@@ -49,6 +52,7 @@ const MangaInfoScreen = () => {
 
 	const {
 		chapters,
+		setChapters,
 		isLoading: isMangaInfoLoading,
 		error: errorData,
 		mangaInfo,
@@ -67,7 +71,19 @@ const MangaInfoScreen = () => {
 	const { readingProgress, isReadingProgressLoading } = useReadingProgress(
 		mangaId!
 	);
-	console.log('readingProgress', readingProgress);
+
+	const {
+		selectionModeOn,
+		selectedChaptersRef,
+		toggleSelectChapter,
+		turnOnSelectionMode,
+		turnOffSelectionMode,
+		registerChapterRef,
+		unregisterChapterRef,
+		selectAllChapters,
+		clearAllSelections,
+		getSelectedChapters,
+	} = useChapterSelection();
 
 	const { isModalVisible, setIsModalVisible } = useMangaTabsEditor();
 
@@ -122,12 +138,33 @@ const MangaInfoScreen = () => {
 	};
 
 	const handleChapterPress = (chapterId: string, chapterUrl: string) => {
+		if (selectionModeOn) {
+			toggleSelectChapter({
+				chapterId,
+				chapterUrl,
+				chapterTitle: '',
+				chapterTimeUploaded: '',
+			});
+			return;
+		}
+
 		const query = new URLSearchParams({
 			chapterUrl: chapterUrl ?? '',
 		}).toString();
 
 		if (!mangaId) return;
 		router.push(`/manga/${mangaId}/${chapterId}?${query}`);
+	};
+
+	const handleChapterLongPress = (chapterId: string, chapterUrl: string) => {
+		Haptic.impactAsync(Haptic.ImpactFeedbackStyle.Heavy);
+		toggleSelectChapter({
+			chapterId,
+			chapterUrl,
+			chapterTitle: '',
+			chapterTimeUploaded: '',
+		});
+		turnOnSelectionMode();
 	};
 
 	const handleSaveMangaListings = async (mangaListings: Tab[]) => {
@@ -141,6 +178,20 @@ const MangaInfoScreen = () => {
 			mangaListings
 		);
 		setIsModalVisible(false);
+	};
+
+	const handleSelectAllChapters = () => {
+		selectAllChapters(chapters);
+	};
+
+	const handleClearAllSelections = () => {
+		clearAllSelections();
+	};
+
+	const handleProcessSelected = () => {
+		const selectedChapterIds = getSelectedChapters();
+		console.log('Selected chapters:', selectedChapterIds);
+		// Process selected chapters here
 	};
 
 	return (
@@ -254,25 +305,22 @@ const MangaInfoScreen = () => {
 										handleSetLastReadChapterIndex
 									}
 									onChapterPress={handleChapterPress}
+									onChapterLongPress={handleChapterLongPress}
 									isListed={false}
 									numberOfReadChapters={readChapters.length}
+									selectionModeOn={selectionModeOn}
+									registerChapterRef={registerChapterRef}
+									unregisterChapterRef={unregisterChapterRef}
+									selectedChapters={selectedChaptersRef.current}
 								/>
-								{!false && (
+								{selectionModeOn && (
 									<View className="flex-row justify-around items-center px-2 my-3 bg-secondary-100 rounded-lg mx-4">
-										<TouchableOpacity
-											className="flex-1 items-center py-3"
-											onPress={() =>
-												console.log('Mark as Read')
-											}
-										>
+										<TouchableOpacity className="flex-1 items-center py-3">
 											<MaterialIcons
 												name="check-circle"
 												size={24}
 												color={colors.accent.DEFAULT}
 											/>
-											<Text className="text-white font-pregular text-sm mt-1">
-												Mark as Read
-											</Text>
 										</TouchableOpacity>
 
 										<TouchableOpacity
@@ -286,9 +334,6 @@ const MangaInfoScreen = () => {
 												size={24}
 												color={colors.accent.DEFAULT}
 											/>
-											<Text className="text-white font-pregular text-sm mt-1">
-												Download
-											</Text>
 										</TouchableOpacity>
 
 										<TouchableOpacity
@@ -300,9 +345,18 @@ const MangaInfoScreen = () => {
 												size={24}
 												color={colors.accent.DEFAULT}
 											/>
-											<Text className="text-white font-pregular text-sm mt-1">
-												Share
-											</Text>
+										</TouchableOpacity>
+										<TouchableOpacity
+											className="flex-1 items-center py-3"
+											onPress={() =>
+												turnOffSelectionMode()
+											}
+										>
+											<MaterialIcons
+												name="close"
+												size={24}
+												color={colors.accent.DEFAULT}
+											/>
 										</TouchableOpacity>
 									</View>
 								)}

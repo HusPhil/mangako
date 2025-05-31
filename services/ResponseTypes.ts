@@ -32,12 +32,16 @@ export interface MangaDetails {
   mangaAlternativeNames: string[];
 }
 
-export interface MangaChapter {
+export interface MangaChapter extends MangaChapterResponse {
+  isRead?: boolean;
+  isSelected?: boolean;
+}
+
+interface MangaChapterResponse {
   chapterId: string;
   chapterTitle: string;
   chapterUrl: string;
   chapterTimeUploaded: string;
-  isRead?: boolean;
 }
 
 export interface ChapterNavigation {

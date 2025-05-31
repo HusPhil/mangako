@@ -39,6 +39,7 @@ export const useChaptersWithReadStatus = (mangaUrl: string, mangaId: string) => 
 
   return {
     chapters,
+    setChapters,
     readChapters,
     mangaInfo,
     isLoading: isMangaInfoLoading   ,
