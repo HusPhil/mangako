@@ -5,11 +5,12 @@ import {
 } from '@openspacelabs/react-native-zoomable-view';
 import { FlashList } from '@shopify/flash-list';
 import * as Haptics from 'expo-haptics';
-import { Image } from 'expo-image';
+// import { Image } from 'expo-image';
 import React, { useCallback } from 'react';
 import {
 	Dimensions,
 	GestureResponderEvent,
+	Image,
 	PanResponderGestureState,
 	ScrollViewProps,
 	View,
@@ -70,19 +71,28 @@ const MangaZoomableReader = ({
 	const renderItem = ({ item }: { item: MangaChapterPage }) => (
 		<View className="flex-1 justify-center items-center">
 			<Image
-				source={{ uri: item.pageImageUrl }}
+				source={{ uri: item.pageImageUrl, headers: {
+					'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+					'Accept': 'image/*',
+					'Accept-Language': 'en-US,en;q=0.9',
+					'Referer': 'https://mangakakalot.com/',
+					
+				} }}
 				style={{
 					width: screenWidth,
 					height: undefined,
 					aspectRatio: item.pageWidth / item.pageHeight,
 				}}
-				contentFit="contain" // This makes the image scale to fit inside width & height without cropping
-				recyclingKey={item.pageId}
-				allowDownscaling={false}
-				placeholder={{ blurhash }}
-				onError={(error) => {
-					console.error('CHAPTER PAGE ERROR: ' + error.error);
+				// contentFit="contain" // This makes the image scale to fit inside width & height without cropping
+				// recyclingKey={item.pageId}
+				// allowDownscaling={false}
+				onLoad={()=>{
+					console.log('onLoad');
 				}}
+				// placeholder={{ blurhash }}
+				// onError={(error) => {
+				// 	console.error('CHAPTER PAGE ERROR: ' + error.error);
+				// }}
 			/>
 		</View>
 	);

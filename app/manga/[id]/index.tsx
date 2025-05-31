@@ -250,14 +250,15 @@ const MangaInfoScreen = () => {
 									isListed={false}
 									numberOfReadChapters={readChapters.length}
 								/>
-								{false && (
-									<View className="flex-row justify-around items-center px-2 py-3 bg-secondary-100 rounded-lg mx-4">
+								{!false && (
+									<View className="flex-row justify-around items-center px-2 my-3 bg-secondary-100 rounded-lg mx-4">
 										<TouchableOpacity
-											className="flex-1 items-center py-safe-or-3.5"
+											className="flex-1 items-center py-3"
 											onPress={() =>
 												console.log('Mark as Read')
 											}
 										>
+												
 											<MaterialIcons
 												name="check-circle"
 												size={24}
@@ -269,7 +270,7 @@ const MangaInfoScreen = () => {
 										</TouchableOpacity>
 
 										<TouchableOpacity
-											className="flex-1 items-center py-safe-or-3.5"
+											className="flex-1 items-center py-3"
 											onPress={() =>
 												console.log('Download')
 											}
@@ -285,7 +286,7 @@ const MangaInfoScreen = () => {
 										</TouchableOpacity>
 
 										<TouchableOpacity
-											className="flex-1 items-center py-safe-or-3.5"
+											className="flex-1 items-center py-3"
 											onPress={() => console.log('Share')}
 										>
 											<MaterialIcons

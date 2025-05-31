@@ -234,9 +234,9 @@ const MangaReaderScreen = () => {
 				<MangaReaderError error={error} />
 			) : !pages || pages.length === 0 ? (
 				<MangaReaderEmpty />
-			) : ((
-					<View className="h-full w-full">
-						<MangaZoomableReader
+			) : (
+				<View className="h-full w-full">
+					<MangaZoomableReader
 							pages={pages}
 							currentPage={1}
 							flashListRef={flashListRef}
