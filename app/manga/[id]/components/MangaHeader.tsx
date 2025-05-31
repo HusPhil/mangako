@@ -68,7 +68,8 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
 
         {/* Info */}
         <View className="flex-1 ml-4 justify-between">
-          {/* Title */}
+          <View>
+            {/* Title */}
           <Text numberOfLines={2} className="text-lg font-bold text-white mb-2">
             {mangaTitle || 'No Title'}
           </Text>
@@ -83,9 +84,11 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
               Status • {isLoading && !details?.status ? 'Loading...' : (details?.status || 'Unknown')}
             </Text>
           </View>
+          </View>
 
-          {/* Buttons */}
-          <View className={`flex-row gap-2 mb-3 ${isLoading ? 'animate-pulse' : ''}`} pointerEvents={isLoading ? 'none' : 'auto'}>
+          <View className=' w-full'>
+            {/* Buttons */}
+          <View className={`flex-row gap-2 ${isLoading ? 'animate-pulse' : ''}`} pointerEvents={isLoading ? 'none' : 'auto'}>
             <TouchableOpacity
               onPress={onReadingResume}
               disabled={isLoading}
@@ -93,7 +96,7 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
             >
               <BookOpen size={20} color="#fff" />
               <Text className="text-white font-semibold ml-2">
-                {hasStartedReading ? 'Continue' : 'Start'}
+                {(hasStartedReading || numberOfReadChapters > 0) ? 'Continue' : 'Start'}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -119,7 +122,8 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
           {/* Progress Bar */}
           <View>
             
-            <View className={`h-1.5  rounded-full overflow-hidden ${isLoading ? 'animate-pulse bg-gray-700' : 'bg-gray-300'}`}>
+            {numberOfReadChapters > 0 && (
+              <View className={`h-1.5 mt-3 rounded-full overflow-hidden ${isLoading ? 'animate-pulse bg-gray-700' : 'bg-gray-300'}`}>
               {!isLoading && (
                 <View
                 style={{ width: `${(numberOfReadChapters / chapterCount) * 100}%` }}
@@ -127,6 +131,8 @@ const MangaHeader: React.FC<MangaHeaderProps> = ({
               />
               )}
             </View>
+            )}
+          </View>
           </View>
         </View>
         

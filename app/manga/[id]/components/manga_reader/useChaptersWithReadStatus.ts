@@ -15,6 +15,8 @@ export const useChaptersWithReadStatus = (mangaUrl: string, mangaId: string) => 
   const {
     loadReadChapters,
     markChapterAsRead,
+    markMultipleChaptersAsRead,
+    markMultipleChaptersAsUnread,
   } = useReadChapters(mangaId);
 
   const [chapters, setChapters] = useState<MangaChapter[]>([]);
@@ -34,7 +36,7 @@ export const useChaptersWithReadStatus = (mangaUrl: string, mangaId: string) => 
                 setNavigationMap(mangaInfo?.chaptersNavigationMap || {});
             });
         }
-    }, [isMangaInfoLoading])
+    }, [isMangaInfoLoading, markMultipleChaptersAsRead, markMultipleChaptersAsUnread])
   );
 
   return {
@@ -45,6 +47,8 @@ export const useChaptersWithReadStatus = (mangaUrl: string, mangaId: string) => 
     isLoading: isMangaInfoLoading   ,
     error: errorData,
     markChapterAsRead,
+    markMultipleChaptersAsRead,
+    markMultipleChaptersAsUnread,
   };
 };
 

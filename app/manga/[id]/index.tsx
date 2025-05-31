@@ -11,7 +11,7 @@ import useMangaTabsEditor from '@/services/manga_list/useMangaTabsEditor';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as Haptic from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Book, BookOpen, Share2, X } from 'lucide-react-native';
+import { Book, BookOpen, X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
 	ActivityIndicator,
@@ -57,6 +57,8 @@ const MangaInfoScreen = () => {
 		error: errorData,
 		mangaInfo,
 		readChapters,
+		markMultipleChaptersAsRead,
+		markMultipleChaptersAsUnread,
 	} = useChaptersWithReadStatus(mangaUrl!, mangaId!);
 
 	const {
@@ -68,7 +70,7 @@ const MangaInfoScreen = () => {
 		updateMangaListings,
 	} = useMangaList();
 
-	const { readingProgress, isReadingProgressLoading } = useReadingProgress(
+	const { readingProgress, } = useReadingProgress(
 		mangaId!
 	);
 
@@ -82,7 +84,6 @@ const MangaInfoScreen = () => {
 		registerChapterRef,
 		unregisterChapterRef,
 		selectAllChapters,
-		clearAllSelections,
 		selectInverseChapters,
 		getSelectedChapters,
 	} = useChapterSelection();
@@ -180,18 +181,21 @@ const MangaInfoScreen = () => {
 		selectAllChapters(chapters);
 	};
 
-	const handleClearAllSelections = () => {
-		clearAllSelections();
-	};
 
 	const handleSelectInverseChapters = () => {
 		selectInverseChapters(chapters);
 	};
 
-	const handleProcessSelected = () => {
+	const handleMarkMultipleChaptersAsRead = () => {
 		const selectedChapterIds = getSelectedChapters();
-		console.log('Selected chapters:', selectedChapterIds);
-		// Process selected chapters here
+		markMultipleChaptersAsRead(selectedChapterIds);
+		turnOffSelectionMode();
+	};
+
+	const handleMarkMultipleChaptersAsUnread = () => {
+		const selectedChapterIds = getSelectedChapters();
+		markMultipleChaptersAsUnread(selectedChapterIds);
+		turnOffSelectionMode();
 	};
 
 	return (
@@ -264,6 +268,7 @@ const MangaInfoScreen = () => {
 								showsVerticalScrollIndicator={false}
 							>
 								<MangaDetailsContent
+									mangaTitle={mangaTitle}
 									mangaAlternativeNames={
 										mangaInfo?.mangaDetails
 											.mangaAlternativeNames || []
@@ -330,6 +335,12 @@ const MangaInfoScreen = () => {
 									<BottomSelectionComponent
 										turnOffSelectionMode={
 											turnOffSelectionMode
+										}
+										onMarkMultipleChaptersAsRead={
+											handleMarkMultipleChaptersAsRead
+										}
+										onMarkMultipleChaptersAsUnread={
+											handleMarkMultipleChaptersAsUnread
 										}
 									/>
 								)}
@@ -414,33 +425,37 @@ const TopSelectionComponent = ({
 
 interface BottomSelectionComponentProps {
 	turnOffSelectionMode: () => void;
+	onMarkMultipleChaptersAsRead: () => void;
+	onMarkMultipleChaptersAsUnread: () => void;
 }
 
 const BottomSelectionComponent = ({
 	turnOffSelectionMode,
+	onMarkMultipleChaptersAsRead,
+	onMarkMultipleChaptersAsUnread,
 }: BottomSelectionComponentProps) => {
 	return (
 		<View className="px-2 my-3 bg-secondary-100 rounded-lg mx-4 py-3 flex-row justify-around items-center">
-			<TouchableOpacity className="flex-1 items-center">
+			<TouchableOpacity className="flex-1 items-center" onPress={onMarkMultipleChaptersAsRead}>
 				<BookOpen size={18} color={colors.accent.DEFAULT} />
 				<Text className="text-xs text-white mt-2">Mark as read</Text>
 			</TouchableOpacity>
 
 			<TouchableOpacity
 				className="flex-1 items-center"
-				onPress={() => console.log('Download')}
+				onPress={onMarkMultipleChaptersAsUnread}
 			>
 				<Book size={18} color={colors.accent.DEFAULT} />
 				<Text className="text-xs text-white mt-2">Mark as unread</Text>
 			</TouchableOpacity>
 
-			<TouchableOpacity
+			{/* <TouchableOpacity
 				className="flex-1 items-center"
 				onPress={() => console.log('Share')}
 			>
 				<Share2 size={18} color={colors.accent.DEFAULT} />
 				<Text className="text-xs text-white mt-2">Share</Text>
-			</TouchableOpacity>
+			</TouchableOpacity> */}
 		</View>
 	);
 };

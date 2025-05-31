@@ -180,8 +180,7 @@ const MangaReaderScreen = () => {
 			const currentPageNum = readingMode.value.horizontal
 				? viewableItems[0].index
 				: viewableItems.splice(-1)[0].index;
-			// readerCurrentPage.current = currentPageNum;
-			// console.log("Current page:", readerCurrentPage.current)
+				
 			// call the callback func to update the ui back in the parent component
 			onPageChange(currentPageNum);
 
