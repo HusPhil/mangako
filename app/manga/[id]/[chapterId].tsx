@@ -1,5 +1,6 @@
 import { colors } from '@/constants';
 import { ReaderMode } from '@/services/cache/types';
+import { useReadChapters } from '@/services/cache/useReadChapters';
 import { useReadingOptions } from '@/services/cache/useReadingOptions';
 import useReadingProgress from '@/services/cache/useReadingProgress';
 import { MangaChapterPage } from '@/services/ResponseTypes';
@@ -45,6 +46,8 @@ const MangaReaderScreen = () => {
 	);
 
 	const { addEntryToReadingProgress, isReadingProgressLoading, readingProgress } = useReadingProgress(mangaId as string);
+
+	const { markChapterAsRead } = useReadChapters(mangaId as string);
 
 	const handleReaderNavigation = (navigationMode: {
 		mode: string;
@@ -184,6 +187,7 @@ const MangaReaderScreen = () => {
 
 			if (currentPageNum === (pages?.length || 0) - 1) {
 				setSnackbarVisible(true);
+				markChapterAsRead(chapterId as string);
 			}
 		}
 	};
@@ -298,7 +302,6 @@ const MangaReaderScreen = () => {
                   label: 'Next',
                   onPress: () => {
                     handleNavigateToNextChapter();
-                    // setSnackbarVisible(false);
                   },
                 }}
 							>

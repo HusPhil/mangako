@@ -25,8 +25,8 @@ interface ChapterListProps {
 	listStyles?: object;
 	onRefresh: () => void;
 	onChapterReadStatusChange: (index: number) => void;
-	onChapterPress: (chapterId: string, chapterUrl: string) => void;
-	onChapterLongPress: (chapterId: string, chapterUrl: string) => void;
+	onChapterPress: (chapter: MangaChapter, index: number) => void;
+	onChapterLongPress: (chapter: MangaChapter, index: number) => void;
 	isListed: boolean;
 	headerComponent?: React.ReactNode;
 	numberOfReadChapters: number;
@@ -186,8 +186,8 @@ interface ChapterItemProps {
 	index: number;
 	isRead: boolean;
 	initialIsSelected: boolean;
-	onPress: (chapterId: string, chapterUrl: string) => void;
-	onLongPress: (chapterId: string, chapterUrl: string) => void;
+	onPress: (chapter: MangaChapter, index: number) => void;
+	onLongPress: (chapter: MangaChapter, index: number) => void;
 }
 
 interface ChapterItemRef {
@@ -219,12 +219,12 @@ const ChapterItem = forwardRef<ChapterItemRef, ChapterItemProps>(
 		}));
 
 		const handlePress = useCallback(() => {
-			onPress(chapterId, chapterUrl);
-		}, [chapterId, chapterUrl, onPress]);
+			onPress({chapterId, chapterUrl, chapterTitle, chapterTimeUploaded: chapterDateUploaded}, index);
+		}, [chapterId, chapterUrl, index, onPress]);
 
 		const handleLongPress = useCallback(() => {
-			onLongPress(chapterId, chapterUrl);
-		}, [chapterId, chapterUrl, onLongPress]);
+			onLongPress({chapterId, chapterUrl, chapterTitle, chapterTimeUploaded: chapterDateUploaded}, index);
+		}, [chapterId, chapterUrl, index, onLongPress]);
 
 		return (
 			<TouchableOpacity

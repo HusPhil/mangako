@@ -2,7 +2,7 @@ import HorizontalRule from '@/components/HorizontalRule';
 import ModalMangaTabsEditor from '@/components/manga_home/ModalMangaTabsEditor';
 import ModalPopup from '@/components/modal/ModalPopup';
 import { colors } from '@/constants';
-import { Manga } from '@/services/ResponseTypes';
+import { Manga, MangaChapter } from '@/services/ResponseTypes';
 import { saveMangaData } from '@/services/cache/mangaCacheUtils';
 import useReadingProgress from '@/services/cache/useReadingProgress';
 import { Tab } from '@/services/manga_list/types';
@@ -11,6 +11,7 @@ import useMangaTabsEditor from '@/services/manga_list/useMangaTabsEditor';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as Haptic from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
+import { Book, BookOpen, Share2, X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
 	ActivityIndicator,
@@ -28,7 +29,6 @@ import MangaDetailsContent from './components/MangaDetailsContent';
 import MangaHeader from './components/MangaHeader';
 import useChapterSelection from './components/manga_reader/useChapterSelection';
 import { useChaptersWithReadStatus } from './components/manga_reader/useChaptersWithReadStatus';
-
 
 type LocalSearchParams = {
 	id?: string;
@@ -75,6 +75,7 @@ const MangaInfoScreen = () => {
 	const {
 		selectionModeOn,
 		selectedChaptersRef,
+		selectChapterRange,
 		toggleSelectChapter,
 		turnOnSelectionMode,
 		turnOffSelectionMode,
@@ -82,6 +83,7 @@ const MangaInfoScreen = () => {
 		unregisterChapterRef,
 		selectAllChapters,
 		clearAllSelections,
+		selectInverseChapters,
 		getSelectedChapters,
 	} = useChapterSelection();
 
@@ -137,34 +139,28 @@ const MangaInfoScreen = () => {
 		);
 	};
 
-	const handleChapterPress = (chapterId: string, chapterUrl: string) => {
+	const handleChapterPress = (chapter: MangaChapter, index: number) => {
 		if (selectionModeOn) {
-			toggleSelectChapter({
-				chapterId,
-				chapterUrl,
-				chapterTitle: '',
-				chapterTimeUploaded: '',
-			});
+			toggleSelectChapter(chapter, index);
 			return;
 		}
 
 		const query = new URLSearchParams({
-			chapterUrl: chapterUrl ?? '',
+			chapterUrl: chapter.chapterUrl ?? '',
 		}).toString();
 
 		if (!mangaId) return;
-		router.push(`/manga/${mangaId}/${chapterId}?${query}`);
+		router.push(`/manga/${mangaId}/${chapter.chapterId}?${query}`);
 	};
 
-	const handleChapterLongPress = (chapterId: string, chapterUrl: string) => {
+	const handleChapterLongPress = (chapter: MangaChapter, index: number) => {
 		Haptic.impactAsync(Haptic.ImpactFeedbackStyle.Heavy);
-		toggleSelectChapter({
-			chapterId,
-			chapterUrl,
-			chapterTitle: '',
-			chapterTimeUploaded: '',
-		});
-		turnOnSelectionMode();
+		if (!selectionModeOn) {
+			toggleSelectChapter(chapter, index);
+			turnOnSelectionMode();
+			return;
+		}
+		selectChapterRange(chapters, index);
 	};
 
 	const handleSaveMangaListings = async (mangaListings: Tab[]) => {
@@ -186,6 +182,10 @@ const MangaInfoScreen = () => {
 
 	const handleClearAllSelections = () => {
 		clearAllSelections();
+	};
+
+	const handleSelectInverseChapters = () => {
+		selectInverseChapters(chapters);
 	};
 
 	const handleProcessSelected = () => {
@@ -229,7 +229,7 @@ const MangaInfoScreen = () => {
 					onClearCache={handleClearMangaCache}
 				/>
 
-				{isMangaInfoLoading || isReadingProgressLoading ? (
+				{isMangaInfoLoading ? (
 					<>
 						<HorizontalRule
 							displayText="Loading..."
@@ -295,6 +295,17 @@ const MangaInfoScreen = () => {
 							</ScrollView>
 						) : (
 							<View className="flex-1">
+								{selectionModeOn && (
+									<TopSelectionComponent
+										turnOffSelectionMode={
+											turnOffSelectionMode
+										}
+										onSelectAll={handleSelectAllChapters}
+										onSelectInverse={
+											handleSelectInverseChapters
+										}
+									/>
+								)}
 								<ChapterList
 									mangaId={mangaId || ''}
 									mangaUrl={mangaUrl || ''}
@@ -311,54 +322,16 @@ const MangaInfoScreen = () => {
 									selectionModeOn={selectionModeOn}
 									registerChapterRef={registerChapterRef}
 									unregisterChapterRef={unregisterChapterRef}
-									selectedChapters={selectedChaptersRef.current}
+									selectedChapters={
+										selectedChaptersRef.current
+									}
 								/>
 								{selectionModeOn && (
-									<View className="flex-row justify-around items-center px-2 my-3 bg-secondary-100 rounded-lg mx-4">
-										<TouchableOpacity className="flex-1 items-center py-3">
-											<MaterialIcons
-												name="check-circle"
-												size={24}
-												color={colors.accent.DEFAULT}
-											/>
-										</TouchableOpacity>
-
-										<TouchableOpacity
-											className="flex-1 items-center py-3"
-											onPress={() =>
-												console.log('Download')
-											}
-										>
-											<MaterialIcons
-												name="file-download"
-												size={24}
-												color={colors.accent.DEFAULT}
-											/>
-										</TouchableOpacity>
-
-										<TouchableOpacity
-											className="flex-1 items-center py-3"
-											onPress={() => console.log('Share')}
-										>
-											<MaterialIcons
-												name="share"
-												size={24}
-												color={colors.accent.DEFAULT}
-											/>
-										</TouchableOpacity>
-										<TouchableOpacity
-											className="flex-1 items-center py-3"
-											onPress={() =>
-												turnOffSelectionMode()
-											}
-										>
-											<MaterialIcons
-												name="close"
-												size={24}
-												color={colors.accent.DEFAULT}
-											/>
-										</TouchableOpacity>
-									</View>
+									<BottomSelectionComponent
+										turnOffSelectionMode={
+											turnOffSelectionMode
+										}
+									/>
 								)}
 							</View>
 						)}
@@ -390,6 +363,87 @@ const MangaInfoScreen = () => {
 };
 
 export default MangaInfoScreen;
+
+interface TopSelectionComponentProps {
+	turnOffSelectionMode: () => void;
+	onSelectAll: () => void;
+	onSelectInverse: () => void;
+}
+
+const TopSelectionComponent = ({
+	turnOffSelectionMode,
+	onSelectAll,
+	onSelectInverse,
+}: TopSelectionComponentProps) => {
+	return (
+		<View className="flex-row justify-between px-2 my-3 bg-secondary-100 rounded-lg mx-4 py-3">
+			<View>
+				<TouchableOpacity
+					className="flex-row items-center px-2"
+					onPress={turnOffSelectionMode}
+				>
+					<X size={24} color={'white'} />
+					<Text className="text-white ml-1">Close</Text>
+				</TouchableOpacity>
+			</View>
+			<View className="flex-row justify-around items-center gap-x-2">
+				<TouchableOpacity
+					className="items-center px-2"
+					onPress={onSelectAll}
+				>
+					<MaterialIcons
+						name="select-all"
+						size={24}
+						color={'white'}
+					/>
+				</TouchableOpacity>
+				<TouchableOpacity
+					className="items-center px-2"
+					onPress={onSelectInverse}
+				>
+					<MaterialIcons
+						name="flip-to-back"
+						size={24}
+						color={'white'}
+					/>
+				</TouchableOpacity>
+			</View>
+		</View>
+	);
+};
+
+interface BottomSelectionComponentProps {
+	turnOffSelectionMode: () => void;
+}
+
+const BottomSelectionComponent = ({
+	turnOffSelectionMode,
+}: BottomSelectionComponentProps) => {
+	return (
+		<View className="px-2 my-3 bg-secondary-100 rounded-lg mx-4 py-3 flex-row justify-around items-center">
+			<TouchableOpacity className="flex-1 items-center">
+				<BookOpen size={18} color={colors.accent.DEFAULT} />
+				<Text className="text-xs text-white mt-2">Mark as read</Text>
+			</TouchableOpacity>
+
+			<TouchableOpacity
+				className="flex-1 items-center"
+				onPress={() => console.log('Download')}
+			>
+				<Book size={18} color={colors.accent.DEFAULT} />
+				<Text className="text-xs text-white mt-2">Mark as unread</Text>
+			</TouchableOpacity>
+
+			<TouchableOpacity
+				className="flex-1 items-center"
+				onPress={() => console.log('Share')}
+			>
+				<Share2 size={18} color={colors.accent.DEFAULT} />
+				<Text className="text-xs text-white mt-2">Share</Text>
+			</TouchableOpacity>
+		</View>
+	);
+};
 
 interface RenderHeaderProps {
 	mangaId: string;
