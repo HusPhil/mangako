@@ -81,6 +81,7 @@ const MangaInfoScreen = () => {
 		turnOffSelectionMode,
 		registerChapterRef,
 		unregisterChapterRef,
+		clearAllSelections,
 		selectAllChapters,
 		selectInverseChapters,
 		getSelectedChapters,
@@ -203,6 +204,12 @@ const MangaInfoScreen = () => {
 		markMultipleChaptersAsUnread(selectedChapterIds);
 		turnOffSelectionMode();
 	};
+
+	useEffect(() => {
+		return () => {
+			clearAllSelections();
+		};
+	}, []);
 
 	return (
 		<View className="h-full w-full bg-primary" style={{ paddingTop: Constants.statusBarHeight }}>

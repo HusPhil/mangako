@@ -142,6 +142,7 @@ const useChapterSelection = () => {
         }
       });
       selectedChaptersRef.current.clear();
+      chapterIdToIndexMap.current.clear();
     }, []);
   
     return {
