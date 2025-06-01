@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { Portal, Snackbar } from 'react-native-paper';
 import ReaderOptionsSheet from './components/manga_reader/ReaderOptionsSheet';
+import { useChapterPageErrors } from './components/manga_reader/useChapterPageErrors';
 import useZoomableViewHandlers from './components/manga_reader/useZoomableViewHandlers';
 import MangaZoomableReader from './components/MangaZoomableReader';
 const MangaReaderScreen = () => {
@@ -149,9 +150,11 @@ const MangaReaderScreen = () => {
 		horizontal: readingMode.value.horizontal,
 	});
 
+	const { registerFailedPage, unregisterFailedPage, reloadAllFailed, reloadFailed, failedRefs } = useChapterPageErrors();
+
 	const onDoubleTap = useCallback(() => {
 		if (currentZoomLevel.current <= 1) {
-			zoomableViewRef?.current?.zoomBy(0.5);
+			zoomableViewRef?.current?.zoomBy(0.5);	
 			return;
 		} else {
 			zoomableViewRef?.current?.zoomTo(1, { x: 0, y: 0 });
@@ -253,6 +256,8 @@ const MangaReaderScreen = () => {
 	}
 
 	const handleOpenOptions = () => {
+		console.log('Opening options:', failedRefs.current);
+		reloadAllFailed();
 		setShowOptions(true);
 		StatusBar.setHidden(false);
 	}
@@ -281,6 +286,8 @@ const MangaReaderScreen = () => {
 						inverted={readingMode.value.inverted}
 						onSingleTap={onTap}
 						onDoubleTap={onDoubleTap}
+						registerFailedPage={registerFailedPage}
+						unregisterFailedPage={unregisterFailedPage}
 						handleOnZoomEnd={handleOnZoomEnd}
 						handleViewableItemsChanged={handleViewableItemsChanged}
 						handleOnShiftingEnd={handleOnShiftingEnd}

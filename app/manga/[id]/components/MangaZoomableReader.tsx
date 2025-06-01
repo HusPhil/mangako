@@ -16,6 +16,7 @@ import {
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import ChapterPage from './ChapterPage';
 import GestureScrollView from './GestureScrollView';
+import { ChapterPageRef } from './manga_reader/useChapterPageErrors';
 interface MangaReaderProps {
 	zoomableViewRef: React.RefObject<ReactNativeZoomableView | null>;
 	panEnabled: boolean;
@@ -26,6 +27,8 @@ interface MangaReaderProps {
 	currentPage: number;
 	onSingleTap: () => void;
 	onDoubleTap: () => void;
+	registerFailedPage: (pageId: string, ref: ChapterPageRef) => void;
+	unregisterFailedPage: (pageId: string) => void;
 	handleOnZoomEnd: (event: GestureResponderEvent, gestureState: PanResponderGestureState, zoomableViewEventObject: ZoomableViewEvent) => void;
 	handleOnTransform: (zoomableViewEventObject: ZoomableViewEvent) => void;
 	handleOnDoubleTapAfter: (event: GestureResponderEvent) => void;
@@ -59,6 +62,8 @@ const MangaZoomableReader = ({
 	currentPage,
 	onSingleTap,
 	onDoubleTap,
+	registerFailedPage,
+	unregisterFailedPage,
 	handleOnStartShouldSetPanResponderCapture,
 	handleOnZoomEnd,
 	handleOnTransform,
@@ -73,6 +78,8 @@ const MangaZoomableReader = ({
 				item={item} 
 				screenWidth={screenWidth} 
 				blurhash={blurhash} 
+				onErrorRegister={registerFailedPage}
+				onErrorClear={unregisterFailedPage}
 			/>
 		);
 	};
