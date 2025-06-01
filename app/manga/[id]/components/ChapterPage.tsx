@@ -36,7 +36,7 @@ const ChapterPage = forwardRef<ChapterPageRef, ChapterPageProps>(
 		}, [hasError]);
 
 		return (
-			<View style={{ width: screenWidth, height: imageHeight }} className="justify-center items-center">
+			<View style={{ width: screenWidth, height: imageHeight }} className="justify-center items-center flex-1">
 				{hasError ? (
 					<Pressable onPress={reload} className="justify-center items-center bg-secondary w-full h-full">
 						<Text className="font-pbold text-xl text-accent text-center px-4">

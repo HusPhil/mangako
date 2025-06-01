@@ -21,7 +21,8 @@
         "foregroundImage": "./assets/new_ramen_icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": false
+      "edgeToEdgeEnabled": false,
+      "package": "com.husph.MangaKo"
     },
     "web": {
       "bundler": "metro",
@@ -30,6 +31,16 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourceslnReleaseBuilds": true,
+            "useLegacyPackaging": true
+          }
+        }
+      ],
       [
         "expo-splash-screen",
         {

@@ -4,7 +4,7 @@ export interface ChapterPageRef {
 	reload: () => void;
 }
 
-export const useChapterPageErrors = () => {
+const useChapterPageErrors = () => {
 	const failedRefs = useRef<Record<string, ChapterPageRef>>({});
 
 	const registerFailedPage = (id: string, ref: ChapterPageRef) => {
@@ -31,3 +31,6 @@ export const useChapterPageErrors = () => {
 		failedRefs, // if you ever want to inspect or target specific ones
 	};
 };
+
+
+export default useChapterPageErrors;

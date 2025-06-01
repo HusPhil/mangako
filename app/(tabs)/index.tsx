@@ -10,7 +10,7 @@ import { useMangaList } from "@/services/manga_list/useMangaList";
 import useMangaListModal from "@/services/manga_list/useMangaListModal";
 import Constants from "expo-constants";
 import { useEffect } from "react";
-import { StatusBar, View } from "react-native";
+import { Platform, StatusBar, View } from "react-native";
 const MangaListScreen = () => {
   const {
     mangaList,
@@ -94,8 +94,9 @@ const MangaListScreen = () => {
     StatusBar.setBarStyle('light-content')
   }, []);
 
+  const viewStyle = Platform.OS === 'android' ? { paddingTop: Constants.statusBarHeight } : {};
   return (
-    <View className="flex-1 bg-primary" style={{ paddingTop: Constants.statusBarHeight }}>
+    <View className="flex-1 bg-primary" style={viewStyle}>
       <MangaListHeader
         handleShowAddTab={handleShowModalAddTab}
         handleShowDeleteTab={handleShowModalDeleteTabs}

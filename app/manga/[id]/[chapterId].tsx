@@ -21,7 +21,7 @@ import {
 } from 'react-native';
 import { Portal, Snackbar } from 'react-native-paper';
 import ReaderOptionsSheet from './components/manga_reader/ReaderOptionsSheet';
-import { useChapterPageErrors } from './components/manga_reader/useChapterPageErrors';
+import useChapterPageErrors from './components/manga_reader/useChapterPageErrors';
 import useZoomableViewHandlers from './components/manga_reader/useZoomableViewHandlers';
 import MangaZoomableReader from './components/MangaZoomableReader';
 const MangaReaderScreen = () => {
@@ -262,6 +262,8 @@ const MangaReaderScreen = () => {
 		StatusBar.setHidden(false);
 	}
 
+	
+
 	return (
 		<View className="h-full w-full bg-black">
 			<StatusBar hidden/>
@@ -346,7 +348,7 @@ const MangaReaderScreen = () => {
 									size={24}
 									color="white"
 								/>
-								<Text className="text-white font-pregular">
+								<Text className="text-white font-pregular text-sm">
 									End of chapter!
 								</Text>
 							</View>

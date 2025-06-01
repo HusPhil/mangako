@@ -4,6 +4,7 @@ import React from "react";
 import {
   ImageSourcePropType,
   Platform,
+  SafeAreaView,
   Text,
   View
 } from "react-native";
@@ -45,7 +46,7 @@ const TabIcon = ({ icon, color, name, focused }: TabIconProps) => {
 
 const TabsLayout = () => {
   return (
-    <View className={`flex-1   ${Platform.OS === 'ios' ? 'pb-4 bg-secondary' : 'bg-primary'}`}>
+    <SafeAreaView className={`flex-1   ${Platform.OS === 'ios' ? 'bg-secondary' : 'bg-primary'}`}>
       <Tabs
         screenOptions={{
           tabBarShowLabel: false,
@@ -55,7 +56,7 @@ const TabsLayout = () => {
             backgroundColor: colors.secondary.DEFAULT,
             borderTopWidth: 1,
             borderColor: colors.accent[100],
-            height: 75,
+            height: Platform.OS === 'ios' ? 55 : 80,
           },
           animation: 'shift',
 
@@ -108,7 +109,7 @@ const TabsLayout = () => {
           }}
         /> */}
       </Tabs>
-    </View>
+    </SafeAreaView>
   );
 };
 

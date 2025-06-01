@@ -12,7 +12,7 @@ import React, {
 	forwardRef,
 	useCallback,
 	useImperativeHandle,
-	useState,
+	useState
 } from 'react';
 import { Pressable, Text, TouchableOpacity, View } from 'react-native';
 import useScrollToTopAndBottom from './manga_reader/useScrollToTopAndBottom';
@@ -74,6 +74,7 @@ const ChapterList: React.FC<ChapterListProps> = ({
 		},
 		[registerChapterRef, unregisterChapterRef]
 	);
+
 
 	const renderChapterItem = useCallback(
 		({ item, index }: { item: MangaChapter; index: number }) => (

@@ -3,7 +3,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import Constants from 'expo-constants';
 import { router } from "expo-router";
 import { useMemo, useRef, useState } from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Image, Platform, Text, TouchableOpacity, View } from "react-native";
 import { Portal, Snackbar } from "react-native-paper";
 import HorizontalRule from "../../components/HorizontalRule";
 import { MangaGrid, MangaSlide } from "../../components/manga_menu";
@@ -68,8 +68,10 @@ const BrowseTab = () => {
     }
   };
 
+  const viewStyle = Platform.OS === 'android' ? { paddingTop: Constants.statusBarHeight } : {};
+
   return (
-    <View className="flex-1 bg-primary" style={{ paddingTop: Constants.statusBarHeight }}>
+    <View className="flex-1 bg-primary" style={viewStyle}>
       <View className="px-4 py-3 pt-4">
         <TouchableOpacity
           className="flex-row justify-between  bg-secondary-100 rounded-lg p-2"
