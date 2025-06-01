@@ -12,6 +12,7 @@ export interface MangaChapterPage {
   pageImageUrl: string;
   pageHeight: number;
   pageWidth: number;
+  pageBlurhash?: string;
 }
 
 export interface LatestMangaListResponse {

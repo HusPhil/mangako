@@ -4,12 +4,13 @@ import ModalEditTabs from "@/components/manga_home/ModalEditTabs";
 import TabsView from "@/components/manga_home/TabsView";
 import MangaListHeader from "@/components/manga_list/MangaListHeader";
 import ModalPopup from "@/components/modal/ModalPopup";
+import { colors } from "@/constants";
 import { Tab } from "@/services/manga_list/types";
 import { useMangaList } from "@/services/manga_list/useMangaList";
 import useMangaListModal from "@/services/manga_list/useMangaListModal";
-import Constants from 'expo-constants';
-import { SafeAreaView, View } from "react-native";
-
+import Constants from "expo-constants";
+import { useEffect } from "react";
+import { StatusBar, View } from "react-native";
 const MangaListScreen = () => {
   const {
     mangaList,
@@ -88,8 +89,13 @@ const MangaListScreen = () => {
     closeModal();
   };
 
+  useEffect(() => {
+    StatusBar.setBackgroundColor(colors.secondary.DEFAULT)
+    StatusBar.setBarStyle('light-content')
+  }, []);
+
   return (
-    <SafeAreaView className="flex-1 bg-primary" style={{ paddingTop: Constants.statusBarHeight }}>
+    <View className="flex-1 bg-primary" style={{ paddingTop: Constants.statusBarHeight }}>
       <MangaListHeader
         handleShowAddTab={handleShowModalAddTab}
         handleShowDeleteTab={handleShowModalDeleteTabs}
@@ -134,7 +140,7 @@ const MangaListScreen = () => {
         onAddTab={() => handleShowModalAddTab()}
         isLoading={!isReady}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 

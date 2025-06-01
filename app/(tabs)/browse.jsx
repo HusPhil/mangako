@@ -3,7 +3,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import Constants from 'expo-constants';
 import { router } from "expo-router";
 import { useMemo, useRef, useState } from "react";
-import { Image, SafeAreaView, Text, TouchableOpacity, View } from "react-native";
+import { Image, Text, TouchableOpacity, View } from "react-native";
 import { Portal, Snackbar } from "react-native-paper";
 import HorizontalRule from "../../components/HorizontalRule";
 import { MangaGrid, MangaSlide } from "../../components/manga_menu";
@@ -12,11 +12,8 @@ import {
   useGetLatestMangaList,
   useGetPopularMangaList,
 } from "../../services/useGetMangaList";
-
 const BrowseTab = () => {
-  // const [newestManga, setNewestManga] = useState([]);
-  // const [popularManga, setPopularManga] = useState([]);
-  // const [isLoading, setIsLoading] = useState(true);
+  
   const [errorData, setErrorData] = useState();
   const [snackbarVisible, setSnackbarVisible] = useState(false);
 
@@ -68,21 +65,11 @@ const BrowseTab = () => {
     if (type === "latest" && hasMoreLatestManga) {
       
       await fetchNextLatestManga();
-      // Snackbar.show({
-      //   text: 'Hello world',
-      //   duration: 5000,
-      //   action: {
-      //     text: 'UNDO',
-      //     textColor: 'green',
-      //     onPress: () => { /* Do something. */ },
-      //   },
-      // });
-      
     }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-primary" style={{ paddingTop: Constants.statusBarHeight }}>
+    <View className="flex-1 bg-primary" style={{ paddingTop: Constants.statusBarHeight }}>
       <View className="px-4 py-3 pt-4">
         <TouchableOpacity
           className="flex-row justify-between  bg-secondary-100 rounded-lg p-2"
@@ -152,20 +139,27 @@ const BrowseTab = () => {
           style={{
             backgroundColor: colors.primary.DEFAULT,
           }}
-          icon={'close'}
-          onIconPress={() => {
-            setSnackbarVisible(false);
-          }}
           visible={snackbarVisible}
-          duration={2000}
+          duration={2 * 1000}
           onDismiss={() => {
             setSnackbarVisible(false);
           }}
         >
-          <Text className="text-white font-pregular">More mangas has been loaded!</Text>
+          <TouchableOpacity
+          className="flex-row justify-between items-center"
+          onPress={() => {
+            setSnackbarVisible(false);
+          }}>
+            <Text className="text-white font-plight">More mangas has been loaded!</Text>
+            <TouchableOpacity onPress={() => {
+              setSnackbarVisible(false);
+            }}>
+              <MaterialIcons name="close" size={24} color="white" />
+            </TouchableOpacity>
+          </TouchableOpacity>
         </Snackbar>
       </Portal>
-    </SafeAreaView>
+    </View>
   );
 };
 

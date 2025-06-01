@@ -61,7 +61,7 @@ const MangaDetailsContent: React.FC<MangaDetailsContentProps> = ({
 				<Text className="text-white font-bold text-lg mb-2">
 					{`${mangaTitle ?? 'No Title'} (Summary)`}
 				</Text>
-				<Text className="text-gray-100 text-sm font-pthin">
+				<Text className="text-gray-100 text-sm">
 					{mangaDescription ?? 'No summary available.'}
 				</Text>
 			</View>

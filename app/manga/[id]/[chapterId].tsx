@@ -17,7 +17,7 @@ import {
 	StatusBar,
 	Text,
 	View,
-	ViewToken,
+	ViewToken
 } from 'react-native';
 import { Portal, Snackbar } from 'react-native-paper';
 import ReaderOptionsSheet from './components/manga_reader/ReaderOptionsSheet';
@@ -102,7 +102,7 @@ const MangaReaderScreen = () => {
 						navigationMode.jumpIndex < (pages?.length || 0)
 					) {
 						// Close options sheet
-						setShowOptions(false);
+						handleCloseOptions();
 
 						// Update current page reference
 						readerCurrentPage.current = navigationMode.jumpIndex;
@@ -159,8 +159,7 @@ const MangaReaderScreen = () => {
 	}, []);
 
 	const onTap = useCallback(() => {
-		setShowOptions(true);
-		StatusBar.setHidden(false);
+		handleOpenOptions();
 	}, []);
 
 	const debouncedUpdateLastRead = useCallback(
@@ -213,7 +212,7 @@ const MangaReaderScreen = () => {
 		// updateOptions({ horizontal: !readingMode });
 
 		// Close options sheet
-		setShowOptions(false);
+		handleCloseOptions();
 	};
 
 	const handleNavigateToNextChapter = () => {
@@ -231,7 +230,7 @@ const MangaReaderScreen = () => {
 
 		if (!mangaId) return;
 		router.replace(`/manga/${mangaId}/${nextChapterId}?${query}`);
-		setShowOptions(false);
+		handleCloseOptions();
 	};
 
 	const handleNavigateToPrevChapter = () => {
@@ -251,6 +250,11 @@ const MangaReaderScreen = () => {
 	const handleCloseOptions = () => {
 		setShowOptions(false);
 		StatusBar.setHidden(true);
+	}
+
+	const handleOpenOptions = () => {
+		setShowOptions(true);
+		StatusBar.setHidden(false);
 	}
 
 	return (
@@ -306,7 +310,14 @@ const MangaReaderScreen = () => {
 							style={{
 								backgroundColor: colors.primary.DEFAULT,
 							}}
-							icon={'close'}
+							icon={({size, color}) => (
+								<Ionicons
+									name="close"
+									size={size}
+									className='mr-3'
+									color={'white'}
+								/>
+							)}
 							onIconPress={() => {
 								setSnackbarVisible(false);
 							}}

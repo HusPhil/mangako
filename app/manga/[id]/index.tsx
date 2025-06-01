@@ -19,10 +19,9 @@ import {
 	Alert,
 	Pressable,
 	ScrollView,
-	StatusBar,
 	Text,
 	TouchableOpacity,
-	View,
+	View
 } from 'react-native';
 import ChapterList from './components/ChapterList';
 import MangaDetailsContent from './components/MangaDetailsContent';
@@ -207,7 +206,6 @@ const MangaInfoScreen = () => {
 
 	return (
 		<View className="h-full w-full bg-primary" style={{ paddingTop: Constants.statusBarHeight }}>
-			<StatusBar translucent hidden/>
 			<View className="h-full w-full">
 				{renderHeader({
 					mangaId: mangaId || '',

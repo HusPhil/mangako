@@ -5,17 +5,16 @@ import {
 } from '@openspacelabs/react-native-zoomable-view';
 import { FlashList } from '@shopify/flash-list';
 import * as Haptics from 'expo-haptics';
-import { Image } from 'expo-image';
 import React, { useCallback } from 'react';
 import {
 	Dimensions,
 	GestureResponderEvent,
 	PanResponderGestureState,
 	ScrollViewProps,
-	View,
 	ViewToken
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import ChapterPage from './ChapterPage';
 import GestureScrollView from './GestureScrollView';
 interface MangaReaderProps {
 	zoomableViewRef: React.RefObject<ReactNativeZoomableView | null>;
@@ -67,34 +66,17 @@ const MangaZoomableReader = ({
 	handleOnShiftingEnd,
 	handleViewableItemsChanged,
 }: MangaReaderProps) => {
-	const renderItem = ({ item }: { item: MangaChapterPage }) => (
-		<View className="flex-1 justify-center items-center">
-			<Image
-				source={{ uri: item.pageImageUrl, headers: {
-					'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-					'Accept': 'image/*',
-					'Accept-Language': 'en-US,en;q=0.9',
-					'Referer': 'https://mangakakalot.com/',
-					
-				} }}
-				style={{
-					width: screenWidth,
-					height: undefined,
-					aspectRatio: item.pageWidth / item.pageHeight,
-				}}
-				contentFit="contain" // This makes the image scale to fit inside width & height without cropping
-				recyclingKey={item.pageId}
-				allowDownscaling={false}
-				onLoad={()=>{
-					console.log('onLoad');
-				}}
-				placeholder={{ blurhash }}
-				onError={(error) => {
-					console.error('CHAPTER PAGE ERROR: ' + error.error);
-				}}
+	
+	const renderItem = ({ item }: { item: MangaChapterPage }) => {
+		return (
+			<ChapterPage 
+				item={item} 
+				screenWidth={screenWidth} 
+				blurhash={blurhash} 
 			/>
-		</View>
-	);
+		);
+	};
+	
 
 	const viewabilityConfig = {
 		minimumViewTime: 300, // How long an item should be visible (ms)

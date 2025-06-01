@@ -3,7 +3,7 @@ import { colors } from '@/constants'
 import { Manga } from '@/services/ResponseTypes'
 import { useSearchMangaMutation } from '@/services/useGetSearchedManga'
 import { Ionicons } from '@expo/vector-icons'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -15,6 +15,8 @@ const Search = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<Manga[]>([])
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+  const inputRef = useRef<TextInput>(null)
+
 
   const {
     mutate: searchManga,
@@ -55,6 +57,12 @@ const Search = () => {
         }
       )
   }
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [searchQuery])
 
   const EmptyListComponent = () => {
     if (isError && error) {
@@ -130,6 +138,15 @@ const Search = () => {
             color={isPending ? colors.accent.DEFAULT : "white"} 
           />
           <TextInput
+            ref={inputRef}
+            onFocus={() => {
+              console.log('focused')
+            }}
+            onLayout={() => {
+              if (inputRef.current) {
+                inputRef.current.focus()
+              }
+            }}
             className="flex-1 ml-3 text-white tracking-wide py-3 text-base"
             placeholder="Search manga..."
             placeholderTextColor="rgba(255,255,255,0.5)"
