@@ -2,8 +2,10 @@ import '@/global.css';
 import { MaterialIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import ModalPopup from '../modal/ModalPopup';
 
 interface ModalAddTabProps {
+	visible: boolean;
 	handleAddTab: () => void;
 	onClose: () => void;
 	setTabTitleToAdd: (text: string) => void;
@@ -11,6 +13,7 @@ interface ModalAddTabProps {
 const suggestions = ['Completed', 'Ongoing', 'Queue', 'Reading', 'Dropped'];
 
 const ModalAddTab = ({
+	visible,
 	handleAddTab,
 	onClose,
 	setTabTitleToAdd,
@@ -23,8 +26,27 @@ const ModalAddTab = ({
 	}, [textInputValue]);
 
 	return (
-		<>
+		<ModalPopup
+			headerTitle="Add a new tab"
+			visible={visible}
+			modalAction={{
+				icon: <MaterialIcons name="add" size={16} color="white" />,
+				name: 'Add Tab',
+				callback: handleAddTab,
+			}}
+			headerIcon={
+				<MaterialIcons
+					name="add-box"
+					size={24}
+					color="rgba(255 255 255 / 0.3)"
+				/>
+			}
+			handleClose={onClose}
+		>
 			<View className="">
+				<Text className="text-gray-300 text-sm mb-3">
+					Create tabs to organize your manga collection{' '}
+				</Text>
 				<TextInput
 					value={textInputValue}
 					placeholder="ex: Completed, Ongoing, etc"
@@ -39,7 +61,9 @@ const ModalAddTab = ({
 					onChangeText={(text) => setTextInputValue(text)}
 					// selectionColor={colors.accent.DEFAULT} // Uncomment if you have colors defined
 				/>
-				<Text className="text-gray-300 mt-5">Suggestions: </Text>
+				<Text className="text-gray-300 mt-5 text-sm">
+					Suggestions:{' '}
+				</Text>
 				<View className="flex-row flex-wrap gap-2 mt-3">
 					{suggestions.map((suggestion) => (
 						<TouchableOpacity
@@ -54,7 +78,7 @@ const ModalAddTab = ({
 					))}
 				</View>
 			</View>
-		</>
+		</ModalPopup>
 	);
 };
 

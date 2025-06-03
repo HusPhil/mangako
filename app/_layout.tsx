@@ -127,7 +127,7 @@ export default function RootLayout() {
 							contentStyle: {
 								backgroundColor: colors.secondary.DEFAULT,
 							},
-							animation: 'simple_push',
+							animation: 'fade_from_bottom',
 						}}
 					/>
 					{/* Search screen */}

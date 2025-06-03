@@ -3,7 +3,6 @@ import ModalDeleteTabs from '@/components/manga_home/ModalDeleteTabs';
 import ModalEditTabs from '@/components/manga_home/ModalEditTabs';
 import TabsView from '@/components/manga_home/TabsView';
 import MangaListHeader from '@/components/manga_list/MangaListHeader';
-import ModalPopup from '@/components/modal/ModalPopup';
 import { colors } from '@/constants';
 import { Tab } from '@/services/manga_list/types';
 import { useMangaList } from '@/services/manga_list/useMangaList';
@@ -11,7 +10,6 @@ import useMangaListModal from '@/services/manga_list/useMangaListModal';
 import Constants from 'expo-constants';
 import { useEffect } from 'react';
 import { Platform, StatusBar, View } from 'react-native';
-import { ModalAddTabFooter } from '../../components/manga_home/ModalAddTab';
 
 const MangaListScreen = () => {
 	const {
@@ -107,44 +105,32 @@ const MangaListScreen = () => {
 				handleShowDeleteTab={handleShowModalDeleteTabs}
 				handleShowSortTab={handleShowModalEditTabs}
 			/>
-			<ModalPopup
-				variant="danger"
-				headerTitle="Add new tab"
-				visible={activeModal !== null}
-				footerComponent={
-					<ModalAddTabFooter handleAddTab={handleAddTab} />
-				}
-				handleClose={closeModal}
-				otherStyles={{
-					backgroundColor: 'transparent',
-					alignSelf: 'center',
-				}}
-			>
-				{isDeleteModalVisible ? (
-					<ModalDeleteTabs
-						onClose={closeModal}
-						tabs={mangaList.tabs}
-						handleDeleteTab={handleDeleteTab}
-						handleSelectItem={handleSelectItem}
-					/>
-				) : isAddModalVisible ? (
-					<ModalAddTab
-						onClose={closeModal}
-						handleAddTab={handleAddTab}
-						setTabTitleToAdd={setTabTitleToAdd}
-					/>
-				) : isEditModalVisible ? (
-					<ModalEditTabs
-						onClose={closeModal}
-						tabs={mangaList.tabs}
-						isSorting={isSorting}
-						renamingTabId={renamingTabId}
-						setRenamingTabId={setRenamingTabId}
-						handleReordered={handleReordered}
-						handleRenameTab={handleRenameTab}
-					/>
-				) : null}
-			</ModalPopup>
+
+			<ModalAddTab
+				visible={isAddModalVisible}
+				onClose={closeModal}
+				handleAddTab={handleAddTab}
+				setTabTitleToAdd={setTabTitleToAdd}
+			/>
+
+			<ModalDeleteTabs
+				visible={isDeleteModalVisible}
+				tabs={mangaList.tabs}
+				handleDeleteTab={handleDeleteTab}
+				handleSelectItem={handleSelectItem}
+				onClose={closeModal}
+			/>
+
+			<ModalEditTabs
+				visible={isEditModalVisible}
+				tabs={mangaList.tabs}
+				isSorting={isSorting}
+				renamingTabId={renamingTabId}
+				setRenamingTabId={setRenamingTabId}
+				handleReordered={handleReordered}
+				handleRenameTab={handleRenameTab}
+				onClose={closeModal}
+			/>
 
 			<TabsView
 				tabs={mangaList.tabs}
