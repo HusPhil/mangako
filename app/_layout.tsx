@@ -7,10 +7,10 @@ import { SplashScreen, Stack } from 'expo-router';
 import * as SystemUI from 'expo-system-ui';
 import React, { useEffect } from 'react';
 import {
-  ActivityIndicator,
-  AppState,
-  AppStateStatus,
-  Platform,
+	ActivityIndicator,
+	AppState,
+	AppStateStatus,
+	Platform,
 } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -29,7 +29,6 @@ export default function RootLayout() {
 		'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf'),
 		'Poppins-Thin': require('../assets/fonts/Poppins-Thin.ttf'),
 	});
-
 	// Hide bottom bar
 	const hideNavBar = async () => {
 		if (Platform.OS !== 'android') return;
@@ -85,6 +84,7 @@ export default function RootLayout() {
 		if (fontsLoaded) {
 			SplashScreen.hideAsync();
 			// Re-hide navigation bar after splash screen
+
 			setTimeout(() => {
 				hideNavBar();
 			}, 100);
@@ -118,18 +118,26 @@ export default function RootLayout() {
 					<Stack.Screen name="(tabs)" />
 
 					{/* Manga section with dynamic ID */}
-					<Stack.Screen name="manga/[id]/index" options={{
-            contentStyle: {
-              backgroundColor: colors.secondary.DEFAULT,
-            },
-            animation: 'fade_from_bottom',
-          }}/>
+					<Stack.Screen name="manga/[id]/index" />
 
 					{/* Manga chapter detail */}
-					<Stack.Screen name="manga/[id]/[chapterId]" />
-
+					<Stack.Screen
+						name="manga/[id]/[chapterId]"
+						options={{
+							contentStyle: {
+								backgroundColor: colors.secondary.DEFAULT,
+							},
+							animation: 'simple_push',
+						}}
+					/>
 					{/* Search screen */}
-					<Stack.Screen name="search" />
+					<Stack.Screen
+						name="name"
+						options={{
+							headerShown: false,
+							animation: 'simple_push',
+						}}
+					/>
 				</Stack>
 			</QueryClientProvider>
 		</PaperProvider>

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { WebViewMessageEvent, WebViewProps } from 'react-native-webview';
 
 interface UseSimpleScraperReturn {
@@ -7,8 +7,18 @@ interface UseSimpleScraperReturn {
   error: string | null;
   logs: string[];
   webViewProps: Partial<WebViewProps> | null;
-  scrapeHTML: (url: string) => void;
+  scrapeHTML: (url: string, options?: ScrapeOptions) => void;
   clearLogs: () => void;
+  reset: () => void;
+}
+
+interface ScrapeOptions {
+  waitTime?: number;
+  timeout?: number;
+  waitForSelector?: string;
+  blockImages?: boolean;
+  enableScrolling?: boolean;    // New option
+  scrollSpeed?: number;         // New option
 }
 
 export const useSimpleScraper = (): UseSimpleScraperReturn => {
@@ -17,6 +27,9 @@ export const useSimpleScraper = (): UseSimpleScraperReturn => {
   const [error, setError] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [webViewProps, setWebViewProps] = useState<Partial<WebViewProps> | null>(null);
+  
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isScrapingRef = useRef<boolean>(false);
 
   const addLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -24,79 +37,225 @@ export const useSimpleScraper = (): UseSimpleScraperReturn => {
     console.log(`[Scraper] ${message}`);
   };
 
+  const cleanup = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    isScrapingRef.current = false;
+  }, []);
+
+  const finishScraping = useCallback((success: boolean, data?: string, errorMsg?: string) => {
+    if (!isScrapingRef.current) return; // Prevent duplicate calls
+    
+    cleanup();
+    setLoading(false);
+    
+    if (success && data) {
+      addLog(`Success! HTML length: ${data.length}`);
+      setHtml(data);
+      setError(null);
+    } else {
+      addLog(`Failed: ${errorMsg || 'Unknown error'}`);
+      setError(errorMsg || 'Scraping failed');
+    }
+    
+    // Keep WebView props for a moment to allow final rendering
+    setTimeout(() => {
+      setWebViewProps(null);
+    }, 1000);
+  }, [cleanup]);
+
   const handleMessage = useCallback((event: WebViewMessageEvent): void => {
+    if (!isScrapingRef.current) return;
+    
     try {
-      addLog(`Received message: ${event.nativeEvent.data.substring(0, 100)}...`);
+      const rawData = event.nativeEvent.data;
+      addLog(`Received message: ${rawData.substring(0, 100)}...`);
       
-      const message = JSON.parse(event.nativeEvent.data);
+      const message = JSON.parse(rawData);
       
       if (message.type === 'log') {
-        addLog(`WebView Log: ${message.data}`);
+        addLog(`WebView: ${message.data}`);
       } else if (message.type === 'success') {
-        addLog(`Success! HTML length: ${message.data.length}`);
-        setHtml(message.data);
-        setLoading(false);
-        setWebViewProps(null);
+        finishScraping(true, message.data);
       } else if (message.type === 'error') {
-        addLog(`Error: ${message.data}`);
-        setError(message.data);
-        setLoading(false);
-        setWebViewProps(null);
+        finishScraping(false, undefined, message.data);
+      } else if (message.type === 'progress') {
+        addLog(`Progress: ${message.data}`);
       }
     } catch (err) {
       addLog(`Message parsing error: ${err}`);
-      setError('Failed to parse WebView message');
-      setLoading(false);
-      setWebViewProps(null);
+      finishScraping(false, undefined, 'Failed to parse WebView message');
+    }
+  }, [finishScraping]);
+
+  const handleError = useCallback((syntheticEvent: any) => {
+    if (!isScrapingRef.current) return;
+    
+    const { nativeEvent } = syntheticEvent;
+    const errorMsg = nativeEvent?.description || 'Unknown WebView error';
+    addLog(`WebView error: ${errorMsg}`);
+    finishScraping(false, undefined, `WebView failed to load: ${errorMsg}`);
+  }, [finishScraping]);
+
+  const handleLoadStart = useCallback(() => {
+    if (isScrapingRef.current) {
+      addLog('WebView started loading...');
     }
   }, []);
 
-  const handleError = useCallback((syntheticEvent: any) => {
-    const { nativeEvent } = syntheticEvent;
-    addLog(`WebView error: ${nativeEvent?.description || 'Unknown error'}`);
-    setError(`WebView failed to load: ${nativeEvent?.description || 'Unknown error'}`);
-    setLoading(false);
-    setWebViewProps(null);
-  }, []);
-
-  const handleLoadStart = useCallback(() => {
-    addLog('WebView started loading...');
-  }, []);
-
   const handleLoad = useCallback(() => {
-    addLog('WebView finished loading');
+    if (isScrapingRef.current) {
+      addLog('WebView finished loading');
+    }
   }, []);
 
-  const scrapeHTML = useCallback((url: string): void => {
-    addLog(`Starting scrape of: ${url}`);
-    setLoading(true);
-    setError(null);
-    setHtml('');
+  const handleLoadEnd = useCallback(() => {
+    if (isScrapingRef.current) {
+      addLog('WebView load ended - JavaScript should execute now');
+    }
+  }, []);
 
-    // Super simple injected JavaScript for testing
-    const injectedJS = `
+  const createInjectedJS = (options: ScrapeOptions) => {
+    const { waitTime = 3000, waitForSelector, blockImages = false } = options;
+    
+    return `
       (function() {
         try {
-          // Log that script is running
           window.ReactNativeWebView.postMessage(JSON.stringify({
             type: 'log',
-            data: 'Injected script started'
+            data: 'Injected script started - URL: ' + window.location.href
           }));
 
-          // Wait a short time for page to settle
-          setTimeout(() => {
-            try {
+          // Function to scroll and load lazy content
+          function scrollToLoadContent() {
+            return new Promise((resolve) => {
+              let totalHeight = 0;
+              const distance = 1000;
+              const scrollDelay = 10;
+              
+              const timer = setInterval(() => {
+                const scrollHeight = document.body.scrollHeight;
+                window.scrollBy(0, distance);
+                totalHeight += distance;
+
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'progress',
+                  data: \`Scrolling... \${totalHeight}/\${scrollHeight}px\`
+                }));
+
+                if(totalHeight >= scrollHeight) {
+                  clearInterval(timer);
+                  // Scroll back to top
+                  window.scrollTo(0, 0);
+                  window.ReactNativeWebView.postMessage(JSON.stringify({
+                    type: 'log',
+                    data: 'Finished scrolling, content should be loaded'
+                  }));
+                  resolve();
+                }
+              }, scrollDelay);
+            });
+          }
+
+          // Block images if requested (after scrolling)
+          function blockImagesIfNeeded() {
+            ${blockImages ? `
+            const images = document.querySelectorAll('img');
+            images.forEach(img => img.style.display = 'none');
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'log',
+              data: 'Blocked ' + images.length + ' images after loading'
+            }));
+            ` : ''}
+          }
+
+          let attempts = 0;
+          const maxAttempts = ${Math.ceil(waitTime / 500)};
+
+          async function checkAndExtract() {
+            attempts++;
+            
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'progress',
+              data: \`Attempt \${attempts}/\${maxAttempts} - Document ready: \${document.readyState}\`
+            }));
+
+            // Wait for document to be ready first
+            if (document.readyState !== 'complete' && attempts < maxAttempts) {
               window.ReactNativeWebView.postMessage(JSON.stringify({
                 type: 'log',
-                data: 'Getting HTML after 2 second delay'
+                data: 'Document not ready yet, waiting...'
               }));
+              setTimeout(checkAndExtract, 500);
+              return;
+            }
 
-              // Get the HTML
+            // On first complete load, scroll to load lazy content
+            if (attempts === 1 || (document.readyState === 'complete' && attempts <= 3)) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'log',
+                data: 'Starting scroll to load lazy content...'
+              }));
+              
+              try {
+                await scrollToLoadContent();
+                blockImagesIfNeeded();
+                
+                // Wait a bit more for lazy loaded content to render
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+              } catch (scrollError) {
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'log',
+                  data: 'Scroll error (continuing anyway): ' + scrollError.message
+                }));
+              }
+            }
+
+            // Check if we should wait for a specific selector
+            ${waitForSelector ? `
+            const targetElement = document.querySelector('${waitForSelector}');
+            if (!targetElement && attempts < maxAttempts) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'log',
+                data: 'Waiting for selector: ${waitForSelector}'
+              }));
+              setTimeout(checkAndExtract, 500);
+              return;
+            }
+            ` : ''}
+
+            // Check if we have content
+            const hasContent = document.body && document.body.children.length > 0;
+            
+            if (!hasContent && attempts < maxAttempts) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'log',
+                data: 'No content found yet, retrying...'
+              }));
+              setTimeout(checkAndExtract, 500);
+              return;
+            }
+
+            // Extract HTML
+            try {
               const html = document.documentElement.outerHTML;
               
+              if (html.length < 100) {
+                throw new Error('HTML too short, might not be fully loaded');
+              }
+
+              // Count loaded images for verification
+              const allImages = document.querySelectorAll('img');
+              const loadedImages = Array.from(allImages).filter(img => 
+                img.complete && img.naturalHeight !== 0
+              ).length;
+
               window.ReactNativeWebView.postMessage(JSON.stringify({
                 type: 'log',
-                data: \`HTML length: \${html.length}\`
+                data: \`Extracted HTML - Length: \${html.length}, Title: "\${document.title}", Images: \${loadedImages}/\${allImages.length}\`
               }));
 
               window.ReactNativeWebView.postMessage(JSON.stringify({
@@ -104,23 +263,49 @@ export const useSimpleScraper = (): UseSimpleScraperReturn => {
                 data: html
               }));
 
-            } catch (innerError) {
+            } catch (extractError) {
               window.ReactNativeWebView.postMessage(JSON.stringify({
                 type: 'error',
-                data: 'Inner error: ' + innerError.message
+                data: 'Extraction error: ' + extractError.message
               }));
             }
-          }, 2000);
+          }
+
+          // Start checking after a brief delay
+          setTimeout(checkAndExtract, 500);
 
         } catch (error) {
           window.ReactNativeWebView.postMessage(JSON.stringify({
             type: 'error',
-            data: 'Script error: ' + error.message
+            data: 'Script initialization error: ' + error.message
           }));
         }
       })();
       true;
     `;
+  };
+
+  const scrapeHTML = useCallback(async (url: string, options: ScrapeOptions = {}): Promise<void> => {
+    const { timeout = 150000 } = options;
+    
+    // Reset state
+    reset();
+    
+    addLog(`Starting scrape of: ${url}`);
+    setLoading(true);
+    setError(null);
+    setHtml('');
+    isScrapingRef.current = true;
+
+    // Set timeout
+    timeoutRef.current = setTimeout(() => {
+      if (isScrapingRef.current) {
+        addLog('Scraping timed out');
+        finishScraping(false, undefined, 'Scraping timed out');
+      }
+    }, timeout);
+
+    const injectedJS = createInjectedJS(options);
 
     setWebViewProps({
       source: { uri: url },
@@ -129,19 +314,39 @@ export const useSimpleScraper = (): UseSimpleScraperReturn => {
       onError: handleError,
       onLoadStart: handleLoadStart,
       onLoad: handleLoad,
-      style: { height: 1, opacity: 0.1 }, // Make slightly visible for debugging
+      onLoadEnd: handleLoadEnd,
+      style: { height: 1280, width: 800, opacity: 0.5 }, // Completely hidden
       javaScriptEnabled: true,
       domStorageEnabled: true,
       startInLoadingState: true,
       mixedContentMode: 'compatibility',
-      allowsInlineMediaPlayback: false,
       mediaPlaybackRequiresUserAction: true,
+      cacheEnabled: false, // Disable cache for fresh content
+      incognito: true, // Private browsing mode
     });
-  }, [handleMessage, handleError, handleLoadStart, handleLoad]);
+    const backendUrl = 'http://192.168.8.78:8000/api/v1/scrape/testWebView';
+				const response = await fetch(backendUrl, {
+				  method: 'POST',
+				  headers: {
+					  'Content-Type': 'application/json',
+				  },
+				  body: JSON.stringify({ html }),
+				});
+				const data = await response.json();
+				console.log('data', data);
+  }, [handleMessage, handleError, handleLoadStart, handleLoad, handleLoadEnd, finishScraping]);
 
   const clearLogs = useCallback(() => {
     setLogs([]);
   }, []);
+
+  const reset = useCallback(() => {
+    cleanup();
+    setLoading(false);
+    setError(null);
+    setHtml('');
+    setWebViewProps(null);
+  }, [cleanup]);
 
   return {
     html,
@@ -150,6 +355,7 @@ export const useSimpleScraper = (): UseSimpleScraperReturn => {
     logs,
     webViewProps,
     scrapeHTML,
-    clearLogs
+    clearLogs,
+    reset
   };
 };

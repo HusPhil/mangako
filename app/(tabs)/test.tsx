@@ -5,7 +5,7 @@ import { useSimpleScraper } from '../manga/[id]/components/manga_reader/useHTMLS
 
 const SimpleScraperTest: React.FC = () => {
   const { html, loading, error, logs, webViewProps, scrapeHTML, clearLogs } = useSimpleScraper();
-  const [url, setUrl] = useState<string>('https://mangabuddy.com/the-eminence-in-shadow/vol-2-chapter-5'); // Simple test URL
+  const [url, setUrl] = useState<string>('https://comick.io/home2?lang=en'); // Simple test URL
 
   const testUrls = [
     { name: 'Simple HTML', url: 'https://httpbin.org/html' },
@@ -60,7 +60,13 @@ const SimpleScraperTest: React.FC = () => {
                 title={test.name}
                 onPress={() => {
                   setUrl(test.url);
-                  scrapeHTML(test.url);
+                  scrapeHTML(test.url, {
+                    waitTime: 8000,
+                    timeout: 300000,
+                    enableScrolling: true,
+                    scrollSpeed: 5,
+                    blockImages: false
+                  });
                 }}
                 disabled={loading}
               />
