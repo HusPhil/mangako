@@ -21,7 +21,7 @@ import {
 	ScrollView,
 	Text,
 	TouchableOpacity,
-	View
+	View,
 } from 'react-native';
 import ChapterList from './components/ChapterList';
 import MangaDetailsContent from './components/MangaDetailsContent';
@@ -68,9 +68,7 @@ const MangaInfoScreen = () => {
 		updateMangaListings,
 	} = useMangaList();
 
-	const { readingProgress, } = useReadingProgress(
-		mangaId!
-	);
+	const { readingProgress } = useReadingProgress(mangaId!);
 
 	const {
 		selectionModeOn,
@@ -92,14 +90,12 @@ const MangaInfoScreen = () => {
 	const handleRefresh = async () => {
 		console.log('Refreshing manga info...');
 		const query = new URLSearchParams({
-			mangaCover: mangaCover ?? "",
-			mangaTitle: mangaTitle ?? "",
-			mangaUrl: mangaUrl ?? "NONE",
-		  }).toString();
-	  
-		router.replace(
-		`/manga/${mangaId}?${query}`
-		);
+			mangaCover: mangaCover ?? '',
+			mangaTitle: mangaTitle ?? '',
+			mangaUrl: mangaUrl ?? 'NONE',
+		}).toString();
+
+		router.replace(`/manga/${mangaId}?${query}`);
 	};
 
 	const handleSetLastReadChapterIndex = (index: number) => {
@@ -188,7 +184,6 @@ const MangaInfoScreen = () => {
 		selectAllChapters(chapters);
 	};
 
-
 	const handleSelectInverseChapters = () => {
 		selectInverseChapters(chapters);
 	};
@@ -212,7 +207,13 @@ const MangaInfoScreen = () => {
 	}, []);
 
 	return (
-		<View className="h-full w-full bg-primary" style={{ paddingTop: Constants.statusBarHeight }}>
+		<View
+			className="h-full w-full bg-primary"
+			style={{
+				paddingTop: Constants.statusBarHeight,
+				paddingBottom: Constants.statusBarHeight,
+			}}
+		>
 			<View className="h-full w-full">
 				{renderHeader({
 					mangaId: mangaId || '',
@@ -445,7 +446,10 @@ const BottomSelectionComponent = ({
 }: BottomSelectionComponentProps) => {
 	return (
 		<View className="px-2 my-3 bg-secondary-100 rounded-lg mx-4 py-3 flex-row justify-around items-center">
-			<TouchableOpacity className="flex-1 items-center" onPress={onMarkMultipleChaptersAsRead}>
+			<TouchableOpacity
+				className="flex-1 items-center"
+				onPress={onMarkMultipleChaptersAsRead}
+			>
 				<BookOpen size={18} color={colors.accent.DEFAULT} />
 				<Text className="text-xs text-white mt-2">Mark as read</Text>
 			</TouchableOpacity>

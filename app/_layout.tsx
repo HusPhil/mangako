@@ -132,7 +132,7 @@ export default function RootLayout() {
 					/>
 					{/* Search screen */}
 					<Stack.Screen
-						name="name"
+						name="search"
 						options={{
 							headerShown: false,
 							animation: 'simple_push',

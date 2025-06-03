@@ -1,57 +1,85 @@
-import { MaterialIcons } from "@expo/vector-icons";
-import React from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
-import colors from "../../constants/Colors";
-import HorizontalRule from "../HorizontalRule";
+import '@/global.css';
+import { MaterialIcons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface ModalAddTabProps {
-  handleAddTab: () => void;
-  onClose: () => void;
-  setTabTitleToAdd: (text: string) => void;
+	handleAddTab: () => void;
+	onClose: () => void;
+	setTabTitleToAdd: (text: string) => void;
 }
+const suggestions = ['Completed', 'Ongoing', 'Queue', 'Reading', 'Dropped'];
 
 const ModalAddTab = ({
-  handleAddTab,
-  onClose,
-  setTabTitleToAdd,
+	handleAddTab,
+	onClose,
+	setTabTitleToAdd,
 }: ModalAddTabProps) => {
-  return (
-    <View className="w-full bg-secondary rounded-md p-3 max-h-[420px]">
-      <View className="flex-row justify-between items-center">
-        <Text className="text-white font-pregular text-center">
-          Add a new Tab on the List!
-        </Text>
-        <TouchableOpacity className="flex-1 items-end p-3" onPress={onClose}>
-          <MaterialIcons name="close" size={20} color="white" />
-        </TouchableOpacity>
-      </View>
-      <HorizontalRule displayText={""} otherStyles={""} />
-      <View className="flex-row px-4 pt-2 items-center mt-2">
-        <TextInput
-          placeholder="ex: Completed, Ongoing, etc"
-          placeholderTextColor={colors.secondary[100]}
-          className="bg-white rounded-lg py-1 px-3 text-primary font-pregular text-sm w-full"
-          autoFocus={true}
-          selectTextOnFocus
-          textAlignVertical="center"
-          onEndEditing={handleAddTab}
-          onChangeText={(text) => setTabTitleToAdd(text)}
-          selectionColor={colors.accent.DEFAULT}
-        />
-      </View>
-      <TouchableOpacity
-        className="flex-row justify-between border-2 border-white py-1 px-2  rounded-md mt-3 self-center"
-        onPress={handleAddTab}
-      >
-        <View>
-          <MaterialIcons name="add-circle-outline" size={15} color="white" />
-        </View>
-        <Text className=" text-center text-xs font-pregular text-white ml-1">
-          Add Tab
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
+	const [isFocused, setIsFocused] = useState(false);
+	const [textInputValue, setTextInputValue] = useState('');
+
+	useEffect(() => {
+		setTabTitleToAdd(textInputValue);
+	}, [textInputValue]);
+
+	return (
+		<>
+			<View className="">
+				<TextInput
+					value={textInputValue}
+					placeholder="ex: Completed, Ongoing, etc"
+					className={`bg-secondary rounded-lg text-white p-3 w-full ${
+						isFocused ? 'border border-accent' : ''
+					}`}
+					onFocus={() => setIsFocused(true)}
+					onBlur={() => setIsFocused(false)}
+					selectTextOnFocus
+					textAlignVertical="center"
+					onEndEditing={handleAddTab}
+					onChangeText={(text) => setTextInputValue(text)}
+					// selectionColor={colors.accent.DEFAULT} // Uncomment if you have colors defined
+				/>
+				<Text className="text-gray-300 mt-5">Suggestions: </Text>
+				<View className="flex-row flex-wrap gap-2 mt-3">
+					{suggestions.map((suggestion) => (
+						<TouchableOpacity
+							key={suggestion}
+							onPress={() => setTextInputValue(suggestion)}
+							className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-full  transition-colors duration-200"
+						>
+							<Text className="text-gray-300 text-xs">
+								{suggestion}
+							</Text>
+						</TouchableOpacity>
+					))}
+				</View>
+			</View>
+		</>
+	);
+};
+
+interface ModalAddTabFooterProps {
+	handleAddTab: () => void;
+}
+
+export const ModalAddTabFooter = ({ handleAddTab }: ModalAddTabFooterProps) => {
+	return (
+		<TouchableOpacity
+			className="flex-row justify-between border-2 border-white py-1 px-2  rounded-md mt-3 self-center"
+			onPress={handleAddTab}
+		>
+			<View>
+				<MaterialIcons
+					name="add-circle-outline"
+					size={15}
+					color="white"
+				/>
+			</View>
+			<Text className=" text-center text-xs font-pregular text-white ml-1">
+				Add Tab
+			</Text>
+		</TouchableOpacity>
+	);
 };
 
 export default ModalAddTab;
