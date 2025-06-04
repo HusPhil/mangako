@@ -120,6 +120,7 @@ const ReaderDropDownList = ({
 									return (
 										<Pressable
 											key={index}
+											disabled={index === selectedIndex}
 											className={`w-full p-3 z-50  ${
 												index === selectedIndex
 													? 'bg-gray-400'

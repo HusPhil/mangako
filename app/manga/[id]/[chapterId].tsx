@@ -285,8 +285,6 @@ const MangaReaderScreen = () => {
 	};
 
 	const handleOpenOptions = () => {
-		console.log('Opening options:', failedRefs.current);
-		reloadAllFailed();
 		setShowOptions(true);
 		StatusBar.setHidden(false);
 	};
@@ -328,6 +326,8 @@ const MangaReaderScreen = () => {
 					/>
 					<ReaderOptionsSheet
 						flashListRef={flashListRef}
+						pages={pages}
+						failedPagesRef={failedRefs}
 						visible={showOptions}
 						readingMode={readingMode}
 						onClose={handleCloseOptions}
@@ -335,7 +335,8 @@ const MangaReaderScreen = () => {
 						chapterId={chapterId as string}
 						chapterTitle={chapterTitle as string}
 						currentPage={readerCurrentPage.current}
-						totalPages={pages.length}
+						reloadPage={reloadFailed}
+						reloadPages={reloadAllFailed}
 						onNavigate={handleReaderNavigation}
 						onToggleReadingMode={handleToggleReadingMode}
 						onNavigateToNextChapter={handleNavigateToNextChapter}

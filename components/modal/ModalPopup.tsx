@@ -78,9 +78,16 @@ const ModalPopup = ({
 					>
 						{/* HEADER */}
 						<View className="w-full py-2 px-5 border-b border-white/30 flex-row justify-between items-center">
-							<View className="gap-2 flex-row items-center">
+							<View
+								className="gap-2 flex-row items-center"
+								style={{ maxWidth: '90%' }}
+							>
 								{headerIcon}
-								<Text className="text-white text-lg">
+								<Text
+									className="text-white text-lg flex-shrink"
+									numberOfLines={2}
+									ellipsizeMode="tail"
+								>
 									{headerTitle || 'Untitled modal'}
 								</Text>
 							</View>

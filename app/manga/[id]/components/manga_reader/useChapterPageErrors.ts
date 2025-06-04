@@ -16,11 +16,13 @@ const useChapterPageErrors = () => {
 	};
 
 	const reloadAllFailed = () => {
-		Object.values(failedRefs.current).forEach(ref => ref.reload());
+		Object.values(failedRefs.current).forEach((ref) => ref.reload());
 	};
 
 	const reloadFailed = (pageId: string) => {
-		failedRefs.current[pageId].reload();
+		if (failedRefs.current[pageId]) {
+			failedRefs.current[pageId].reload();
+		}
 	};
 
 	return {
@@ -31,6 +33,5 @@ const useChapterPageErrors = () => {
 		failedRefs, // if you ever want to inspect or target specific ones
 	};
 };
-
 
 export default useChapterPageErrors;

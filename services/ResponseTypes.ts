@@ -1,67 +1,66 @@
 export interface Manga {
-  mangaId: string;
-  mangaTitle: string;
-  mangaUrl: string;
-  mangaCover: string;
+	mangaId: string;
+	mangaTitle: string;
+	mangaUrl: string;
+	mangaCover: string;
 }
 
-
 export interface MangaChapterPage {
-  pageId: string;
-  pageUrl: string;
-  pageImageUrl: string;
-  pageHeight: number;
-  pageWidth: number;
-  pageBlurhash?: string;
+	pageId: string;
+	pageUrl: string;
+	pageImageUrl: string;
+	pageHeight: number;
+	pageWidth: number;
+	pageIndex?: number;
+	pageBlurhash?: string;
 }
 
 export interface LatestMangaListResponse {
-  source: string;
-  latest_manga: Manga[];
+	source: string;
+	latest_manga: Manga[];
 }
 
 export interface PopularMangaListResponse {
-  source: string;
-  popular_manga: Manga[];
+	source: string;
+	popular_manga: Manga[];
 }
 
 export interface MangaDetails {
-  mangaDescription: string;
-  mangaAuthor: string;
-  mangaStatus: string;
-  mangaTags: string[];
-  mangaAlternativeNames: string[];
+	mangaDescription: string;
+	mangaAuthor: string;
+	mangaStatus: string;
+	mangaTags: string[];
+	mangaAlternativeNames: string[];
 }
 
 export interface MangaChapter extends MangaChapterResponse {
-  isRead?: boolean;
-  isSelected?: boolean;
+	isRead?: boolean;
+	isSelected?: boolean;
 }
 
 interface MangaChapterResponse {
-  chapterId: string;
-  chapterTitle: string;
-  chapterUrl: string;
-  chapterTimeUploaded: string;
+	chapterId: string;
+	chapterTitle: string;
+	chapterUrl: string;
+	chapterTimeUploaded: string;
 }
 
 export interface ChapterNavigation {
-  prev?: MangaChapter;
-  next?: MangaChapter;
+	prev?: MangaChapter;
+	next?: MangaChapter;
 }
 
 export interface ChapterNavigationMap {
-  [chapterId: string]: ChapterNavigation;
+	[chapterId: string]: ChapterNavigation;
 }
 
 export interface MangaInfoResponse {
-  mangaChapters: MangaChapter[];
-  mangaDetails: MangaDetails;
-  chaptersNavigationMap: ChapterNavigationMap;
+	mangaChapters: MangaChapter[];
+	mangaDetails: MangaDetails;
+	chaptersNavigationMap: ChapterNavigationMap;
 }
 
-
 export interface MangaSearchResponse {
-  source: string;
-  results: Manga[];
+	source: string;
+	results: Manga[];
 }

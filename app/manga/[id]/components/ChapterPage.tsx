@@ -22,7 +22,7 @@ const ChapterPage = forwardRef<ChapterPageRef, ChapterPageProps>(
 
 		const reload = () => {
 			setHasError(false);
-			setRetryKey(prev => prev + 1);
+			setRetryKey((prev) => prev + 1);
 		};
 
 		useImperativeHandle(ref, () => ({ reload }));
@@ -36,9 +36,15 @@ const ChapterPage = forwardRef<ChapterPageRef, ChapterPageProps>(
 		}, [hasError]);
 
 		return (
-			<View style={{ width: screenWidth, height: imageHeight }} className="justify-center items-center flex-1">
+			<View
+				style={{ width: screenWidth, height: imageHeight }}
+				className="justify-center items-center flex-1"
+			>
 				{hasError ? (
-					<Pressable onPress={reload} className="justify-center items-center bg-secondary w-full h-full">
+					<Pressable
+						onPress={reload}
+						className="justify-center items-center bg-secondary w-full h-full"
+					>
 						<Text className="font-pbold text-xl text-accent text-center px-4">
 							Failed to load image
 						</Text>
@@ -50,9 +56,10 @@ const ChapterPage = forwardRef<ChapterPageRef, ChapterPageProps>(
 					<Image
 						key={retryKey}
 						source={{
-							uri: item.pageImageUrl,
+							uri: false ? '' : item.pageImageUrl,
 							headers: {
-								'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+								'User-Agent':
+									'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
 								Accept: 'image/*',
 								'Accept-Language': 'en-US,en;q=0.9',
 								Referer: 'https://mangakakalot.com/',
@@ -65,7 +72,12 @@ const ChapterPage = forwardRef<ChapterPageRef, ChapterPageProps>(
 						transition={100}
 						recyclingKey={`${item.pageId}-${retryKey}`}
 						allowDownscaling={false}
-						placeholder={{ blurhash: item.pageBlurhash || blurhash }}
+						placeholder={{
+							blurhash: item.pageBlurhash || blurhash,
+						}}
+						onLoad={() => {
+							onErrorClear?.(item?.pageId);
+						}}
 						onError={(error) => {
 							console.error('CHAPTER PAGE ERROR:', error.error);
 							setHasError(true);
