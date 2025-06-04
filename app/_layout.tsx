@@ -118,7 +118,15 @@ export default function RootLayout() {
 					<Stack.Screen name="(tabs)" />
 
 					{/* Manga section with dynamic ID */}
-					<Stack.Screen name="manga/[id]/index" />
+					<Stack.Screen
+						name="manga/[id]/index"
+						options={{
+							contentStyle: {
+								backgroundColor: colors.secondary.DEFAULT,
+							},
+							animation: 'fade_from_bottom',
+						}}
+					/>
 
 					{/* Manga chapter detail */}
 					<Stack.Screen
@@ -127,7 +135,7 @@ export default function RootLayout() {
 							contentStyle: {
 								backgroundColor: colors.secondary.DEFAULT,
 							},
-							animation: 'fade_from_bottom',
+							animation: 'simple_push',
 						}}
 					/>
 					{/* Search screen */}

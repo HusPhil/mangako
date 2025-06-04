@@ -4,120 +4,138 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import React, { useEffect, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import HorizontalRule from '../HorizontalRule';
+import ModalPopup from '../modal/ModalPopup';
 
 interface ModalAddToMangaListProps {
+	visible: boolean;
 	mangaId: string;
-  mangaListTabs: Tab[];
-  onSaveMangaListings: (mangaListings: Tab[]) => void;
+	mangaListTabs: Tab[];
+	onSaveMangaListings: (mangaListings: Tab[]) => void;
 	onClose: () => void;
-  findMangaListings: (mangaId: string) => Promise<Tab[]>;
+	findMangaListings: (mangaId: string) => Promise<Tab[]>;
 }
 
 const ModalMangaTabsEditor = ({
-  mangaId,
+	visible,
+	mangaId,
 	mangaListTabs,
 	onSaveMangaListings,
 	onClose,
-  findMangaListings,
+	findMangaListings,
 }: ModalAddToMangaListProps) => {
 	const [mangaListings, setMangaListings] = useState<Tab[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
-  let prevMangaListings: Tab[] = [];
+	let prevMangaListings: Tab[] = [];
 
-  useEffect(() => {
-    setIsLoading(true);
-    console.log('Manga ID:', mangaId);
-    const fetchMangaListings = async () => {
-      const listings = await findMangaListings(mangaId!);
-      console.log('Manga listings:', listings);
-      setMangaListings(listings);
-      prevMangaListings = listings;
-      setIsLoading(false);
-    };
-    fetchMangaListings();
-  }, [mangaId]);
+	useEffect(() => {
+		setIsLoading(true);
+		console.log('Manga ID:', mangaId);
+		const fetchMangaListings = async () => {
+			const listings = await findMangaListings(mangaId!);
+			console.log('Manga listings:', listings);
+			setMangaListings(listings);
+			prevMangaListings = listings;
+			setIsLoading(false);
+		};
+		fetchMangaListings();
+	}, [mangaId]);
 
-
-  const handleToggleMangaListing = (tab: Tab) => {
-    setMangaListings(prev => {
-      const exists = prev.some(listing => listing.id === tab.id);
-      if (exists) {
-        // Remove item if it exists
-        tab.mangaIds = tab.mangaIds.filter(id => id !== mangaId);
-        return prev.filter(listing => listing.id !== tab.id);
-      } else {
-        // Add item if it doesn't exist
-        tab.mangaIds = [...tab.mangaIds, mangaId];
-        return [...prev, tab];
-      }
-    });
-  }
+	const handleToggleMangaListing = (tab: Tab) => {
+		setMangaListings((prev) => {
+			const exists = prev.some((listing) => listing.id === tab.id);
+			if (exists) {
+				// Remove item if it exists
+				tab.mangaIds = tab.mangaIds.filter((id) => id !== mangaId);
+				return prev.filter((listing) => listing.id !== tab.id);
+			} else {
+				// Add item if it doesn't exist
+				tab.mangaIds = [...tab.mangaIds, mangaId];
+				return [...prev, tab];
+			}
+		});
+	};
 
 	const renderItem = ({ item }: { item: Tab }) => {
 		return (
-			<TouchableOpacity onPress={() => handleToggleMangaListing(item)}>
-				<View className="flex-row justify-between items-center py-3">
+			<TouchableOpacity
+				onPress={() => handleToggleMangaListing(item)}
+				className="bg-secondary/30 my-1 rounded-md p-1 px-3 border border-gray-600"
+			>
+				<View className="flex-row gap-2 items-center py-3">
+					{mangaListings.some((listing) => listing.id === item.id) ? (
+						item.id === 'favorites' ? (
+							<MaterialIcons
+								name="favorite"
+								size={20}
+								color={colors.accent.DEFAULT}
+							/>
+						) : (
+							<MaterialIcons
+								name="task-alt"
+								size={20}
+								color={colors.accent.DEFAULT}
+							/>
+						)
+					) : (
+						<MaterialIcons
+							name="radio-button-unchecked"
+							size={20}
+							color={'rgba(255 255 255 / 0.3)'}
+						/>
+					)}
 					<Text key={item.id} className="text-white font-pregular">
 						{item.name}
 					</Text>
-					{mangaListings.some(listing => listing.id === item.id) && (
-            <MaterialIcons
-              name="sell"
-              size={20}
-              color={colors.accent.DEFAULT}
-            />
-					)}
 				</View>
 			</TouchableOpacity>
 		);
 	};
 
-  const handleClose = () => {
-    onClose();
-    // setMangaListings(prevMangaListings);
-  }
-
+	const handleClose = () => {
+		onClose();
+		// setMangaListings(prevMangaListings);
+	};
 
 	return (
 		<>
 			{!isLoading && (
-				<View className="w-full bg-secondary rounded-md p-3 max-h-[420px]">
-					<View className="flex-row justify-between items-center">
-						<Text className="text-white font-pregular text-center">
-							Manage where this manga is listed
-						</Text>
-						<TouchableOpacity
-							className="flex-1 items-end p-3"
-							onPress={handleClose}
-						>
+				<ModalPopup
+					headerTitle="Manage tabs for this manga"
+					headerIcon={
+						<MaterialIcons
+							name="collections-bookmark"
+							size={24}
+							color="rgba(255 255 255 / 0.3)"
+						/>
+					}
+					modalAction={{
+						name: 'Save',
+						icon: (
 							<MaterialIcons
-								name="close"
-								size={20}
+								name="bookmark-outline"
+								size={16}
 								color="white"
 							/>
-						</TouchableOpacity>
+						),
+						callback: () => onSaveMangaListings(mangaListings),
+					}}
+					visible={visible}
+					handleClose={onClose}
+				>
+					<View className="w-full p-2 rounded-md  max-h-[250px]">
+						<View className="flex-row items-center">
+							<FlashList
+								data={mangaListTabs}
+								keyExtractor={(item, index) =>
+									`${item.id}-${index}`
+								}
+								renderItem={renderItem}
+								estimatedItemSize={100}
+								extraData={mangaListings}
+							/>
+						</View>
 					</View>
-					<HorizontalRule displayText={''} otherStyles={''} />
-					<View className="flex-row px-4 pt-2 items-center mt-2 max-h-[80%]">
-						<FlashList
-							data={mangaListTabs}
-							keyExtractor={(item, index) => `${item.id}-${index}`}
-							renderItem={renderItem}
-              estimatedItemSize={100}
-              extraData={mangaListings}
-						/>
-					</View>
-					<TouchableOpacity
-						className="flex-row justify-between border-2 border-white py-1 px-2  rounded-md mt-3 self-center"
-						onPress={() => onSaveMangaListings(mangaListings)}
-					>
-						<MaterialIcons name="save" size={15} color="white" />
-						<Text className=" text-center text-xs font-pregular text-white ml-1">
-							Save Changes
-						</Text>
-					</TouchableOpacity>
-				</View>
+				</ModalPopup>
 			)}
 		</>
 	);

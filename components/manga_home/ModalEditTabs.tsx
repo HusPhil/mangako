@@ -105,7 +105,11 @@ const DraggableTabItem = React.memo(
 				activeOpacity={0.7}
 			>
 				<View className="flex-row items-center space-x-3 max-w-[85%]">
-					<Pressable onPressIn={onDragStart} onPressOut={onDragEnd}>
+					<Pressable
+						onPressIn={onDragStart}
+						onPressOut={onDragEnd}
+						className=" p-1"
+					>
 						<MaterialIcons
 							name="drag-indicator"
 							size={20}

@@ -1,6 +1,5 @@
 import HorizontalRule from '@/components/HorizontalRule';
 import ModalMangaTabsEditor from '@/components/manga_home/ModalMangaTabsEditor';
-import ModalPopup from '@/components/modal/ModalPopup';
 import { colors } from '@/constants';
 import { Manga, MangaChapter } from '@/services/ResponseTypes';
 import { saveMangaData } from '@/services/cache/mangaCacheUtils';
@@ -115,8 +114,15 @@ const MangaInfoScreen = () => {
 			readingProgress?.lastRead?.chapterUrl ??
 			fallbackChapter.chapterUrl ??
 			'';
+		const chapterTitle =
+			readingProgress?.lastRead.chapterTitle ??
+			fallbackChapter.chapterTitle ??
+			'';
 
-		const query = new URLSearchParams({ chapterUrl }).toString();
+		const query = new URLSearchParams({
+			chapterUrl,
+			chapterTitle,
+		}).toString();
 		router.push(`/manga/${mangaId}/${chapterId}?${query}`);
 	};
 
@@ -151,6 +157,7 @@ const MangaInfoScreen = () => {
 
 		const query = new URLSearchParams({
 			chapterUrl: chapter.chapterUrl ?? '',
+			chapterTitle: chapter.chapterTitle ?? '',
 		}).toString();
 
 		if (!mangaId) return;
@@ -356,26 +363,15 @@ const MangaInfoScreen = () => {
 								)}
 							</View>
 						)}
-						<ModalPopup
+
+						<ModalMangaTabsEditor
 							visible={isModalVisible}
-							handleClose={() => {}}
-							otherStyles={{
-								backgroundColor: 'transparent',
-								alignSelf: 'center',
-							}}
-						>
-							<View className="h-full w-full justify-center items-center px-3 bg-transparent self-center">
-								<ModalMangaTabsEditor
-									mangaId={mangaId || ''}
-									mangaListTabs={mangaList.tabs}
-									findMangaListings={getMangaListings}
-									onClose={() => setIsModalVisible(false)}
-									onSaveMangaListings={
-										handleSaveMangaListings
-									}
-								/>
-							</View>
-						</ModalPopup>
+							mangaId={mangaId || ''}
+							mangaListTabs={mangaList.tabs}
+							findMangaListings={getMangaListings}
+							onClose={() => setIsModalVisible(false)}
+							onSaveMangaListings={handleSaveMangaListings}
+						/>
 					</View>
 				)}
 			</View>

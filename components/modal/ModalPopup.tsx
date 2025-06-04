@@ -81,7 +81,7 @@ const ModalPopup = ({
 							<View className="gap-2 flex-row items-center">
 								{headerIcon}
 								<Text className="text-white text-lg">
-									{headerTitle || 'Untitled action'}
+									{headerTitle || 'Untitled modal'}
 								</Text>
 							</View>
 							<TouchableOpacity

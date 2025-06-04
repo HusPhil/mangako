@@ -17,7 +17,7 @@ import {
 	StatusBar,
 	Text,
 	View,
-	ViewToken
+	ViewToken,
 } from 'react-native';
 import { Portal, Snackbar } from 'react-native-paper';
 import ReaderOptionsSheet from './components/manga_reader/ReaderOptionsSheet';
@@ -26,13 +26,20 @@ import useZoomableViewHandlers from './components/manga_reader/useZoomableViewHa
 import MangaZoomableReader from './components/MangaZoomableReader';
 const MangaReaderScreen = () => {
 	const router = useRouter();
-	const { id: mangaId, chapterId, chapterUrl } = useLocalSearchParams();
+	const {
+		id: mangaId,
+		chapterId,
+		chapterUrl,
+		chapterTitle,
+	} = useLocalSearchParams();
 	const {
 		data: pages,
 		isLoading,
 		isError,
 		error,
 	} = useGetChapterPages('mangakakalot', chapterUrl as string | undefined);
+
+	if (!chapterTitle) return <Text>Chapter title not found</Text>;
 
 	const navigationMap = useChapterNavigationStore(
 		(state) => state.navigationMap
@@ -51,7 +58,6 @@ const MangaReaderScreen = () => {
 	const { readingMode, updateReadingMode } = useReadingOptions(
 		mangaId as string
 	);
-
 
 	const {
 		addEntryToReadingProgress,
@@ -150,11 +156,17 @@ const MangaReaderScreen = () => {
 		horizontal: readingMode.value.horizontal,
 	});
 
-	const { registerFailedPage, unregisterFailedPage, reloadAllFailed, reloadFailed, failedRefs } = useChapterPageErrors();
+	const {
+		registerFailedPage,
+		unregisterFailedPage,
+		reloadAllFailed,
+		reloadFailed,
+		failedRefs,
+	} = useChapterPageErrors();
 
 	const onDoubleTap = useCallback(() => {
 		if (currentZoomLevel.current <= 1) {
-			zoomableViewRef?.current?.zoomBy(0.5);	
+			zoomableViewRef?.current?.zoomBy(0.5);
 			return;
 		} else {
 			zoomableViewRef?.current?.zoomTo(1, { x: 0, y: 0 });
@@ -173,6 +185,7 @@ const MangaReaderScreen = () => {
 			addEntryToReadingProgress(
 				{
 					chapterId: chapterId as string,
+					chapterTitle: chapterTitle as string,
 					chapterUrl: chapterUrl as string,
 					page: currentPageNum,
 				},
@@ -223,9 +236,17 @@ const MangaReaderScreen = () => {
 			navigationMap[chapterId as string]?.next?.chapterId;
 		const nextChapterUrl =
 			navigationMap[chapterId as string]?.next?.chapterUrl;
+		const nextChapterTitle =
+			navigationMap[chapterId as string]?.next?.chapterTitle;
+
+		if (!nextChapterId) {
+			router.back;
+			return;
+		}
 
 		const query = new URLSearchParams({
 			chapterUrl: nextChapterUrl ?? '',
+			chapterTitle: nextChapterTitle ?? '',
 		}).toString();
 
 		console.log('nextChapterId', nextChapterId);
@@ -241,9 +262,17 @@ const MangaReaderScreen = () => {
 			navigationMap[chapterId as string]?.prev?.chapterId;
 		const prevChapterUrl =
 			navigationMap[chapterId as string]?.prev?.chapterUrl;
+		const prevChapterTitle =
+			navigationMap[chapterId as string]?.prev?.chapterTitle;
+
+		if (!prevChapterId) {
+			router.back();
+			return;
+		}
 
 		const query = new URLSearchParams({
 			chapterUrl: prevChapterUrl ?? '',
+			chapterTitle: prevChapterTitle ?? '',
 		}).toString();
 
 		if (!mangaId) return;
@@ -253,20 +282,18 @@ const MangaReaderScreen = () => {
 	const handleCloseOptions = () => {
 		setShowOptions(false);
 		StatusBar.setHidden(true);
-	}
+	};
 
 	const handleOpenOptions = () => {
 		console.log('Opening options:', failedRefs.current);
 		reloadAllFailed();
 		setShowOptions(true);
 		StatusBar.setHidden(false);
-	}
-
-	
+	};
 
 	return (
 		<View className="h-full w-full bg-black">
-			<StatusBar hidden/>
+			<StatusBar hidden />
 			{isLoading || isReadingProgressLoading ? (
 				<MangaReaderLoader />
 			) : isError ? (
@@ -306,6 +333,7 @@ const MangaReaderScreen = () => {
 						onClose={handleCloseOptions}
 						mangaId={mangaId as string}
 						chapterId={chapterId as string}
+						chapterTitle={chapterTitle as string}
 						currentPage={readerCurrentPage.current}
 						totalPages={pages.length}
 						onNavigate={handleReaderNavigation}
@@ -319,11 +347,11 @@ const MangaReaderScreen = () => {
 							style={{
 								backgroundColor: colors.primary.DEFAULT,
 							}}
-							icon={({size, color}) => (
+							icon={({ size, color }) => (
 								<Ionicons
 									name="close"
 									size={size}
-									className='mr-3'
+									className="mr-3"
 									color={'white'}
 								/>
 							)}
