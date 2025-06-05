@@ -10,7 +10,6 @@ const fetchSources = async (): Promise<Source[]> => {
   if (!response.data || !Array.isArray(response.data)) {
     throw new Error("Invalid response from the server");
   }
-  console.log("Available sources:", response.data);
   return response.data;
 };
 

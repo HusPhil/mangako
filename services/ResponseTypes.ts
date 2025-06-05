@@ -67,8 +67,8 @@ export interface MangaSearchResponse {
 
 
 export enum SourceStatus {
-  ACTIVE = "active",
-  IN_DEVELOPMENT = "in_development",
+  READY_TO_USE = "ready to use",
+  IN_DEVELOPMENT = "in development",
   DEPRECATED = "deprecated"
 }
 

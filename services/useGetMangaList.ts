@@ -1,4 +1,5 @@
 import {
+  InfiniteData,
   useInfiniteQuery,
   useQuery,
   UseQueryResult,
@@ -21,19 +22,19 @@ export const getLatestMangaList = async ({
 
   return response; // Contains latest_manga and popular_manga
 };
-
 export const useGetLatestMangaList = (source: string) => {
   return useInfiniteQuery<
-    LatestMangaListResponse,
-    Error,
-    LatestMangaListResponse,
-    [string, string, string],
-    number
+    LatestMangaListResponse,            // TQueryFnData – type of each page
+    Error,                              // TError – error type
+    InfiniteData<LatestMangaListResponse>, // ✅ TData – the return type of data (optional, only if you're selecting)
+    [string, string, string],          // TQueryKey
+    number                              // TPageParam
   >({
     queryKey: [source, "manga", "latest"],
-    queryFn: ({ pageParam }) => getLatestMangaList({ source, page: pageParam }),
-    enabled: !!source,
+    queryFn: ({ pageParam = 1 }) =>
+      getLatestMangaList({ source, page: pageParam }),
     initialPageParam: 1,
+    enabled: !!source,
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.latest_manga.length === 0) return undefined;
       return allPages.length + 1;

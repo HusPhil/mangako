@@ -1,7 +1,12 @@
 import SourceDropDownList from '@/components/modal/SourceDropdownList';
 import { colors } from '@/constants';
-import { useGetAvailableSources } from '@/services/useGetAvailableSources';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Manga } from '@/services/ResponseTypes';
+import { useSourceStore } from '@/stores/sourceStore';
+import {
+	Ionicons,
+	MaterialCommunityIcons,
+	MaterialIcons,
+} from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -17,9 +22,24 @@ const BrowseTab = () => {
 	const [errorData, setErrorData] = useState();
 	const [snackbarVisible, setSnackbarVisible] = useState(false);
 
-	const { data: availableSources, isLoading: isLoadingSources } =
-		useGetAvailableSources();
 	const [activeSourceIndex, setActiveSourceIndex] = useState(0);
+	const availableSources = useSourceStore((state) => state.availableSources);
+
+	if (availableSources.length === 0) {
+		return (
+			<View className="flex-1 bg-primary justify-center items-center">
+				<MaterialCommunityIcons
+					name="robot-confused-outline"
+					size={96}
+					color="white"
+				/>
+
+				<Text className="text-white font-pregular">
+					No available sources at the moment
+				</Text>
+			</View>
+		);
+	}
 
 	const {
 		data: latestMangaData,
@@ -28,11 +48,9 @@ const BrowseTab = () => {
 		fetchNextPage: fetchNextLatestManga,
 		hasNextPage: hasMoreLatestManga,
 		isFetchingNextPage: isFetchingMoreLatestManga,
-	} = useGetLatestMangaList(
-		isLoadingSources ? undefined : availableSources[0]?.sourceName
-	);
+	} = useGetLatestMangaList(availableSources[activeSourceIndex]?.sourceName);
 
-	const latestMangaList = useMemo(() => {
+	const latestMangaList: Manga[] = useMemo(() => {
 		if (!latestMangaData) return [];
 
 		const seen = new Map();
@@ -52,9 +70,7 @@ const BrowseTab = () => {
 		data: popularMangaData,
 		error: popularMangaError,
 		isLoading: popularMangaLoading,
-	} = useGetPopularMangaList(
-		isLoadingSources ? null : availableSources[0]?.sourceName
-	);
+	} = useGetPopularMangaList(availableSources[activeSourceIndex]?.sourceName);
 
 	const handleSearchButton = () => {
 		router.push({
@@ -62,12 +78,12 @@ const BrowseTab = () => {
 		});
 	};
 
-	const getMoreManga = async (type) => {
+	const getMoreManga = async () => {
 		if (latestMangaLoading) {
 			console.log('latestMangaLoading', latestMangaLoading);
 			return;
 		}
-		if (type === 'latest' && hasMoreLatestManga) {
+		if (hasMoreLatestManga) {
 			await fetchNextLatestManga();
 		}
 	};
@@ -77,16 +93,29 @@ const BrowseTab = () => {
 			? { paddingTop: Constants.statusBarHeight }
 			: {};
 
-	if (isLoadingSources) {
+	if (latestMangaError) {
 		return (
 			<View className="flex-1 bg-primary justify-center items-center">
-				<Text className="text-white font-pregular">Loading...</Text>
+				<MaterialCommunityIcons
+					name="robot-dead-outline"
+					size={96}
+					color="white"
+				/>
+
+				<Text className="text-white font-pregular">
+					{latestMangaError.message ||
+						'Sorry, something went wrong while fetching the latest manga.'}
+				</Text>
 			</View>
 		);
 	}
 
 	return (
-		<View className="flex-1 bg-primary" style={viewStyle}>
+		<View
+			className="flex-1 bg-primary"
+			style={viewStyle}
+			key={activeSourceIndex}
+		>
 			<View className="mx-4 rounded-md mt-4 border border-gray-600 bg-secondary/30 flex-row items-center">
 				<SourceDropDownList
 					listItems={availableSources}
@@ -117,11 +146,9 @@ const BrowseTab = () => {
 					<MangaSlide
 						mangaData={
 							popularMangaLoading
-								? null
+								? undefined
 								: popularMangaData?.popular_manga
 						}
-						limit={100}
-						numColumns={3}
 						isLoading={popularMangaLoading}
 						onEndReached={() => {
 							// TODO: so something
@@ -132,13 +159,15 @@ const BrowseTab = () => {
 						otherStyles={'my-4 mx-4'}
 					/>
 					<MangaGrid
-						mangaData={latestMangaLoading ? null : latestMangaList}
+						mangaData={
+							latestMangaLoading ? undefined : latestMangaList
+						}
 						numColumns={3}
 						isLoading={
 							latestMangaLoading || isFetchingMoreLatestManga
 						}
 						onEndReached={() => {
-							getMoreManga('latest');
+							getMoreManga();
 							setSnackbarVisible(true);
 						}}
 					/>
@@ -151,21 +180,9 @@ const BrowseTab = () => {
 						color="white"
 					/>
 					<Text className="text-white font-pregular mt-2">
-						Something went wrong.
+						Something went wrong. Please restart the app and try
+						again.
 					</Text>
-					<TouchableOpacity
-						className="p-2 bg-accent rounded-md mt-4"
-						onPress={() => {
-							setNewestManga([]);
-							setPopularManga([]);
-							setErrorData(undefined);
-							fetchData();
-						}}
-					>
-						<Text className="text-white font-pregular text-center">
-							Would you like to retry?
-						</Text>
-					</TouchableOpacity>
 				</View>
 			)}
 			<Portal>

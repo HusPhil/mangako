@@ -1,7 +1,8 @@
 import { colors } from '@/constants';
 import { Tabs } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
+	ActivityIndicator,
 	ImageSourcePropType,
 	Platform,
 	SafeAreaView,
@@ -18,6 +19,8 @@ interface TabIconProps {
 	focused: boolean;
 }
 
+import { useGetAvailableSources } from '@/services/useGetAvailableSources';
+import { useSourceStore } from '@/stores/sourceStore';
 import { BookOpenText, Home } from 'lucide-react-native';
 
 const TabIcon = ({ icon, color, name, focused }: TabIconProps) => {
@@ -45,6 +48,30 @@ const TabIcon = ({ icon, color, name, focused }: TabIconProps) => {
 };
 
 const TabsLayout = () => {
+	const { isLoading: isLoadingSources, data: availableSources } =
+		useGetAvailableSources();
+
+	useEffect(() => {
+		if (availableSources && availableSources.length > 0) {
+			// Set the first source as the active source if needed
+			// This can be used to initialize the state or perform any side effects
+			const setAvailableSource =
+				useSourceStore.getState().setAvailableSources;
+			setAvailableSource(availableSources);
+		}
+	}, [availableSources]);
+
+	if (isLoadingSources || !availableSources) {
+		return (
+			<View className="flex-1 bg-primary justify-center items-center">
+				<ActivityIndicator size="large" color={colors.accent.DEFAULT} />
+				<Text className="text-white font-pregular">
+					Loading sources...
+				</Text>
+			</View>
+		);
+	}
+
 	return (
 		<SafeAreaView
 			className={`flex-1   ${
