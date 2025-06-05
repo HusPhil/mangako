@@ -221,10 +221,10 @@ const ReaderOptionsSheet: React.FC<ReaderOptionsSheetProps> = ({
 							</Text>
 						</View>
 						{failedPages.length === 0 ? (
-							<View className="h-[250px] w-full justify-center items-center p-7">
+							<View className="w-full justify-center items-center p-7">
 								<MaterialCommunityIcons
 									name="robot-happy-outline"
-									size={72}
+									size={96}
 									color="white"
 								/>
 								<Text className="font-pregular text-white">
@@ -232,7 +232,7 @@ const ReaderOptionsSheet: React.FC<ReaderOptionsSheetProps> = ({
 								</Text>
 							</View>
 						) : (
-							<View className="">
+							<View>
 								<FlatList
 									data={failedPages}
 									style={{ maxHeight: 200 }}

@@ -1,13 +1,14 @@
+import SourceDropDownList from '@/components/modal/SourceDropdownList';
 import { colors } from '@/constants';
-import { MaterialIcons } from '@expo/vector-icons';
+import { useGetAvailableSources } from '@/services/useGetAvailableSources';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
-import { Image, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Platform, Text, TouchableOpacity, View } from 'react-native';
 import { Portal, Snackbar } from 'react-native-paper';
 import HorizontalRule from '../../components/HorizontalRule';
 import { MangaGrid, MangaSlide } from '../../components/manga_menu';
-import icons from '../../constants/icons';
 import {
 	useGetLatestMangaList,
 	useGetPopularMangaList,
@@ -16,8 +17,9 @@ const BrowseTab = () => {
 	const [errorData, setErrorData] = useState();
 	const [snackbarVisible, setSnackbarVisible] = useState(false);
 
-	const currentNewestMangaPage = useRef(1);
-	const currentPopularMangaPage = useRef(1);
+	const { data: availableSources, isLoading: isLoadingSources } =
+		useGetAvailableSources();
+	const [activeSourceIndex, setActiveSourceIndex] = useState(0);
 
 	const {
 		data: latestMangaData,
@@ -26,7 +28,9 @@ const BrowseTab = () => {
 		fetchNextPage: fetchNextLatestManga,
 		hasNextPage: hasMoreLatestManga,
 		isFetchingNextPage: isFetchingMoreLatestManga,
-	} = useGetLatestMangaList('mangakakalot');
+	} = useGetLatestMangaList(
+		isLoadingSources ? undefined : availableSources[0]?.sourceName
+	);
 
 	const latestMangaList = useMemo(() => {
 		if (!latestMangaData) return [];
@@ -48,7 +52,9 @@ const BrowseTab = () => {
 		data: popularMangaData,
 		error: popularMangaError,
 		isLoading: popularMangaLoading,
-	} = useGetPopularMangaList('mangakakalot');
+	} = useGetPopularMangaList(
+		isLoadingSources ? null : availableSources[0]?.sourceName
+	);
 
 	const handleSearchButton = () => {
 		router.push({
@@ -71,28 +77,42 @@ const BrowseTab = () => {
 			? { paddingTop: Constants.statusBarHeight }
 			: {};
 
+	if (isLoadingSources) {
+		return (
+			<View className="flex-1 bg-primary justify-center items-center">
+				<Text className="text-white font-pregular">Loading...</Text>
+			</View>
+		);
+	}
+
 	return (
 		<View className="flex-1 bg-primary" style={viewStyle}>
-			<View className="px-4 py-3 pt-4">
+			<View className="mx-4 rounded-md mt-4 border border-gray-600 bg-secondary/30 flex-row items-center">
+				<SourceDropDownList
+					listItems={availableSources}
+					selectedIndex={activeSourceIndex}
+					onValueChange={(newSelectedIndex) =>
+						setActiveSourceIndex(newSelectedIndex)
+					}
+				/>
 				<TouchableOpacity
-					className="flex-row justify-between  bg-secondary-100 rounded-lg p-2"
+					className="flex-row justify-between items-center p-3 flex-1 bg-secondary"
 					onPress={handleSearchButton}
 				>
-					<Text className="text-white font-pregular text-sm">
-						Search a manga..
-						{/* {data && <Text>{data.message}</Text>} */}
+					<Text className="text-white font-pregular">
+						Search for manga
 					</Text>
-					<Image
-						source={icons.search}
-						className="h-[18px] w-[18px]"
-					/>
+					<Ionicons name="search" size={20} color={'white'} />
 				</TouchableOpacity>
 			</View>
+			<Text className="mt-2 text-white font-pregular mx-4 text-xs">
+				Source: {availableSources[activeSourceIndex]?.sourceName}
+			</Text>
 			{!errorData ? (
 				<>
 					<HorizontalRule
 						displayText={'Most Popular'}
-						otherStyles={'my-4 mx-4'}
+						otherStyles={'mb-4 mx-4'}
 					/>
 					<MangaSlide
 						mangaData={

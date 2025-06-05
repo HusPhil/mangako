@@ -64,3 +64,18 @@ export interface MangaSearchResponse {
 	source: string;
 	results: Manga[];
 }
+
+
+export enum SourceStatus {
+  ACTIVE = "active",
+  IN_DEVELOPMENT = "in_development",
+  DEPRECATED = "deprecated"
+}
+
+export interface Source {
+    sourceId: string;
+    sourceName: string;
+    sourceUrl: string;
+    sourceStatus: SourceStatus;
+    sourceIcon?: string | null;
+}

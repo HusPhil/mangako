@@ -32,6 +32,7 @@ export const useGetLatestMangaList = (source: string) => {
   >({
     queryKey: [source, "manga", "latest"],
     queryFn: ({ pageParam }) => getLatestMangaList({ source, page: pageParam }),
+    enabled: !!source,
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.latest_manga.length === 0) return undefined;
@@ -57,6 +58,7 @@ export const useGetPopularMangaList = (
 ): UseQueryResult<PopularMangaListResponse> => {
   return useQuery({
     queryKey: [source, "manga", "popular"],
+    enabled: !!source,
     queryFn: () => getPopularMangaList({ source }),
   });
 };
