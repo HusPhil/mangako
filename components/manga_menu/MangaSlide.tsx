@@ -24,8 +24,7 @@ const MangaSlide = ({
 			mangaId: `placeholder-${index}`,
 			mangaTitle: '',
 			mangaUrl: '',
-			mangaCover:
-				'https://tse4.mm.bing.net/th?id=OIP.9UXr8a0nke-gN-qsS9RNjAHaE8&pid=Api&P=0&h=180',
+			mangaCover: '',
 		}));
 
 	const MangaText = ({ mangaTitle }: { mangaTitle: string | null }) => {
