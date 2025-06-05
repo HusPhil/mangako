@@ -32,6 +32,8 @@ const MangaCard = ({
 			mangaUrl: mangaUrl ?? 'NONE',
 		}).toString();
 
+		console.log('mangaurl', mangaUrl);
+
 		router.push(`/manga/${mangaId}?${query}`);
 	};
 

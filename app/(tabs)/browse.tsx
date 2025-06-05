@@ -24,6 +24,9 @@ const BrowseTab = () => {
 
 	const [activeSourceIndex, setActiveSourceIndex] = useState(0);
 	const availableSources = useSourceStore((state) => state.availableSources);
+	const setGlobalSourceIndex = useSourceStore(
+		(state) => state.setActiveSelectedIndex
+	);
 
 	if (availableSources.length === 0) {
 		return (
@@ -48,7 +51,7 @@ const BrowseTab = () => {
 		fetchNextPage: fetchNextLatestManga,
 		hasNextPage: hasMoreLatestManga,
 		isFetchingNextPage: isFetchingMoreLatestManga,
-	} = useGetLatestMangaList(availableSources[activeSourceIndex]?.sourceName);
+	} = useGetLatestMangaList(availableSources[activeSourceIndex]?.sourceId);
 
 	const latestMangaList: Manga[] = useMemo(() => {
 		if (!latestMangaData) return [];
@@ -70,7 +73,7 @@ const BrowseTab = () => {
 		data: popularMangaData,
 		error: popularMangaError,
 		isLoading: popularMangaLoading,
-	} = useGetPopularMangaList(availableSources[activeSourceIndex]?.sourceName);
+	} = useGetPopularMangaList(availableSources[activeSourceIndex]?.sourceId);
 
 	const handleSearchButton = () => {
 		router.push({
@@ -110,6 +113,12 @@ const BrowseTab = () => {
 		);
 	}
 
+	const handleOnSourceChange = (index: number) => {
+		setActiveSourceIndex(index);
+		setGlobalSourceIndex(index);
+		setErrorData(undefined);
+	};
+
 	return (
 		<View
 			className="flex-1 bg-primary"
@@ -120,9 +129,7 @@ const BrowseTab = () => {
 				<SourceDropDownList
 					listItems={availableSources}
 					selectedIndex={activeSourceIndex}
-					onValueChange={(newSelectedIndex) =>
-						setActiveSourceIndex(newSelectedIndex)
-					}
+					onValueChange={handleOnSourceChange}
 				/>
 				<TouchableOpacity
 					className="flex-row justify-between items-center p-3 flex-1 bg-secondary"

@@ -6,6 +6,7 @@ import useReadingProgress from '@/services/cache/useReadingProgress';
 import { MangaChapterPage } from '@/services/ResponseTypes';
 import { useGetChapterPages } from '@/services/useGetChapterPages';
 import { useChapterNavigationStore } from '@/stores/chapterNavigationStore';
+import { useSourceStore } from '@/stores/sourceStore';
 import { Ionicons } from '@expo/vector-icons';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import { FlashList } from '@shopify/flash-list';
@@ -26,6 +27,11 @@ import useZoomableViewHandlers from './components/manga_reader/useZoomableViewHa
 import MangaZoomableReader from './components/MangaZoomableReader';
 const MangaReaderScreen = () => {
 	const router = useRouter();
+
+	const currentActiveSource = useSourceStore(
+		(state) => state.getActiveSource
+	);
+
 	const {
 		id: mangaId,
 		chapterId,
@@ -37,7 +43,10 @@ const MangaReaderScreen = () => {
 		isLoading,
 		isError,
 		error,
-	} = useGetChapterPages('mangakakalot', chapterUrl as string | undefined);
+	} = useGetChapterPages(
+		currentActiveSource()?.sourceId || 'mangakakalot',
+		chapterUrl as string | undefined
+	);
 
 	if (!chapterTitle) return <Text>Chapter title not found</Text>;
 

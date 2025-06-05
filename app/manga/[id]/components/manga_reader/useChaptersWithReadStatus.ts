@@ -2,15 +2,21 @@ import { useReadChapters } from "@/services/cache/useReadChapters";
 import { MangaChapter } from "@/services/ResponseTypes";
 import { useGetMangaInfo } from "@/services/useGetMangaInfo";
 import { useChapterNavigationStore } from "@/stores/chapterNavigationStore";
+import { useSourceStore } from "@/stores/sourceStore";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 
 export const useChaptersWithReadStatus = (mangaUrl: string, mangaId: string) => {
+
+  const currentActiveSource = useSourceStore(
+      (state) => state.getActiveSource
+    );
+
   const {
     data: mangaInfo,
     isLoading: isMangaInfoLoading,
     error: errorData,
-  } = useGetMangaInfo("mangakakalot", mangaUrl!);
+  } = useGetMangaInfo(currentActiveSource()?.sourceId || "mangakakalot", mangaUrl!);
 
   const {
     loadReadChapters,

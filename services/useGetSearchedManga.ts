@@ -10,6 +10,7 @@ export const getSearchedManga = async (
   const { data: response } = await axiosInstance.get(`${BASE_URL}/${source}/manga/search`, {
     params: { keyword },
   });
+  console.log('Search response:', response);
   return response;
 };
 
