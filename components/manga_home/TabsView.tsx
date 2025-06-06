@@ -1,4 +1,4 @@
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import React, { useCallback } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -6,14 +6,14 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { colors } from '@/constants';
 import { Tab } from '@/services/manga_list/types';
 
-import { Manga } from '@/services/ResponseTypes';
+import { MangaRender } from '@/services/ResponseTypes';
 import { CaptionsOff } from 'lucide-react-native';
 import { MangaGrid } from '../manga_menu';
 const Tabs = createMaterialTopTabNavigator();
 
 interface TabViewProps {
 	tabs: Tab[];
-	mangas: Record<string, Manga>;
+	mangas: Record<string, MangaRender>;
 	onAddTab: () => void;
 	isLoading: boolean;
 }
@@ -27,6 +27,7 @@ const TabsView = ({ tabs, mangas, onAddTab, isLoading }: TabViewProps) => {
 						<MangaGrid
 							mangaData={tabItem.mangaIds.map((id) => mangas[id])}
 							numColumns={3}
+							getSourceId={(item) => item.mangaSourceId}
 						/>
 					</View>
 				);
@@ -79,26 +80,21 @@ const TabsView = ({ tabs, mangas, onAddTab, isLoading }: TabViewProps) => {
 				</Tabs.Navigator>
 			) : (
 				<View className="justify-center items-center h-full w-full">
-					<MaterialIcons
-						name="not-interested"
-						size={75}
+					<MaterialCommunityIcons
+						name="robot-confused-outline"
+						size={128}
 						color="white"
 					/>
 					<Text className="font-pregular text-white text-center mt-2">
 						No tabs were found!
 					</Text>
 					<TouchableOpacity
-						className="flex-row justify-between border-2 border-white py-1 px-2  rounded-md mt-3 self-center"
 						onPress={onAddTab}
+						className="bg-accent-100
+						mt-5 py-2 px-3 rounded-md flex-row items-center gap-1 border-white/50 border"
 					>
-						<View>
-							<MaterialIcons
-								name="add-circle-outline"
-								size={15}
-								color="white"
-							/>
-						</View>
-						<Text className=" text-center text-xs font-pregular text-white ml-1">
+						<MaterialIcons name="add" size={16} color="white" />
+						<Text className="text-white text-sm font-pregular">
 							Add new Tab
 						</Text>
 					</TouchableOpacity>

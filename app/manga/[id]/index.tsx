@@ -1,7 +1,7 @@
 import HorizontalRule from '@/components/HorizontalRule';
 import ModalMangaTabsEditor from '@/components/manga_home/ModalMangaTabsEditor';
 import { colors } from '@/constants';
-import { Manga, MangaChapter } from '@/services/ResponseTypes';
+import { MangaChapter, MangaRender } from '@/services/ResponseTypes';
 import { saveMangaData } from '@/services/cache/mangaCacheUtils';
 import useReadingProgress from '@/services/cache/useReadingProgress';
 import { Tab } from '@/services/manga_list/types';
@@ -29,6 +29,7 @@ import useChapterSelection from './components/manga_reader/useChapterSelection';
 import { useChaptersWithReadStatus } from './components/manga_reader/useChaptersWithReadStatus';
 type LocalSearchParams = {
 	id?: string;
+	mangaSourceId?: string;
 	mangaCover?: string;
 	mangaTitle?: string;
 	mangaUrl?: string;
@@ -37,11 +38,11 @@ type LocalSearchParams = {
 const MangaInfoScreen = () => {
 	const {
 		id: mangaId,
+		mangaSourceId,
 		mangaCover,
 		mangaTitle,
 		mangaUrl,
 	} = useLocalSearchParams<LocalSearchParams>();
-	const testParams = useLocalSearchParams<LocalSearchParams>();
 
 	const [activeTab, setActiveTab] = useState<'Details' | 'Chapters'>(
 		'Details'
@@ -56,7 +57,11 @@ const MangaInfoScreen = () => {
 		readChapters,
 		markMultipleChaptersAsRead,
 		markMultipleChaptersAsUnread,
-	} = useChaptersWithReadStatus(mangaUrl!, mangaId!);
+	} = useChaptersWithReadStatus(
+		mangaUrl!,
+		mangaId!,
+		mangaSourceId || 'mangakakalot'
+	);
 
 	const {
 		addToMangaFavorites,
@@ -156,6 +161,7 @@ const MangaInfoScreen = () => {
 		}
 
 		const query = new URLSearchParams({
+			mangaSourceId: mangaSourceId ?? '',
 			chapterUrl: chapter.chapterUrl ?? '',
 			chapterTitle: chapter.chapterTitle ?? '',
 		}).toString();
@@ -177,6 +183,7 @@ const MangaInfoScreen = () => {
 	const handleSaveMangaListings = async (mangaListings: Tab[]) => {
 		await updateMangaListings(
 			{
+				mangaSourceId: mangaSourceId!,
 				mangaId: mangaId!,
 				mangaTitle: mangaTitle!,
 				mangaUrl: mangaUrl!,
@@ -223,6 +230,7 @@ const MangaInfoScreen = () => {
 		>
 			<View className="h-full w-full">
 				{renderHeader({
+					mangaSourceId: mangaSourceId || '',
 					mangaId: mangaId || '',
 					mangaTitle: mangaTitle || '',
 					mangaUrl: mangaUrl || '',
@@ -470,16 +478,18 @@ const BottomSelectionComponent = ({
 };
 
 interface RenderHeaderProps {
+	mangaSourceId: string;
 	mangaId: string;
 	mangaTitle: string;
 	mangaUrl: string;
 	mangaCover: string;
 	checkIfMangaIsFavorite: (mangaId: string) => Promise<boolean>;
-	addToMangaFavorites: (manga: Manga) => Promise<void>;
+	addToMangaFavorites: (manga: MangaRender) => Promise<void>;
 	removeMangaFromTab: (tabName: string, mangaId: string) => Promise<void>;
 }
 
 const renderHeader = ({
+	mangaSourceId,
 	mangaId,
 	mangaTitle,
 	mangaUrl,
@@ -512,6 +522,7 @@ const renderHeader = ({
 			setIsFavorite(false);
 		} else {
 			await addToMangaFavorites({
+				mangaSourceId,
 				mangaId,
 				mangaTitle,
 				mangaUrl,

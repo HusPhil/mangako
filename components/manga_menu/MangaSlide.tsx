@@ -2,11 +2,11 @@ import { FlashList } from '@shopify/flash-list';
 import React from 'react';
 import { Text, View } from 'react-native';
 
-import { Manga } from '@/services/ResponseTypes';
+import { MangaResponse, SourceStatus } from '@/services/ResponseTypes';
 import MangaCard from './MangaCard';
 
 interface MangaSlideProps {
-	mangaData?: Manga[];
+	mangaData?: MangaResponse[];
 	listStyles?: string;
 	isLoading?: boolean;
 	listEmptyComponent?: React.ReactNode;
@@ -18,9 +18,15 @@ const MangaSlide = ({
 	isLoading,
 	onEndReached,
 }: MangaSlideProps) => {
-	const placeholderData: Manga[] = new Array(3 * 10)
+	const placeholderData: MangaResponse[] = new Array(3 * 10)
 		.fill(null)
 		.map((_, index) => ({
+			mangaSource: {
+				sourceUrl: '',
+				sourceId: '',
+				sourceName: '',
+				sourceStatus: SourceStatus.DEPRECATED,
+			},
 			mangaId: `placeholder-${index}`,
 			mangaTitle: '',
 			mangaUrl: '',
@@ -40,13 +46,14 @@ const MangaSlide = ({
 		);
 	};
 
-	const renderItem = ({ item }: { item: Manga }) => (
+	const renderItem = ({ item }: { item: MangaResponse }) => (
 		<View
 			className={`w-[132] mt-3 h-[150] ${
 				isLoading ? 'animate-pulse ' : ''
 			}`}
 		>
 			<MangaCard
+				mangaSourceId={item.mangaSource.sourceId}
 				mangaId={item.mangaId}
 				mangaUrl={item.mangaUrl}
 				mangaTitle={item.mangaTitle}

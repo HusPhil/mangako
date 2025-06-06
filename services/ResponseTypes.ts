@@ -1,8 +1,16 @@
-export interface Manga {
+export interface MangaBase {
 	mangaId: string;
 	mangaTitle: string;
 	mangaUrl: string;
 	mangaCover: string;
+}
+
+export interface MangaRender extends MangaBase {
+	mangaSourceId: string;
+}
+
+export interface MangaResponse extends MangaBase {
+	mangaSource: Source
 }
 
 export interface MangaChapterPage {
@@ -17,12 +25,12 @@ export interface MangaChapterPage {
 
 export interface LatestMangaListResponse {
 	source: string;
-	latest_manga: Manga[];
+	latest_manga: MangaResponse[];
 }
 
 export interface PopularMangaListResponse {
 	source: string;
-	popular_manga: Manga[];
+	popular_manga: MangaResponse[];
 }
 
 export interface MangaDetails {
@@ -62,7 +70,7 @@ export interface MangaInfoResponse {
 
 export interface MangaSearchResponse {
 	source: string;
-	results: Manga[];
+	results: MangaRender[];
 }
 
 

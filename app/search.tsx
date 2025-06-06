@@ -1,6 +1,6 @@
 import MangaGrid from '@/components/manga_menu/MangaGrid';
 import { colors } from '@/constants';
-import { Manga } from '@/services/ResponseTypes';
+import { MangaRender } from '@/services/ResponseTypes';
 import { useSearchMangaMutation } from '@/services/useGetSearchedManga';
 import { useSourceStore } from '@/stores/sourceStore';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,12 +15,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface SearchResponse {
-	results: Manga[];
+	results: MangaRender[];
 }
 
 const Search = () => {
 	const [searchQuery, setSearchQuery] = useState('');
-	const [searchResults, setSearchResults] = useState<Manga[]>([]);
+	const [searchResults, setSearchResults] = useState<MangaRender[]>([]);
 	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 	const inputRef = useRef<TextInput>(null);
 

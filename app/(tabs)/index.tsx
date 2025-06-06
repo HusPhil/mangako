@@ -50,13 +50,6 @@ const MangaListScreen = () => {
 	};
 
 	const handleShowModalEditTabs = async () => {
-		await addMangaToTab('favorites', {
-			mangaId: 'c2e9c5eeeb6b5fdc078e161f2bad76fe',
-			mangaTitle: 'kems Magic Emperor',
-			mangaUrl: 'https://www.mangakakalot.gg/manga/magic-emperor',
-			mangaCover:
-				'https://mangako-page-image-proxy.manga-image-proxy.workers.dev/?url=https%3A%2F%2Fimg-r1.2xstorage.com%2Fthumb%2Fmagic-emperor.webp',
-		});
 		openModal('edit');
 	};
 

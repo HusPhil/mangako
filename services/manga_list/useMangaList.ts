@@ -1,7 +1,7 @@
 // src/hooks/useMangaList.ts
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Manga } from '../ResponseTypes';
+import { MangaRender } from '../ResponseTypes';
 import {
 	cleanUnusedManga,
 	ensureMangaListFolder,
@@ -70,7 +70,7 @@ export function useMangaList() {
 		console.log('updated', updated);
 	};
 
-	const addMangaToTab = async (tabId: string, manga: Manga) => {
+	const addMangaToTab = async (tabId: string, manga: MangaRender) => {
 		const mangaExists = !!mangaList.manga[manga.mangaId];
 		const updatedTabs = mangaList.tabs.map((tab) =>
 			tab.id === tabId
@@ -106,7 +106,7 @@ export function useMangaList() {
 		setMangaList({ ...mangaList, tabs: updatedTabs });
 	};
 
-	const addToMangaFavorites = async (manga: Manga) => {
+	const addToMangaFavorites = async (manga: MangaRender) => {
 		console.log('addToMangaFavorites', manga);
 		const mangaExists = !!mangaList.manga[manga.mangaId];
 		const favoritesTab = mangaList.tabs.find(
@@ -201,7 +201,7 @@ export function useMangaList() {
 		);
 	};
 
-	const updateMangaListings = async (manga: Manga, mangaListings: Tab[]) => {
+	const updateMangaListings = async (manga: MangaRender, mangaListings: Tab[]) => {
 		const mangaListingIds = mangaListings.map((listing) => listing.id);
 
 		const updatedMangaTabs = mangaList.tabs.map((tab) => {

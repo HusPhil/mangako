@@ -6,7 +6,7 @@ import { useSourceStore } from "@/stores/sourceStore";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 
-export const useChaptersWithReadStatus = (mangaUrl: string, mangaId: string) => {
+export const useChaptersWithReadStatus = (mangaUrl: string, mangaId: string, mangaSourceId: string) => {
 
   const currentActiveSource = useSourceStore(
       (state) => state.getActiveSource
@@ -16,7 +16,7 @@ export const useChaptersWithReadStatus = (mangaUrl: string, mangaId: string) => 
     data: mangaInfo,
     isLoading: isMangaInfoLoading,
     error: errorData,
-  } = useGetMangaInfo(currentActiveSource()?.sourceId || "mangakakalot", mangaUrl!);
+  } = useGetMangaInfo(mangaSourceId || "mangakakalot", mangaUrl!);
 
   const {
     loadReadChapters,

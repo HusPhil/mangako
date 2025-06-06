@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { TouchableOpacity, View } from 'react-native';
 
 interface MangaCardProps {
+	mangaSourceId: string;
 	mangaId: string;
 	mangaUrl: string;
 	mangaTitle: string;
@@ -15,6 +16,7 @@ interface MangaCardProps {
 }
 
 const MangaCard = ({
+	mangaSourceId,
 	mangaId,
 	mangaUrl,
 	containerStyles,
@@ -26,7 +28,9 @@ const MangaCard = ({
 	disabled,
 }: MangaCardProps) => {
 	const handlePress = () => {
+		console.log('mangaSourceId:', mangaSourceId);
 		const query = new URLSearchParams({
+			mangaSourceId: mangaSourceId ?? '',
 			mangaCover: mangaCover ?? '',
 			mangaTitle: mangaTitle ?? '',
 			mangaUrl: mangaUrl ?? 'NONE',

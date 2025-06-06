@@ -6,7 +6,6 @@ import useReadingProgress from '@/services/cache/useReadingProgress';
 import { MangaChapterPage } from '@/services/ResponseTypes';
 import { useGetChapterPages } from '@/services/useGetChapterPages';
 import { useChapterNavigationStore } from '@/stores/chapterNavigationStore';
-import { useSourceStore } from '@/stores/sourceStore';
 import { Ionicons } from '@expo/vector-icons';
 import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import { FlashList } from '@shopify/flash-list';
@@ -25,26 +24,33 @@ import ReaderOptionsSheet from './components/manga_reader/ReaderOptionsSheet';
 import useChapterPageErrors from './components/manga_reader/useChapterPageErrors';
 import useZoomableViewHandlers from './components/manga_reader/useZoomableViewHandlers';
 import MangaZoomableReader from './components/MangaZoomableReader';
+
+type LocalSearchParams = {
+	id?: string;
+	mangaSourceId?: string;
+	chapterId?: string;
+	chapterTitle?: string;
+	chapterUrl?: string;
+};
+
 const MangaReaderScreen = () => {
 	const router = useRouter();
 
-	const currentActiveSource = useSourceStore(
-		(state) => state.getActiveSource
-	);
-
 	const {
 		id: mangaId,
+		mangaSourceId,
 		chapterId,
 		chapterUrl,
 		chapterTitle,
-	} = useLocalSearchParams();
+	} = useLocalSearchParams<LocalSearchParams>();
+
 	const {
 		data: pages,
 		isLoading,
 		isError,
 		error,
 	} = useGetChapterPages(
-		currentActiveSource()?.sourceId || 'mangakakalot',
+		mangaSourceId || 'mangakakalot',
 		chapterUrl as string | undefined
 	);
 
@@ -222,12 +228,13 @@ const MangaReaderScreen = () => {
 
 			// call the callback func to update the ui back in the parent component
 			onPageChange(currentPageNum);
-
-			if (currentPageNum === (pages?.length || 0) - 1) {
-				setSnackbarVisible(true);
-				markChapterAsRead(chapterId as string);
-			}
 		}
+	};
+
+	const handleOnEndReached = () => {
+		console.log('End reached');
+		setSnackbarVisible(true);
+		markChapterAsRead(chapterId as string);
 	};
 
 	const handleToggleReadingMode = (readingMode: ReaderMode) => {
@@ -332,6 +339,7 @@ const MangaReaderScreen = () => {
 						handleOnStartShouldSetPanResponderCapture={
 							handleOnStartShouldSetPanResponderCapture
 						}
+						handleOnEndReached={handleOnEndReached}
 					/>
 					<ReaderOptionsSheet
 						flashListRef={flashListRef}

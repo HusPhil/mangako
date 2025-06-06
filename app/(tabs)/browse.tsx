@@ -1,6 +1,6 @@
 import SourceDropDownList from '@/components/modal/SourceDropdownList';
 import { colors } from '@/constants';
-import { Manga } from '@/services/ResponseTypes';
+import { MangaResponse } from '@/services/ResponseTypes';
 import { useSourceStore } from '@/stores/sourceStore';
 import {
 	Ionicons,
@@ -53,7 +53,7 @@ const BrowseTab = () => {
 		isFetchingNextPage: isFetchingMoreLatestManga,
 	} = useGetLatestMangaList(availableSources[activeSourceIndex]?.sourceId);
 
-	const latestMangaList: Manga[] = useMemo(() => {
+	const latestMangaList: MangaResponse[] = useMemo(() => {
 		if (!latestMangaData) return [];
 
 		const seen = new Map();
@@ -87,7 +87,9 @@ const BrowseTab = () => {
 			return;
 		}
 		if (hasMoreLatestManga) {
-			await fetchNextLatestManga();
+			fetchNextLatestManga().then(() => {
+				setSnackbarVisible(true);
+			});
 		}
 	};
 
@@ -175,8 +177,8 @@ const BrowseTab = () => {
 						}
 						onEndReached={() => {
 							getMoreManga();
-							setSnackbarVisible(true);
 						}}
+						getSourceId={(item) => item.mangaSource.sourceId}
 					/>
 				</>
 			) : (

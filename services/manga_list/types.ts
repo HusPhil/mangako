@@ -1,6 +1,6 @@
 // src/types.ts
 
-import { Manga } from "../ResponseTypes";
+import { MangaRender } from "../ResponseTypes";
 
 export type Tab = {
   id: string; // e.g., "favorites"
@@ -11,5 +11,5 @@ export type Tab = {
 
 export type MangaList = {
   tabs: Tab[];
-  manga: Record<string, Manga>;
+  manga: Record<string, MangaRender>;
 };
