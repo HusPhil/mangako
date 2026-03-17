@@ -1,24 +1,39 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Tabs } from "expo-router";
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import "../global.css";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Tabs>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "home-sharp" : "home-outline"}
+              color={color}
+              size={24}
+            />
+          ),
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
+        name="browse"
+        options={{
+          title: "Browse",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "library-sharp" : "library-outline"}
+              color={color}
+              size={24}
+            />
+          ),
+          headerShown: false,
+        }}
+      />
+    </Tabs>
   );
 }
