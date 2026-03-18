@@ -1,4 +1,4 @@
-import BrowseScreenHeader from "@/components/BrowseScreenComponents/BrowseScreenHeader";
+import BrowseScreenHeader from "@/components/browse-screen-components/BrowseScreenHeader";
 import MangaGrid from "@/components/MangaGrid";
 import { useGetLatestMangaList } from "@/hooks/api/useGetMangaList";
 import React from "react";

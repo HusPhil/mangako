@@ -1,5 +1,5 @@
-import HomeScreenHeader from "@/components/HomeScreenComponents/HomeScreenHeader";
-import MangListFilter from "@/components/HomeScreenComponents/MangListFilter";
+import HomeScreenHeader from "@/components/home-screen-components/HomeScreenHeader";
+import MangListFilter from "@/components/home-screen-components/MangListFilter";
 import MangaGrid from "@/components/MangaGrid";
 import { MANGA_LIST_DUMMY_DATA } from "@/constants/dummyData";
 import { Link } from "expo-router";
