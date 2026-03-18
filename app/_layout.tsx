@@ -1,39 +1,54 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { Tabs } from "expo-router";
-
+import { Stack } from "expo-router";
+import React from "react";
 import "../global.css";
-
-export default function RootLayout() {
+const RootLayout = () => {
   return (
-    <Tabs>
-      <Tabs.Screen
-        name="index"
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        animation: "simple_push",
+        animationTypeForReplace: "push",
+      }}
+    >
+      <Stack.Screen
+        name="(tabs)"
         options={{
-          title: "Home",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "home-sharp" : "home-outline"}
-              color={color}
-              size={24}
-            />
-          ),
-          headerShown: false,
+          animation: "fade", // Fade often looks better for Tabs
         }}
       />
-      <Tabs.Screen
-        name="browse"
+
+      <Stack.Screen
+        name="manga/[id]/index"
         options={{
-          title: "Browse",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "library-sharp" : "library-outline"}
-              color={color}
-              size={24}
-            />
-          ),
-          headerShown: false,
+          animation: "simple_push",
         }}
       />
-    </Tabs>
+
+      {/*  
+      <Stack.Screen
+        name="manga/[id]/[chapterId]"
+        options={{
+          animation: "simple_push",
+        }}
+      />
+
+      <Stack.Screen
+        name="search"
+        options={{
+          headerShown: false,
+          animation: "simple_push",
+        }}
+      /> */}
+      <Stack.Screen
+        name="(modals)/test-modal"
+        options={{
+          presentation: "transparentModal", // This allows the background to show through
+          headerShown: false,
+          animation: "fade_from_bottom", // Nicer entrance for Android
+        }}
+      />
+    </Stack>
   );
-}
+};
+
+export default RootLayout;

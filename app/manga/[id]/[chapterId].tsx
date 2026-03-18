@@ -1,12 +1,12 @@
 import React from "react";
 import { Text, View } from "react-native";
 
-const browse = () => {
+const MangaReaderScreen = () => {
   return (
     <View>
-      <Text>browse</Text>
+      <Text>MangaReaderScreen</Text>
     </View>
   );
 };
 
-export default browse;
+export default MangaReaderScreen;
