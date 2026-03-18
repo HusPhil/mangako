@@ -14,13 +14,12 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: Colors.accent,
         tabBarStyle: {
           backgroundColor: Colors.background,
-          borderTopWidth: 0,
-          // We calculate height: standard tab height (50) + bottom inset
+          borderTopWidth: 0.25,
+          borderColor: "rgb(255 255 255 / 0.1)",
           height: 60 + 10 + insets.bottom,
           paddingTop: 10, // Your desired top spacing
         },
         tabBarItemStyle: {
-          // This ensures the icons don't "sink" when the bar gets taller
           height: 50,
         },
       }}
