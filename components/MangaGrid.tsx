@@ -1,18 +1,31 @@
+import { MangaRender, MangaResponse } from "@/types/ResponseTypes";
 import { FlashList } from "@shopify/flash-list";
 import React from "react";
 import { View } from "react-native";
-import MangaCard, { MangaCardProps } from "./MangaCard";
+import MangaCard from "./MangaCard";
 
 const NUM_COLUMNS = 3;
 
-interface MangaItem extends MangaCardProps {}
+type MangaGridItem = MangaResponse | MangaRender;
 
-interface MangaGridProps {
-  mangaList: MangaItem[];
+interface MangaGridProps<T extends MangaGridItem> {
+  mangaList: T[];
+  mangaSourceId: string;
 }
 
-const MangaGrid = ({ mangaList }: MangaGridProps) => {
-  const renderItem = ({ item }: { item: MangaItem }) => <MangaCard {...item} />;
+const MangaGrid = <T extends MangaGridItem>({
+  mangaList,
+  mangaSourceId,
+}: MangaGridProps<T>) => {
+  const renderItem = ({ item }: { item: MangaGridItem }) => (
+    <MangaCard
+      mangaSourceId={mangaSourceId}
+      mangaId={item.mangaId}
+      mangaUrl={item.mangaUrl}
+      mangaTitle={item.mangaTitle}
+      mangaCover={item.mangaCover}
+    />
+  );
 
   return (
     <View className="flex-1">

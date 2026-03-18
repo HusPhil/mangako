@@ -24,7 +24,13 @@ const MangaCard = ({
     [mangaSourceId, mangaCover, mangaTitle, mangaUrl],
   );
   const handlePress = () => {
-    router.push(`/manga/${mangaId}?${query}`);
+    try {
+      if (router.canGoBack !== undefined) {
+        router.push(`/manga/${mangaId}?${query}`);
+      }
+    } catch (error) {
+      console.warn("Navigation not available:", error);
+    }
   };
 
   useEffect(() => {
@@ -32,11 +38,11 @@ const MangaCard = ({
   }, [mangaId]);
 
   return (
-    <View key={mangaId} className="flex-1 p-2">
+    <View key={mangaId} className="flex-1 p-2 ">
       <Pressable onPress={handlePress}>
         {({ pressed }) => (
           <View
-            className="bg-secondary rounded-lg overflow-hidden border border-background"
+            className="bg-background rounded-lg overflow-hidden border border-white"
             style={{
               opacity: pressed ? 0.85 : 1,
               transform: [{ scale: pressed ? 0.99 : 1 }],
