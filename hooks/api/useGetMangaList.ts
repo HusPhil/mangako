@@ -12,9 +12,6 @@ export const getLatestMangaList = async ({
   // Ensure BASE_URL doesn't end with a slash if your path starts with one
   // Or just use the URL constructor for ultimate safety:
   const url = `${BASE_URL}/${source}/manga/latest/${page}`;
-
-  console.log("Fetching from:", url); // <--- Add this to see what's actually being called!
-
   return await apiClient<LatestMangaListResponse>(url);
 };
 

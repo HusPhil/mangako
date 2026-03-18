@@ -29,7 +29,7 @@ const RootLayout = () => {
           <Stack.Screen
             name="manga/[id]/index"
             options={{
-              animation: "simple_push",
+              animation: "fade_from_bottom",
             }}
           />
 
