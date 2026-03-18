@@ -1,7 +1,7 @@
 import { MangaRender } from "@/types/ResponseTypes";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 
 export interface MangaCardProps extends MangaRender {}
@@ -33,16 +33,12 @@ const MangaCard = ({
     }
   };
 
-  useEffect(() => {
-    router.prefetch(`/manga/${mangaId}`);
-  }, [mangaId]);
-
   return (
     <View key={mangaId} className="flex-1 p-2 ">
       <Pressable onPress={handlePress}>
         {({ pressed }) => (
           <View
-            className="bg-background rounded-lg overflow-hidden border border-white"
+            className="bg-background rounded-lg overflow-hidden border border-secondary"
             style={{
               opacity: pressed ? 0.85 : 1,
               transform: [{ scale: pressed ? 0.99 : 1 }],

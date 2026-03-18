@@ -25,6 +25,7 @@ const MangaGrid = <T extends MangaGridItem>({
       mangaTitle={item.mangaTitle}
       mangaCover={item.mangaCover}
     />
+    // <Text>{item.mangaId}</Text>
   );
 
   return (
