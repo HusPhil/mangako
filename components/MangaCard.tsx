@@ -1,7 +1,7 @@
 import { MangaRender } from "@/types/ResponseTypes";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 
 export interface MangaCardProps extends MangaRender {}
@@ -13,23 +13,23 @@ const MangaCard = ({
   mangaTitle,
   mangaUrl,
 }: MangaCardProps) => {
+  const query = useMemo(
+    () =>
+      new URLSearchParams({
+        mangaSourceId: mangaSourceId ?? "",
+        mangaCover: mangaCover ?? "",
+        mangaTitle: mangaTitle ?? "",
+        mangaUrl: mangaUrl ?? "NONE",
+      }).toString(),
+    [mangaSourceId, mangaCover, mangaTitle, mangaUrl],
+  );
   const handlePress = () => {
-    try {
-      if (router.canGoBack !== undefined) {
-        // Check if router is available
-        const query = new URLSearchParams({
-          mangaSourceId: mangaSourceId ?? "",
-          mangaCover: mangaCover ?? "",
-          mangaTitle: mangaTitle ?? "",
-          mangaUrl: mangaUrl ?? "NONE",
-        }).toString();
-
-        router.push(`/manga/${mangaId}?${query}`);
-      }
-    } catch (error) {
-      console.warn("Navigation not available:", error);
-    }
+    router.push(`/manga/${mangaId}?${query}`);
   };
+
+  useEffect(() => {
+    router.prefetch(`/manga/${mangaId}`);
+  }, [mangaId]);
 
   return (
     <View key={mangaId} className="flex-1 p-2">
@@ -43,7 +43,7 @@ const MangaCard = ({
             }}
           >
             <Image
-              source={mangaUrl}
+              source={mangaCover}
               style={{ width: "100%", aspectRatio: 0.7 }}
               contentFit="cover"
               transition={200}
