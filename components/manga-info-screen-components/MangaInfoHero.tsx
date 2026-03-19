@@ -16,6 +16,10 @@ interface MangaInfoHeroSectionProps {
   mangaTitle: string;
   mangaAuthor: string;
   mangaSynopsis: string;
+  mangaStatus: string;
+  mangaTags: string[];
+  mangaAlternativeNames: string[];
+  mangaRating: string;
   scrollY: SharedValue<number>;
   HERO_HEIGHT: number;
   onBack: () => void;
@@ -27,6 +31,9 @@ const MangaInfoHeroSection = memo(
     mangaTitle,
     mangaAuthor,
     mangaSynopsis,
+    mangaStatus,
+    mangaTags,
+    mangaRating,
     scrollY,
     HERO_HEIGHT,
     onBack,
@@ -193,14 +200,18 @@ const MangaInfoHeroSection = memo(
               <Text className="text-[10px] text-gray-500 uppercase font-bold mt-1 tracking-tighter">
                 Status
               </Text>
-              <Text className="text-sm font-semibold text-white">Ongoing</Text>
+              <Text className="text-sm font-semibold text-white">
+                {mangaStatus}
+              </Text>
             </View>
             <View className="flex-1 items-center border-x border-white/5">
               <Ionicons name="star" size={20} color="#eab308" />
               <Text className="text-[10px] text-gray-500 uppercase font-bold mt-1 tracking-tighter">
                 Rating
               </Text>
-              <Text className="text-sm font-semibold text-white">4.9</Text>
+              <Text className="text-sm font-semibold text-white">
+                {mangaRating}
+              </Text>
             </View>
             <View className="flex-1 items-center">
               <MaterialCommunityIcons
@@ -211,7 +222,9 @@ const MangaInfoHeroSection = memo(
               <Text className="text-[10px] text-gray-500 uppercase font-bold mt-1 tracking-tighter">
                 Genre
               </Text>
-              <Text className="text-sm font-semibold text-white">Sci-Fi</Text>
+              <Text className="text-sm font-semibold text-white">
+                {mangaTags[0]}
+              </Text>
             </View>
           </View>
         </View>

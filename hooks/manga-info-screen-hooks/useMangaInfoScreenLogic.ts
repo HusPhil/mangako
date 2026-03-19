@@ -1,30 +1,31 @@
-import { isError } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    useAnimatedScrollHandler,
-    useSharedValue,
+  useAnimatedScrollHandler,
+  useSharedValue,
 } from "react-native-reanimated";
 import { useGetMangaInfo } from "../api/useGetMangInfo";
+import { useChapterListControls } from "./useChapterListControls";
 export const useMangaInfoScreenLogic = (
   mangaSourceId: string,
   mangaUrl: string,
 ) => {
   const router = useRouter();
 
+  const [isReady, setIsReady] = useState(false);
   const scrollY = useSharedValue(0);
-
   const mangaInfo = useGetMangaInfo(mangaSourceId!, mangaUrl!);
+
+  const { onChapterPress, onChapterLongPress } = useChapterListControls(
+    mangaInfo?.data?.mangaChapters || [],
+  );
 
   const onScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollY.value = event.contentOffset.y;
     },
   });
-
-  const handleBack = useCallback(() => router.back(), [router]);
-
-  const [isReady, setIsReady] = useState(false);
+  const onBack = useCallback(() => router.back(), [router]);
 
   useEffect(() => {
     let frameId: number;
@@ -39,11 +40,15 @@ export const useMangaInfoScreenLogic = (
   }, []);
 
   return {
-    handleBack,
-    onScroll,
-    scrollY,
-    isError: isError(mangaInfo),
+    isError: mangaInfo.isError,
     isLoading: mangaInfo.isLoading || !isReady,
     mangaInfo: mangaInfo.data,
+    scrollY,
+
+    onChapterPress,
+    onChapterLongPress,
+
+    onBack: onBack,
+    onScroll: onScroll,
   };
 };
