@@ -1,6 +1,7 @@
 {
   "expo": {
-    "name": "mangako-v3",
+    "name": "MangaKo",
+    "backgroundColor": "#161618",
     "slug": "mangako-v3",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,8 +10,10 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "backgroundColor": "#161618",
       "supportsTablet": true
     },
+    "primaryColor": "#161618",
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -28,17 +31,9 @@
     },
     "plugins": [
       "expo-router",
+      "expo-system-ui",
       [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
-        }
+        "expo-splash-screen"
       ]
     ],
     "experiments": {

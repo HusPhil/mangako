@@ -41,7 +41,7 @@ const MangaInfoHeroSection = memo(
     const animatedBgStyle = useAnimatedStyle(() => {
       const scale = interpolate(
         scrollY.value,
-        [-100, 0],
+        [0, 175],
         [1.3, 1],
         Extrapolation.CLAMP,
       );
@@ -62,7 +62,7 @@ const MangaInfoHeroSection = memo(
     const animatedCoverStyle = useAnimatedStyle(() => {
       const translateY = interpolate(
         scrollY.value,
-        [0, HERO_HEIGHT],
+        [0, HERO_HEIGHT * 0.25],
         [0, -40],
         Extrapolation.CLAMP,
       );
@@ -116,14 +116,15 @@ const MangaInfoHeroSection = memo(
           </View>
 
           <Animated.View
-            style={[StyleSheet.absoluteFill, animatedInfoStyle]}
+            style={[
+              StyleSheet.absoluteFill,
+              animatedInfoStyle,
+              animatedCoverStyle,
+            ]}
             className="justify-end items-center px-6 pb-8"
           >
             {/* Parallax Cover */}
-            <Animated.View
-              style={[animatedCoverStyle]}
-              className="shadow-2xl rounded-lg overflow-hidden w-44 aspect-[2/3] border border-white/20"
-            >
+            <Animated.View className="shadow-2xl rounded-lg overflow-hidden w-44 aspect-[2/3] border border-white/20">
               <Image
                 source={mangaCover}
                 style={{ width: "100%", height: "100%" }}

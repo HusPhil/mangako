@@ -1,8 +1,10 @@
+import { Colors } from "@/constants/colors";
 import { MangaRender } from "@/types/ResponseTypes";
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import React, { useMemo } from "react";
-import { Pressable, Text, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export interface MangaCardProps extends MangaRender {}
 
@@ -13,6 +15,8 @@ const MangaCard = ({
   mangaTitle,
   mangaUrl,
 }: MangaCardProps) => {
+  const [isLoading, setIsLoading] = useState(true);
+
   const query = useMemo(
     () =>
       new URLSearchParams({
@@ -23,36 +27,54 @@ const MangaCard = ({
       }).toString(),
     [mangaSourceId, mangaCover, mangaTitle, mangaUrl],
   );
+
   const handlePress = () => {
     try {
-      if (router.canGoBack !== undefined) {
-        router.push(`/manga/${mangaId}?${query}`);
-      }
+      router.push(`/manga/${mangaId}?${query}`);
     } catch (error) {
-      console.warn("Navigation not available:", error);
+      console.warn("Navigation failed:", error);
     }
   };
 
   return (
-    <View key={mangaId} className="flex-1 p-2 ">
+    <View className="flex-1 p-2">
       <Pressable onPress={handlePress}>
         {({ pressed }) => (
           <View
-            className="bg-background rounded-lg overflow-hidden border border-secondary"
+            className="bg-background rounded-lg overflow-hidden border border-backgroud"
             style={{
               opacity: pressed ? 0.85 : 1,
               transform: [{ scale: pressed ? 0.99 : 1 }],
             }}
           >
-            <Image
-              source={mangaCover}
-              style={{ width: "100%", aspectRatio: 0.7 }}
-              contentFit="cover"
-              transition={200}
-            />
+            {/* Image Container */}
+            <View className="relative w-full" style={{ aspectRatio: 0.7 }}>
+              <Image
+                source={mangaUrl}
+                style={StyleSheet.absoluteFill}
+                contentFit="cover"
+                transition={300}
+                onLoadStart={() => setIsLoading(true)}
+                // onLoadEnd={() => setIsLoading(false)}
+              />
 
-            {/* The Overlay Container */}
-            <View className="absolute bottom-0 left-0 right-0 p-2 h-12 justify-center bg-secondary/60">
+              {/* Placeholder Icon Overlay */}
+              {isLoading && (
+                <View
+                  style={StyleSheet.absoluteFill}
+                  className="items-center justify-center mb-7 bg-secondary/30"
+                >
+                  <Ionicons
+                    name="image-outline"
+                    size={38}
+                    color={Colors.primary}
+                  />
+                </View>
+              )}
+            </View>
+
+            {/* Title Overlay */}
+            <View className="absolute bottom-0 left-0 right-0 p-2 h-12 justify-center bg-background/80">
               <Text
                 className="text-white text-[10px] font-semibold"
                 numberOfLines={2}
