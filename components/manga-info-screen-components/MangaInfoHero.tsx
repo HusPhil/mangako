@@ -1,4 +1,5 @@
 // components/MangaInfoScreenComponents/HeroSection.tsx
+import { useLibraryStore } from "@/stores/library-store";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -115,6 +116,7 @@ const MangaInfoHeroSection = memo(
             <Pressable
               className="w-10 h-10 rounded-full bg-white/10 items-center justify-center border border-white/10"
               onPress={onAddToLibrary}
+              onLongPress={() => useLibraryStore.getState().resetMangaLibrary()}
             >
               <Ionicons name="heart-outline" size={22} color="white" />
             </Pressable>
