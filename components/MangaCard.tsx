@@ -50,12 +50,12 @@ const MangaCard = ({
             {/* Image Container */}
             <View className="relative w-full" style={{ aspectRatio: 0.7 }}>
               <Image
-                source={mangaUrl}
+                source={mangaCover}
                 style={StyleSheet.absoluteFill}
                 contentFit="cover"
                 transition={300}
                 onLoadStart={() => setIsLoading(true)}
-                // onLoadEnd={() => setIsLoading(false)}
+                onLoadEnd={() => setIsLoading(false)}
               />
 
               {/* Placeholder Icon Overlay */}

@@ -4,10 +4,10 @@ import { useGetLatestMangaList } from "@/hooks/api/useGetMangaList";
 import React from "react";
 import { Text, View } from "react-native";
 
-const DUMMY_SOURCE = "mangafox";
+const DUMMY_SOURCE = "asura_scans";
 
 const Browse = () => {
-  const { data, isLoading, isError } = useGetLatestMangaList("mangafox");
+  const { data, isLoading, isError } = useGetLatestMangaList(DUMMY_SOURCE);
 
   if (isLoading) {
     return <Text>Loading...</Text>;

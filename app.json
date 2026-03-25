@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mangakov3",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
       "backgroundColor": "#161618",
@@ -31,10 +31,10 @@
     },
     "plugins": [
       "expo-router",
-      "expo-system-ui",
       [
         "expo-splash-screen"
-      ]
+      ],
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true,

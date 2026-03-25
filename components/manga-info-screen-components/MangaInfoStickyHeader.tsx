@@ -24,7 +24,7 @@ const MangaStickyHeader = ({
 
   // Define when the header should start appearing (usually end of Hero)
   // 400 is a safe estimate for HERO_HEIGHT - StickyHeight
-  const TRIGGER_POINT = 400;
+  const TRIGGER_POINT = 300;
 
   const animatedStickyHeaderStyle = useAnimatedStyle(() => {
     // 1. Calculate Opacity
@@ -46,6 +46,7 @@ const MangaStickyHeader = ({
     return {
       opacity,
       transform: [{ translateY }],
+      pointerEvents: scrollY.value > TRIGGER_POINT ? "auto" : "none",
     };
   });
 
@@ -56,8 +57,6 @@ const MangaStickyHeader = ({
         { paddingTop: insets.top + 10 },
         animatedStickyHeaderStyle,
       ]}
-      // Add pointerEvents so it doesn't block touches when hidden
-      pointerEvents={scrollY.value > TRIGGER_POINT ? "auto" : "none"}
       className="z-50 flex-row items-center px-6 pb-4 border-b border-white/10 bg-black"
     >
       <Image

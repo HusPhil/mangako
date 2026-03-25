@@ -1,9 +1,6 @@
 import HomeScreenHeader from "@/components/home-screen-components/HomeScreenHeader";
 import MangListFilter from "@/components/home-screen-components/MangListFilter";
-import MangaGrid from "@/components/MangaGrid";
-import { MANGA_LIST_DUMMY_DATA } from "@/constants/dummyData";
-import { Link } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { View } from "react-native";
 
 const DUMMY_SOURCE = "mangafox";
 
@@ -12,7 +9,7 @@ const HomeScreen = () => {
     <View className="flex-1 bg-secondary">
       <HomeScreenHeader />
       <MangListFilter />
-      <MangaGrid
+      {/* <MangaGrid
         mangaList={MANGA_LIST_DUMMY_DATA}
         mangaSourceId={DUMMY_SOURCE}
       />
@@ -20,7 +17,7 @@ const HomeScreen = () => {
         <Pressable>
           <Text>Open Modal</Text>
         </Pressable>
-      </Link>
+      </Link> */}
     </View>
   );
 };
