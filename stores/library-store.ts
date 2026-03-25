@@ -27,7 +27,7 @@ type LibraryStore = {
 export const useLibraryStore = create<LibraryStore>((set, get) => ({
   db: null,
   library: [],
-  selectedCategory: "all",
+  selectedCategory: null,
 
   setDB: (db) => {
     set({ db });
