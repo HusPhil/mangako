@@ -33,9 +33,8 @@ export const useMangaInfoScreenLogic = (
   const onBack = useCallback(() => router.back(), [router]);
 
   const onAddToLibrary = useCallback(() => {
-    // resetLibrary(db);
     useLibraryStore.getState().addMangaToLibrary({
-      mangaId: mangaId,
+      manga_id: mangaId,
       manga_url: mangaUrl,
       title: mangaTitle,
       cover_url: mangaCover,
