@@ -86,3 +86,18 @@ export interface Source {
   sourceStatus: SourceStatus;
   sourceIcon?: string | null;
 }
+
+export const mapResponseToRender = (response: MangaResponse): MangaRender => {
+  return {
+    // Spread the base properties (mangaId, mangaTitle, mangaUrl, mangaCover)
+    ...response,
+    mangaSourceId: response.mangaSource.sourceId,
+  };
+};
+
+// If mapping a list (e.g., from an API search result)
+export const mapResponseListToRenderList = (
+  responses: MangaResponse[],
+): MangaRender[] => {
+  return responses.map(mapResponseToRender);
+};

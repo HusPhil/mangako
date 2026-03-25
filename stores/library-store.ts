@@ -1,9 +1,10 @@
 import {
-  addManga,
-  getLibrary, // Added this
+  addMangaToLibraryWithCategory,
+  getLibrary,
+  getLibraryByCategory,
   removeManga,
   resetLibrary,
-  toggleFavorite, // Added this
+  toggleFavorite,
 } from "@/services/db/repos/manga-library";
 import { AddMangaInput, LibraryManga } from "@/services/db/types";
 import { SQLiteDatabase } from "expo-sqlite";
@@ -12,11 +13,12 @@ import { create } from "zustand";
 type LibraryStore = {
   db: SQLiteDatabase | null;
   library: LibraryManga[];
+  selectedCategory: string | null; // Track current filter
 
   setDB: (db: SQLiteDatabase) => void;
-  loadLibrary: () => void;
+  loadLibrary: (categoryId?: string) => void;
 
-  addMangaToLibrary: (manga: AddMangaInput) => void;
+  addMangaToLibrary: (manga: AddMangaInput, categoryId?: string) => void;
   toggleFavorite: (mangaId: string) => void;
   removeMangaFromLibrary: (mangaId: string) => void;
   resetMangaLibrary: () => void;
@@ -25,32 +27,43 @@ type LibraryStore = {
 export const useLibraryStore = create<LibraryStore>((set, get) => ({
   db: null,
   library: [],
+  selectedCategory: "all",
 
   setDB: (db) => {
     set({ db });
-    // This ensures that as soon as the DB is ready, the UI populates
     get().loadLibrary();
   },
 
-  loadLibrary: () => {
-    const { db } = get();
+  loadLibrary: (categoryId) => {
+    const { db, selectedCategory } = get();
     if (!db) return;
-    const data = getLibrary(db);
-    set({ library: data });
+
+    // Use passed category, or current state category, or null (all)
+    const targetCategory =
+      categoryId !== undefined ? categoryId : selectedCategory;
+
+    let data: LibraryManga[];
+    if (targetCategory) {
+      data = getLibraryByCategory(db, targetCategory);
+    } else {
+      data = getLibrary(db);
+    }
+
+    set({ library: data, selectedCategory: targetCategory ?? null });
   },
 
-  addMangaToLibrary: (manga) => {
+  addMangaToLibrary: (manga, categoryId = "favorites") => {
     const { db } = get();
     if (!db) return;
-    addManga(db, manga);
-    get().loadLibrary(); // Refresh state from DB
+    addMangaToLibraryWithCategory(db, manga, categoryId);
+    get().loadLibrary();
   },
 
   toggleFavorite: (mangaId) => {
     const { db } = get();
     if (!db) return;
     toggleFavorite(db, mangaId);
-    get().loadLibrary(); // Refresh state to show the heart/star change
+    get().loadLibrary();
   },
 
   removeMangaFromLibrary: (mangaId) => {
@@ -64,6 +77,6 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
     const { db } = get();
     if (!db) return;
     resetLibrary(db);
-    set({ library: [] }); // Faster than a full reload after a wipe
+    set({ library: [], selectedCategory: null });
   },
 }));

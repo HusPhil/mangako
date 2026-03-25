@@ -1,10 +1,11 @@
 import BrowseScreenHeader from "@/components/browse-screen-components/BrowseScreenHeader";
 import MangaGrid from "@/components/MangaGrid";
 import { useGetLatestMangaList } from "@/hooks/api/useGetMangaList";
+import { mapResponseListToRenderList } from "@/types/ResponseTypes";
 import React from "react";
 import { Text, View } from "react-native";
 
-const DUMMY_SOURCE = "asura_scans";
+const DUMMY_SOURCE = "mangafox";
 
 const Browse = () => {
   const { data, isLoading, isError } = useGetLatestMangaList(DUMMY_SOURCE);
@@ -24,7 +25,7 @@ const Browse = () => {
   return (
     <View className="flex-1 bg-secondary">
       <BrowseScreenHeader />
-      <MangaGrid mangaList={data?.latest_manga} mangaSourceId={DUMMY_SOURCE} />
+      <MangaGrid mangaList={mapResponseListToRenderList(data?.latest_manga)} />
     </View>
   );
 };

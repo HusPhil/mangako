@@ -1,3 +1,5 @@
+import { MangaRender } from "@/types/ResponseTypes";
+
 export type LibraryManga = {
   manga_id: string;
   manga_url: string;
@@ -12,3 +14,18 @@ export type AddMangaInput = Pick<
   LibraryManga,
   "manga_id" | "manga_url" | "title" | "cover_url" | "source_id"
 >;
+
+export const mapLibraryToGridItem = (manga: LibraryManga): MangaRender => {
+  return {
+    mangaId: manga.manga_id,
+    mangaTitle: manga.title,
+    mangaUrl: manga.manga_url,
+    mangaCover: manga.cover_url,
+    mangaSourceId: manga.source_id,
+  };
+};
+
+// If you have an array of library items:
+export const mapLibraryListToGridItems = (list: LibraryManga[]) => {
+  return list.map(mapLibraryToGridItem);
+};
