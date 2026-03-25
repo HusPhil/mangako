@@ -1,3 +1,4 @@
+import { useLibraryStore } from "@/stores/library-store";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -6,9 +7,13 @@ import {
 } from "react-native-reanimated";
 import { useGetMangaInfo } from "../api/useGetMangInfo";
 import { useChapterListControls } from "./useChapterListControls";
+
 export const useMangaInfoScreenLogic = (
   mangaSourceId: string,
   mangaUrl: string,
+  mangaId: string,
+  mangaTitle: string,
+  mangaCover: string,
 ) => {
   const router = useRouter();
 
@@ -26,6 +31,17 @@ export const useMangaInfoScreenLogic = (
     },
   });
   const onBack = useCallback(() => router.back(), [router]);
+
+  const onAddToLibrary = useCallback(() => {
+    // resetLibrary(db);
+    useLibraryStore.getState().addMangaToLibrary({
+      mangaId: mangaId,
+      manga_url: mangaUrl,
+      title: mangaTitle,
+      cover_url: mangaCover,
+      source_id: mangaSourceId,
+    });
+  }, []);
 
   useEffect(() => {
     let frameId: number;
@@ -50,5 +66,6 @@ export const useMangaInfoScreenLogic = (
 
     onBack: onBack,
     onScroll: onScroll,
+    onAddToLibrary,
   };
 };
