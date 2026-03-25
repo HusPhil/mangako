@@ -23,6 +23,7 @@ interface MangaInfoHeroSectionProps {
   scrollY: SharedValue<number>;
   HERO_HEIGHT: number;
   onBack: () => void;
+  onAddToLibrary: () => void;
 }
 
 const MangaInfoHeroSection = memo(
@@ -37,6 +38,7 @@ const MangaInfoHeroSection = memo(
     scrollY,
     HERO_HEIGHT,
     onBack,
+    onAddToLibrary,
   }: MangaInfoHeroSectionProps) => {
     // const animatedBgStyle = useAnimatedStyle(() => {
     //   const scale = interpolate(
@@ -110,7 +112,10 @@ const MangaInfoHeroSection = memo(
             >
               <Ionicons name="chevron-back" size={24} color="white" />
             </Pressable>
-            <Pressable className="w-10 h-10 rounded-full bg-white/10 items-center justify-center border border-white/10">
+            <Pressable
+              className="w-10 h-10 rounded-full bg-white/10 items-center justify-center border border-white/10"
+              onPress={onAddToLibrary}
+            >
               <Ionicons name="heart-outline" size={22} color="white" />
             </Pressable>
           </View>

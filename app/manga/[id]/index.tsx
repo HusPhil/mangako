@@ -13,7 +13,7 @@ const SCREEN_HEIGHT = Dimensions.get("window").height;
 const HERO_HEIGHT = SCREEN_HEIGHT * 0.7;
 
 type LocalSearchParams = {
-  id?: string;
+  mangaId?: string;
   mangaSourceId?: string;
   mangaCover?: string;
   mangaTitle?: string;
@@ -21,10 +21,11 @@ type LocalSearchParams = {
 };
 
 const MangaInfoScreen = () => {
-  const { mangaTitle, mangaCover, mangaUrl, mangaSourceId } =
+  const { mangaId, mangaTitle, mangaCover, mangaUrl, mangaSourceId } =
     useLocalSearchParams<LocalSearchParams>();
 
-  if (!mangaTitle || !mangaCover || !mangaUrl || !mangaSourceId) return null;
+  if (!mangaTitle || !mangaCover || !mangaUrl || !mangaSourceId || !mangaId)
+    return null;
 
   const {
     isLoading,
@@ -35,7 +36,14 @@ const MangaInfoScreen = () => {
     onChapterLongPress,
     onBack: handleBack,
     onScroll: handleScroll,
-  } = useMangaInfoScreenLogic(mangaSourceId, mangaUrl);
+    onAddToLibrary: handleAddToLibrary,
+  } = useMangaInfoScreenLogic(
+    mangaSourceId,
+    mangaUrl,
+    mangaId,
+    mangaTitle,
+    mangaCover,
+  );
 
   const mangaDetails = mangaInfo?.mangaDetails;
 
@@ -53,6 +61,7 @@ const MangaInfoScreen = () => {
         scrollY={scrollY}
         HERO_HEIGHT={HERO_HEIGHT}
         onBack={handleBack}
+        onAddToLibrary={handleAddToLibrary}
       />
     ),
     [mangaCover, mangaTitle, mangaDetails, scrollY, handleBack],

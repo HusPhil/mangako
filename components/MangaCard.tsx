@@ -20,6 +20,7 @@ const MangaCard = ({
   const query = useMemo(
     () =>
       new URLSearchParams({
+        mangaId: mangaId ?? "",
         mangaSourceId: mangaSourceId ?? "",
         mangaCover: mangaCover ?? "",
         mangaTitle: mangaTitle ?? "",

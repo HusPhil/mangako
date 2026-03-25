@@ -1,3 +1,4 @@
+import { useLibraryStore } from "@/stores/library-store";
 import { SQLiteDatabase } from "expo-sqlite";
 
 type Migration = {
@@ -50,6 +51,64 @@ const migrations: Migration[] = [
       console.log("Migration v2: Removed is_favorite column");
     },
   },
+  {
+    version: 3,
+    up: (db) => {
+      const tableInfo = db.getAllSync<{ name: string }>(
+        `PRAGMA table_info(library_manga);`,
+      );
+      const columnExists = tableInfo.some((col) => col.name === "manga_url");
+
+      if (!columnExists) {
+        db.execSync(`ALTER TABLE library_manga ADD COLUMN manga_url TEXT;`);
+        console.log("Migration v3: Added manga_url column successfully.");
+      }
+    },
+    down: (db) => {
+      console.warn(
+        "Migration v3: Rollback requested. Note: Column 'manga_url' was not removed to prevent data loss.",
+      );
+    },
+  },
+  {
+    version: 4,
+    up: (db) => {
+      console.log(
+        "Migration v4: Removing manga_url to prepare for backfill reset",
+      );
+      try {
+        // This resets the column so v5 can apply it cleanly with data
+        db.execSync(`ALTER TABLE library_manga DROP COLUMN manga_url;`);
+      } catch (e) {
+        console.warn(
+          "DROP COLUMN failed (likely unsupported). Proceeding to v5 anyway.",
+        );
+      }
+    },
+    down: (db) => {},
+  },
+  {
+    version: 5,
+    up: (db) => {
+      console.log("Migration v5: Re-adding manga_url with backfill logic");
+
+      try {
+        db.execSync(`ALTER TABLE library_manga ADD COLUMN manga_url TEXT;`);
+      } catch (e) {
+        console.log("Column already exists, skipping ADD COLUMN");
+      }
+      db.execSync(`
+        UPDATE library_manga 
+        SET manga_url = 'NONE' 
+        WHERE manga_url IS NULL OR manga_url = '';
+      `);
+
+      console.log("Migration v5: Backfill complete.");
+    },
+    down: (db) => {
+      // Logic to revert if necessary
+    },
+  },
 ];
 
 export const migrateTo = (db: SQLiteDatabase, targetVersion: number) => {
@@ -84,5 +143,6 @@ export const migrateTo = (db: SQLiteDatabase, targetVersion: number) => {
 
 export const runMigrations = async (db: SQLiteDatabase) => {
   const latest = Math.max(...migrations.map((m) => m.version), 0);
+  useLibraryStore.getState().setDB(db);
   migrateTo(db, latest);
 };
