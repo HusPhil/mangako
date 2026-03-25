@@ -7,12 +7,16 @@ import { View } from "react-native";
 
 const HomeScreen = () => {
   const library = useLibraryStore((state) => state.library);
+  const selectedCategory = useLibraryStore((state) => state.selectedCategory);
 
   return (
     <View className="flex-1 bg-secondary">
       <HomeScreenHeader />
       <MangaListFilter />
-      <MangaGrid mangaList={mapLibraryListToGridItems(library)} />
+      <MangaGrid
+        key={selectedCategory}
+        mangaList={mapLibraryListToGridItems(library)}
+      />
     </View>
   );
 };

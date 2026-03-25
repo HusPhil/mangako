@@ -50,6 +50,14 @@ const RootLayout = () => {
                   animation: "fade_from_bottom",
                 }}
               />
+              <Stack.Screen
+                name="(modals)/category-settings"
+                options={{
+                  presentation: "pageSheet",
+                  headerShown: false,
+                  animation: "fade_from_bottom",
+                }}
+              />
             </Stack>
           </View>
         </QueryClientProvider>
