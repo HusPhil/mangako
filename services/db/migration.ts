@@ -1,4 +1,3 @@
-import { useLibraryStore } from "@/stores/library-store";
 import { SQLiteDatabase } from "expo-sqlite";
 
 type Migration = {
@@ -143,6 +142,5 @@ export const migrateTo = (db: SQLiteDatabase, targetVersion: number) => {
 
 export const runMigrations = async (db: SQLiteDatabase) => {
   const latest = Math.max(...migrations.map((m) => m.version), 0);
-  useLibraryStore.getState().setDB(db);
   migrateTo(db, latest);
 };

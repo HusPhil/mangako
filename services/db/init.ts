@@ -1,8 +1,12 @@
 // /services/db/init.ts
+import { useLibraryStore } from "@/stores/library-store";
+import { SQLiteDatabase } from "expo-sqlite";
 import { db } from "./index";
+import { runMigrations } from "./migration";
 
 export const initDB = () => {
   db.execSync(`
+    
     -- Library table
     CREATE TABLE IF NOT EXISTS library_manga (
       manga_id TEXT PRIMARY KEY,
@@ -55,4 +59,11 @@ export const initDB = () => {
     CREATE INDEX IF NOT EXISTS idx_progress_last_read ON reading_progress(last_read_at DESC);
     CREATE INDEX IF NOT EXISTS idx_chapter_read_manga ON chapter_read(manga_id);
   `);
+};
+
+export const initializeDB = async (db: SQLiteDatabase) => {
+  db.execSync(`PRAGMA foreign_keys = ON;`);
+  initDB();
+  await runMigrations(db);
+  useLibraryStore.getState().setDB(db);
 };
