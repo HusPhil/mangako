@@ -38,25 +38,25 @@ const MangaInfoHeroSection = memo(
     HERO_HEIGHT,
     onBack,
   }: MangaInfoHeroSectionProps) => {
-    const animatedBgStyle = useAnimatedStyle(() => {
-      const scale = interpolate(
-        scrollY.value,
-        [0, 175],
-        [1.3, 1],
-        Extrapolation.CLAMP,
-      );
-      const opacity = interpolate(
-        scrollY.value,
-        [0, HERO_HEIGHT * 0.5],
-        [1, 0.5],
-        Extrapolation.CLAMP,
-      );
+    // const animatedBgStyle = useAnimatedStyle(() => {
+    //   const scale = interpolate(
+    //     scrollY.value,
+    //     [0, 175],
+    //     [1, 2],
+    //     Extrapolation.CLAMP,
+    //   );
+    //   const opacity = interpolate(
+    //     scrollY.value,
+    //     [0, HERO_HEIGHT * 0.5],
+    //     [1, 0.5],
+    //     Extrapolation.CLAMP,
+    //   );
 
-      return {
-        transform: [{ scale }],
-        opacity,
-      };
-    });
+    //   return {
+    //     // transform: [{ scale }],
+    //     // opacity,
+    //   };
+    // });
 
     // 2. Floating Cover Animation (Subtle Parallax)
     const animatedCoverStyle = useAnimatedStyle(() => {
@@ -79,7 +79,7 @@ const MangaInfoHeroSection = memo(
         [1, 0],
         Extrapolation.CLAMP,
       );
-      return { opacity };
+      return { opacity, pointerEvents: opacity > 0.3 ? "auto" : "none" };
     });
 
     return (
@@ -88,16 +88,16 @@ const MangaInfoHeroSection = memo(
           style={{ height: HERO_HEIGHT }}
           className="relative w-full overflow-hidden"
         >
-          <Animated.View style={[StyleSheet.absoluteFill, animatedBgStyle]}>
+          <Animated.View style={[StyleSheet.absoluteFill]}>
             <Image
               source={mangaCover}
               style={StyleSheet.absoluteFill}
               contentFit="cover"
-              blurRadius={15}
+              blurRadius={3}
               recyclingKey="hero-blur"
             />
             <LinearGradient
-              colors={["transparent", "rgba(0,0,0,0.4)", "black"]}
+              colors={["transparent", "rgba(0,0,0,0.5)", "black"]}
               style={StyleSheet.absoluteFill}
             />
           </Animated.View>
