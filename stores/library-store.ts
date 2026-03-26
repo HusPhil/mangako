@@ -16,6 +16,7 @@ type LibraryStore = {
   selectedCategory: string | null; // Track current filter
 
   setDB: (db: SQLiteDatabase) => void;
+  setSelectedCategory: (categoryId: string | null) => void;
   loadLibrary: (categoryId?: string) => void;
 
   addMangaToLibrary: (manga: AddMangaInput, categoryId?: string) => void;
@@ -27,11 +28,17 @@ type LibraryStore = {
 export const useLibraryStore = create<LibraryStore>((set, get) => ({
   db: null,
   library: [],
-  selectedCategory: null,
 
+  selectedCategory: null,
   setDB: (db) => {
     set({ db });
     get().loadLibrary();
+  },
+
+  // New Action: Explicitly set and load
+  setSelectedCategory: (categoryId: string | null) => {
+    set({ selectedCategory: categoryId });
+    get().loadLibrary(categoryId ?? undefined);
   },
 
   loadLibrary: (categoryId) => {

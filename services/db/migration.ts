@@ -108,6 +108,41 @@ const migrations: Migration[] = [
       // Logic to revert if necessary
     },
   },
+  {
+    version: 6,
+    up: (db) => {
+      console.log("Migration v6: Adding sort_order to categories");
+      try {
+        // 1. Add the column
+        db.execSync(
+          `ALTER TABLE categories ADD COLUMN sort_order INTEGER DEFAULT 0;`,
+        );
+
+        // 2. (Optional) Initialize sort_order based on existing alphabetical order
+        // This prevents all existing categories from having the same index (0)
+        const categories = db.getAllSync<{ category_id: string }>(
+          `SELECT category_id FROM categories ORDER BY name ASC`,
+        );
+
+        categories.forEach((cat, index) => {
+          db.execSync(
+            `UPDATE categories SET sort_order = ${index} WHERE category_id = '${cat.category_id}';`,
+          );
+        });
+
+        console.log("Migration v6: sort_order added and initialized.");
+      } catch (e) {
+        console.warn("Migration v6 failed or column already exists:");
+      }
+    },
+    down: (db) => {
+      // Note: SQLite does not support DROP COLUMN in many environments.
+      // Usually, we leave the column to avoid complex table recreation.
+      console.warn(
+        "Migration v6: Rollback not supported for ALTER TABLE ADD COLUMN.",
+      );
+    },
+  },
 ];
 
 export const migrateTo = (db: SQLiteDatabase, targetVersion: number) => {
