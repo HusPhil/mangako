@@ -29,3 +29,19 @@ export const mapLibraryToGridItem = (manga: LibraryManga): MangaRender => {
 export const mapLibraryListToGridItems = (list: LibraryManga[]) => {
   return list.map(mapLibraryToGridItem);
 };
+
+export interface Category {
+  category_id: string;
+  name: string;
+  sort_order: number;
+}
+
+export interface MangaCategory {
+  manga_id: string;
+  category_id: string;
+}
+
+export interface MangaCategoryResult {
+  category_id: string;
+  category_name: string;
+}

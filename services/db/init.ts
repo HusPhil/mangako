@@ -1,4 +1,5 @@
 // /services/db/init.ts
+import { useCategoryStore } from "@/stores/categories-store";
 import { useLibraryStore } from "@/stores/library-store";
 import { SQLiteDatabase } from "expo-sqlite";
 import { db } from "./index";
@@ -66,4 +67,5 @@ export const initializeDB = async (db: SQLiteDatabase) => {
   initDB();
   await runMigrations(db);
   useLibraryStore.getState().setDB(db);
+  useCategoryStore.getState().setDB(db);
 };
