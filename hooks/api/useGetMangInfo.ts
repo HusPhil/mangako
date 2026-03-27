@@ -5,21 +5,25 @@ import { useQuery } from "@tanstack/react-query";
 export const getMangaInfo = async (
   source: string,
   mangaUrl: string,
+  signal?: AbortSignal,
 ): Promise<MangaInfoResponse> => {
-  const response = apiClient<MangaInfoResponse>(
+  return await apiClient<MangaInfoResponse>(
     `${BASE_URL}/${source}/manga/info`,
     {
-      params: {
-        url: mangaUrl,
-      },
+      params: { url: mangaUrl },
+      signal,
     },
   );
-  return response;
 };
 
-export const useGetMangaInfo = (source: string, mangaUrl: string) => {
-  return useQuery<MangaInfoResponse>({
-    queryKey: ["manga", "info", mangaUrl],
-    queryFn: () => getMangaInfo(source, mangaUrl),
+export const useGetMangaInfo = (source: string, mangaUrl?: string) => {
+  return useQuery({
+    queryKey: ["manga", "info", source, mangaUrl] as const,
+    queryFn: ({ signal }) => {
+      if (!mangaUrl) throw new Error("Manga URL is required");
+      return getMangaInfo(source, mangaUrl, signal);
+    },
+    enabled: !!source && !!mangaUrl, // Critical: prevent empty fetches
+    staleTime: 1000 * 60 * 15, // Cache info for 15 mins
   });
 };

@@ -5,21 +5,22 @@ import { useQuery } from "@tanstack/react-query";
 export const getLatestMangaList = async ({
   source,
   page = 1,
+  signal,
 }: {
   source: string;
   page?: number;
+  signal?: AbortSignal;
 }): Promise<LatestMangaListResponse> => {
-  // Ensure BASE_URL doesn't end with a slash if your path starts with one
-  // Or just use the URL constructor for ultimate safety:
   const url = `${BASE_URL}/${source}/manga/latest/${page}`;
-  return await apiClient<LatestMangaListResponse>(url);
+  return await apiClient<LatestMangaListResponse>(url, { signal });
 };
 
 export const useGetLatestMangaList = (source: string, page: number = 1) => {
   return useQuery({
-    queryKey: [source, "manga", "latest", page] as const,
-    queryFn: () => getLatestMangaList({ source, page }),
-    enabled: !!source, // Don't run if source is missing
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    queryKey: ["manga", "latest", source, page] as const,
+    queryFn: ({ signal }) => getLatestMangaList({ source, page, signal }),
+    enabled: !!source,
+    staleTime: 1000 * 60 * 5, // 5 minutes is standard for "Latest" feeds
+    refetchOnWindowFocus: false,
   });
 };
