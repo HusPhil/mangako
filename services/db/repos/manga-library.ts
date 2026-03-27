@@ -1,37 +1,32 @@
 import { SQLiteDatabase } from "expo-sqlite";
 import { AddMangaInput, LibraryManga } from "../types";
 
-export const addMangaToLibraryWithCategory = (
+export const saveGhostManga = (db: SQLiteDatabase, manga: AddMangaInput) => {
+  db.runSync(
+    `INSERT INTO library_manga (manga_id, title, cover_url, source_id, manga_url, added_at, is_in_library)
+     VALUES (?, ?, ?, ?, ?, ?, 0)
+     ON CONFLICT(manga_id) DO UPDATE SET 
+        title = excluded.title, 
+        cover_url = excluded.cover_url`,
+    [
+      manga.manga_id,
+      manga.title,
+      manga.cover_url,
+      manga.source_id,
+      manga.manga_url,
+      Date.now(),
+    ],
+  );
+};
+
+export const getLibraryMangaById = (
   db: SQLiteDatabase,
-  manga: AddMangaInput,
-  categoryId: string,
-) => {
-  db.withTransactionSync(() => {
-    db.runSync(
-      `INSERT OR IGNORE INTO categories (category_id, name) VALUES (?, ?)`,
-      [categoryId, categoryId],
-    );
-
-    db.runSync(
-      `INSERT OR REPLACE INTO library_manga
-       (manga_id, manga_url, title, cover_url, source_id, added_at, is_favorite)
-       VALUES (?, ?, ?, ?, ?, ?, COALESCE((SELECT is_favorite FROM library_manga WHERE manga_id = ?), 0))`,
-      [
-        manga.manga_id,
-        manga.manga_url,
-        manga.title,
-        manga.cover_url,
-        manga.source_id,
-        Date.now(),
-        manga.manga_id,
-      ],
-    );
-
-    db.runSync(
-      `INSERT OR REPLACE INTO manga_category (manga_id, category_id) VALUES (?, ?)`,
-      [manga.manga_id, categoryId],
-    );
-  });
+  mangaId: string,
+): LibraryManga | null => {
+  return db.getFirstSync<LibraryManga>(
+    `SELECT * FROM library_manga WHERE manga_id = ?`,
+    [mangaId],
+  );
 };
 
 export const getLibraryByCategory = (
@@ -41,7 +36,7 @@ export const getLibraryByCategory = (
   return db.getAllSync<LibraryManga>(
     `SELECT lm.* FROM library_manga lm
      JOIN manga_category mc ON lm.manga_id = mc.manga_id
-     WHERE mc.category_id = ?
+     WHERE mc.category_id = ? AND lm.is_in_library = 1
      ORDER BY lm.is_favorite DESC, lm.added_at DESC`,
     [categoryId],
   );
@@ -49,7 +44,7 @@ export const getLibraryByCategory = (
 
 export const getLibrary = (db: SQLiteDatabase): LibraryManga[] => {
   return db.getAllSync<LibraryManga>(
-    `SELECT * FROM library_manga ORDER BY is_favorite DESC, added_at DESC`,
+    `SELECT * FROM library_manga WHERE is_in_library = 1 ORDER BY is_favorite DESC, added_at DESC`,
   );
 };
 
@@ -58,10 +53,6 @@ export const toggleFavorite = (db: SQLiteDatabase, mangaId: string) => {
     `UPDATE library_manga SET is_favorite = CASE WHEN is_favorite = 1 THEN 0 ELSE 1 END WHERE manga_id = ?`,
     [mangaId],
   );
-};
-
-export const removeManga = (db: SQLiteDatabase, mangaId: string) => {
-  db.runSync(`DELETE FROM library_manga WHERE manga_id = ?`, [mangaId]);
 };
 
 export const resetLibrary = (db: SQLiteDatabase) => {

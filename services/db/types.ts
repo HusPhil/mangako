@@ -44,3 +44,18 @@ export interface MangaCategory {
   manga_id: string;
   category_id: string;
 }
+
+export type ReadingProgress = {
+  manga_id: string;
+  last_read_chapter_id: string;
+  last_read_chapter_title: string;
+  last_read_chapter_url: string;
+  last_read_page: number;
+  last_read_at: number;
+};
+
+export type ChapterMetadata = {
+  id: string;
+  title: string;
+  url: string;
+};

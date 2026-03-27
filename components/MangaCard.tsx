@@ -1,9 +1,10 @@
 import { Colors } from "@/constants/colors";
+import { useLibraryStore } from "@/stores/library-store";
 import { MangaRender } from "@/types/ResponseTypes";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export interface MangaCardProps extends MangaRender {}
@@ -17,21 +18,18 @@ const MangaCard = ({
 }: MangaCardProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
-  const query = useMemo(
-    () =>
-      new URLSearchParams({
-        mangaId: mangaId ?? "",
-        mangaSourceId: mangaSourceId ?? "",
-        mangaCover: mangaCover ?? "",
-        mangaTitle: mangaTitle ?? "",
-        mangaUrl: mangaUrl ?? "NONE",
-      }).toString(),
-    [mangaSourceId, mangaCover, mangaTitle, mangaUrl],
-  );
-
   const handlePress = () => {
     try {
-      router.push(`/manga/${mangaId}?${query}`);
+      const mangaData = {
+        manga_id: mangaId,
+        title: mangaTitle,
+        cover_url: mangaCover,
+        manga_url: mangaUrl,
+        source_id: mangaSourceId,
+      };
+      useLibraryStore.getState().saveGhostManga(mangaData);
+
+      router.push(`/manga/${mangaId}`);
     } catch (error) {
       console.warn("Navigation failed:", error);
     }
