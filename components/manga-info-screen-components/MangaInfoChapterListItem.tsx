@@ -41,36 +41,21 @@ const MangaInfoChapterListItem = ({
     <Pressable
       onPress={handleChapterPress}
       onLongPress={handleChapterLongPress}
-      // Added visual feedback for pressing
-      className={`${isSelected ? "bg-primary/20" : "active:bg-white/5"}`}
+      className={`${isSelected ? "bg-primary/5" : "active:bg-primary/10"}`}
     >
       <View
-        className={`py-5 px-6 border-b border-white/5 flex-row items-center justify-between ${
-          isSelected ? "bg-blue-500/20" : ""
-        }`}
+        className={`py-5 px-6 border-b border-primary/5 flex-row items-center justify-between `}
       >
-        <View className="flex-1">
-          <Text
-            className={`font-medium ${
-              isSelected
-                ? "text-blue-400"
-                : isRead
-                  ? "text-gray-500"
-                  : "text-white"
-            }`}
-          >
-            {chapterTitle}
-          </Text>
-          <Text
-            className={`text-xs mt-1 ${isRead ? "text-gray-600" : "text-gray-400"}`}
-          >
+        <View className={`flex-1 ${isRead ? "opacity-25" : ""}`}>
+          <Text className={`font-medium text-primary`}>{chapterTitle}</Text>
+          <Text className={`text-xs mt-1 text-accent`}>
             {chapterTimeUploaded}
           </Text>
         </View>
 
         {/* Optional: Add a small indicator for "Read" status if you want more than just text color changes */}
         {isRead && !isSelected && (
-          <View className="w-2 h-2 rounded-full bg-gray-600 ml-2" />
+          <View className="w-2 h-2 rounded-full bg-muted ml-2" />
         )}
       </View>
     </Pressable>

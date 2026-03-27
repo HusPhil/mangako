@@ -103,7 +103,7 @@ const FilterChip = ({
 }) => (
   <Pressable
     onPress={onPress}
-    className={`px-6 h-11 rounded-2xl justify-center border ${
+    className={`px-6 h-11 rounded-xl justify-center border ${
       isActive ? "bg-white border-white" : "bg-white/5 border-white/5"
     }`}
     style={({ pressed }) => ({
@@ -112,9 +112,7 @@ const FilterChip = ({
     })}
   >
     <Text
-      className={`text-[15px] ${
-        isActive ? "text-black font-pblack" : "text-muted font-pbold"
-      }`}
+      className={`text-md ${isActive ? "text-black font-bold" : "text-muted "}`}
     >
       {label}
     </Text>
