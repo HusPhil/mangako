@@ -3,6 +3,7 @@ import React, { useMemo } from "react";
 import { Dimensions, StatusBar, Text, View } from "react-native";
 
 // Components
+import AddToLibraryModal from "@/components/manga-info-screen-components/AddToLibraryModal";
 import MangaInfoChapterList from "@/components/manga-info-screen-components/MangaInfoChapterList";
 import MangaInfoHero from "@/components/manga-info-screen-components/MangaInfoHero";
 import MangaInfoLoader from "@/components/manga-info-screen-components/MangaInfoLoader";
@@ -86,6 +87,7 @@ const MangaInfoScreen = () => {
         listHeader={listHeader}
         onScroll={handleScroll}
       />
+      <AddToLibraryModal />
     </View>
   );
 };

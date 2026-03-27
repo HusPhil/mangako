@@ -1,4 +1,4 @@
-import { useLibraryStore } from "@/stores/library-store";
+import useMangaInfoScreenUIStore from "@/stores/ui-stores/manga-info-screen-ui-store";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -33,13 +33,15 @@ export const useMangaInfoScreenLogic = (
   const onBack = useCallback(() => router.back(), [router]);
 
   const onAddToLibrary = useCallback(() => {
-    useLibraryStore.getState().addMangaToLibrary({
-      manga_id: mangaId,
-      manga_url: mangaUrl,
-      title: mangaTitle,
-      cover_url: mangaCover,
-      source_id: mangaSourceId,
-    });
+    useMangaInfoScreenUIStore
+      .getState()
+      .openModal("add_to_library", {
+        mangaId,
+        mangaTitle,
+        mangaCover,
+        mangaUrl,
+        mangaSourceId,
+      });
   }, []);
 
   useEffect(() => {

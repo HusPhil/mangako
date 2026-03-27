@@ -1,11 +1,12 @@
 import * as CategoryRepo from "@/services/db/repos/manga-categories";
-import { Category } from "@/services/db/types";
+import { AddMangaInput, AssignedCategory, Category } from "@/services/db/types";
 import { SQLiteDatabase } from "expo-sqlite";
 import { create } from "zustand";
 
 type CategoryStore = {
   db: SQLiteDatabase | null;
   categories: Category[];
+  assignedCategories: AssignedCategory[];
 
   // Database Initialization
   setDB: (db: SQLiteDatabase) => void;
@@ -15,16 +16,20 @@ type CategoryStore = {
   addCategory: (name: string) => void;
   updateCategoryName: (categoryId: string, newName: string) => void;
   removeCategory: (categoryId: string) => void;
-
-  // Manga Association
-  assignManga: (mangaId: string, categoryId: string) => void;
-  unassignManga: (mangaId: string, categoryId: string) => void;
   moveCategory: (id: string, direction: "up" | "down") => void;
+
+  // Loading Manga Assignments
+  loadMangaAssignments: (mangaId: string) => void;
+  updateMangaAssignments: (
+    manga: AddMangaInput,
+    assignedCategories: AssignedCategory[],
+  ) => void;
 };
 
 export const useCategoryStore = create<CategoryStore>((set, get) => ({
   db: null,
   categories: [],
+  assignedCategories: [],
 
   setDB: (db) => {
     set({ db });
@@ -69,22 +74,7 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
     get().loadCategories();
   },
 
-  assignManga: (mangaId, categoryId) => {
-    const { db } = get();
-    if (!db) return;
-    CategoryRepo.assignMangaToCategory(db, mangaId, categoryId);
-    // Refreshing categories in case you track counts in the UI
-    get().loadCategories();
-  },
-
-  unassignManga: (mangaId, categoryId) => {
-    const { db } = get();
-    if (!db) return;
-    CategoryRepo.removeMangaFromCategory(db, mangaId, categoryId);
-    get().loadCategories();
-  },
-
-  moveCategory: (id: string, direction: "up" | "down") => {
+  moveCategory: (id, direction: "up" | "down") => {
     const { db, categories, loadCategories } = get();
     if (!db) return;
 
@@ -109,5 +99,19 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
     } catch (e) {
       console.error("Move failed", e);
     }
+  },
+
+  loadMangaAssignments: (mangaId) => {
+    const { db } = get();
+    if (!db) return;
+    const data = CategoryRepo.getAllCategoriesWithAssignment(db, mangaId);
+    set({ assignedCategories: data });
+  },
+
+  updateMangaAssignments: (manga, assignedCategories: AssignedCategory[]) => {
+    const { db } = get();
+    if (!db) return;
+    CategoryRepo.updateMangaAssignments(db, manga, assignedCategories);
+    get().loadMangaAssignments(manga.manga_id);
   },
 }));

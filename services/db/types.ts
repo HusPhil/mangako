@@ -36,12 +36,11 @@ export interface Category {
   sort_order: number;
 }
 
+export interface AssignedCategory extends Category {
+  is_assigned: boolean;
+}
+
 export interface MangaCategory {
   manga_id: string;
   category_id: string;
-}
-
-export interface MangaCategoryResult {
-  category_id: string;
-  category_name: string;
 }

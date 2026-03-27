@@ -13,7 +13,7 @@ import { create } from "zustand";
 type LibraryStore = {
   db: SQLiteDatabase | null;
   library: LibraryManga[];
-  selectedCategory: string | null; // Track current filter
+  selectedCategory: string | null;
 
   setDB: (db: SQLiteDatabase) => void;
   setSelectedCategory: (categoryId: string | null) => void;
