@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons, Octicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -13,21 +14,20 @@ interface MangaStickyHeaderProps {
   mangaTitle: string;
   mangaCover: string;
   scrollY: SharedValue<number>;
+  onBackPress?: () => void; // Added back press handler
 }
 
 const MangaStickyHeader = ({
   mangaCover,
   mangaTitle,
   scrollY,
+  onBackPress,
 }: MangaStickyHeaderProps) => {
   const insets = useSafeAreaInsets();
 
-  // Define when the header should start appearing (usually end of Hero)
-  // 400 is a safe estimate for HERO_HEIGHT - StickyHeight
   const TRIGGER_POINT = 300;
 
   const animatedStickyHeaderStyle = useAnimatedStyle(() => {
-    // 1. Calculate Opacity
     const opacity = interpolate(
       scrollY.value,
       [TRIGGER_POINT, TRIGGER_POINT + 30],
@@ -35,7 +35,6 @@ const MangaStickyHeader = ({
       Extrapolation.CLAMP,
     );
 
-    // 2. Calculate Slide (Starts at -100 hidden, moves to 0 visible)
     const translateY = interpolate(
       scrollY.value,
       [TRIGGER_POINT - 50, TRIGGER_POINT],
@@ -46,7 +45,7 @@ const MangaStickyHeader = ({
     return {
       opacity,
       transform: [{ translateY }],
-      pointerEvents: scrollY.value > TRIGGER_POINT ? "auto" : "none",
+      // Use pointerEvents style return directly for Reanimated 3+
     };
   });
 
@@ -54,26 +53,49 @@ const MangaStickyHeader = ({
     <Animated.View
       style={[
         styles.stickyHeader,
-        { paddingTop: insets.top + 10 },
+        { paddingTop: insets.top + 8 }, // Adjusted padding for balance
         animatedStickyHeaderStyle,
       ]}
-      className="z-50 flex-row items-center px-6 pb-4 border-b border-white/10 bg-black"
+      className="z-50 flex-row items-center px-4 pb-4 border-b border-white/10 bg-background"
     >
+      {/* Back Button */}
+      <Pressable onPress={onBackPress} className="p-2 mr-2 active:opacity-50">
+        <Octicons
+          name="chevron-left"
+          color="white"
+          size={24}
+          strokeWidth={2.5}
+        />
+      </Pressable>
+
+      {/* Manga Cover */}
       <Image
         source={mangaCover}
-        style={{ width: 55, height: 55, borderRadius: 4 }}
+        style={{ width: 50, height: 50, borderRadius: 6 }} // Slightly smaller to fit button row
         contentFit="cover"
       />
-      <View className="flex-1 mx-4">
+
+      {/* Content */}
+      <View className="flex-1 mx-3 gap-1">
         <Text className="text-white font-bold text-sm" numberOfLines={1}>
           {mangaTitle}
         </Text>
-        <Text className="text-[10px] text-gray-400 uppercase">
+        <Text className="text-[10px] text-gray-400 uppercase tracking-wider">
           Chapter 124 • Today
         </Text>
       </View>
-      <Pressable className="bg-white px-4 py-1.5 rounded-full active:scale-95">
-        <Text className="text-black text-xs font-bold">Read</Text>
+
+      <Pressable
+        className="bg-white flex-row items-center px-4 py-2 gap-2 rounded-md active:scale-95"
+        style={{ shadowColor: "#fff", shadowOpacity: 0.1, shadowRadius: 10 }}
+      >
+        <MaterialCommunityIcons
+          className="mb-0.5"
+          name="book-open-page-variant-outline"
+          size={18}
+          color="black"
+        />
+        <Text className="text-black text-sm font-bold uppercase ">Read</Text>
       </Pressable>
     </Animated.View>
   );

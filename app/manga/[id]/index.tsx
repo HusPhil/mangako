@@ -81,6 +81,7 @@ const MangaInfoScreen = () => {
         mangaStatus={mangaDetails?.mangaStatus ?? ""}
         mangaTags={mangaDetails?.mangaTags ?? []}
         mangaAlternativeNames={mangaDetails?.mangaAlternativeNames ?? []}
+        mangaSourceId={mangaSourceId}
         readChaptersCount={readChaptersCount}
         totalChapters={mangaChapters.length}
         mangaRating={"4.9"}
@@ -105,13 +106,14 @@ const MangaInfoScreen = () => {
   if (isError) return <Text>Error</Text>;
 
   return (
-    <View className="flex-1 bg-black">
+    <View className="flex-1 bg-secondary">
       <StatusBar barStyle="light-content" />
       {!isSelectionMode && (
         <MangaStickyHeader
           mangaCover={mangaCover}
           mangaTitle={mangaTitle}
           scrollY={scrollY}
+          onBackPress={handleBack}
         />
       )}
       {isSelectionMode && (
