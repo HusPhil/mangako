@@ -143,6 +143,62 @@ const migrations: Migration[] = [
       );
     },
   },
+
+  {
+    version: 7,
+    up: (db) => {
+      console.log("Migration v7: Adding Chapter Title and URL metadata");
+
+      // 1. Remove the withTransactionSync wrapper for ALTER TABLE
+      try {
+        // Check if columns exist first to prevent double-add errors
+        const tableInfo = db.getAllSync<{ name: string }>(
+          `PRAGMA table_info(reading_progress);`,
+        );
+        const hasTitle = tableInfo.some(
+          (col) => col.name === "last_read_chapter_title",
+        );
+
+        if (!hasTitle) {
+          // Run these as individual commands
+          db.execSync(
+            `ALTER TABLE reading_progress ADD COLUMN last_read_chapter_title TEXT;`,
+          );
+          db.execSync(
+            `ALTER TABLE reading_progress ADD COLUMN last_read_chapter_url TEXT;`,
+          );
+
+          db.execSync(
+            `ALTER TABLE chapter_read ADD COLUMN chapter_title TEXT;`,
+          );
+          db.execSync(`ALTER TABLE chapter_read ADD COLUMN chapter_url TEXT;`);
+
+          console.log("Migration v7: Metadata columns added successfully.");
+        }
+      } catch (e) {
+        console.error("Migration v7 Error:", e);
+        // We don't throw here so the setVersion can still mark progress if partially successful
+      }
+    },
+    down: (db) => {
+      console.warn("Migration v7: Rollback not supported.");
+    },
+  },
+  {
+    version: 8,
+    up: (db) => {
+      // 1. Add the column to distinguish between "Library" and "Just Tracking"
+      db.execSync(
+        `ALTER TABLE library_manga ADD COLUMN is_in_library INTEGER DEFAULT 1;`,
+      );
+
+      // 2. Existing manga are obviously in the library
+      db.execSync(`UPDATE library_manga SET is_in_library = 1;`);
+    },
+    down: (db) => {
+      console.warn("No rollback");
+    },
+  },
 ];
 
 export const migrateTo = (db: SQLiteDatabase, targetVersion: number) => {

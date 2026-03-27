@@ -21,7 +21,6 @@ export const categoryNameExists = (
 
 export const createCategory = (db: SQLiteDatabase, name: string): void => {
   const trimmedName = name.trim();
-
   if (!trimmedName) throw new Error("Category name cannot be empty");
   if (trimmedName.toLowerCase() === "all")
     throw new Error("Category ALL already provided");
@@ -51,16 +50,12 @@ export const renameCategory = (
   newName: string,
 ): void => {
   const trimmedName = newName.trim();
-
   db.withTransactionSync(() => {
     const existing = db.getFirstSync<{ category_id: string }>(
       `SELECT category_id FROM categories WHERE LOWER(name) = LOWER(?) AND category_id != ?`,
       [trimmedName, categoryId],
     );
-
-    if (existing) {
-      throw new Error("Another category already has this name");
-    }
+    if (existing) throw new Error("Another category already has this name");
 
     db.runSync(`UPDATE categories SET name = ? WHERE category_id = ?`, [
       trimmedName,
@@ -90,9 +85,9 @@ export const updateCategoryOrders = (
       `UPDATE categories SET sort_order = ? WHERE category_id = ?`,
     );
     try {
-      orders.forEach((item) => {
-        statement.executeSync([item.sort_order, item.category_id]);
-      });
+      orders.forEach((item) =>
+        statement.executeSync([item.sort_order, item.category_id]),
+      );
     } finally {
       statement.finalizeSync();
     }
@@ -135,23 +130,19 @@ export const updateMangaAssignments = (
       (cat) => cat.is_assigned,
     );
 
-    // 1. If NO categories are selected, remove it from the library and stop
-    if (activeAssignments.length === 0) {
-      db.runSync(`DELETE FROM manga_category WHERE manga_id = ?`, [
-        manga.manga_id,
-      ]);
-      db.runSync(`DELETE FROM library_manga WHERE manga_id = ?`, [
-        manga.manga_id,
-      ]);
-      return;
-    }
+    // MODIFIED: If it has categories, it's in the library. If not, it's a "ghost" for tracking.
+    const isInLibrary = activeAssignments.length > 0 ? 1 : 0;
 
-    // 2. Ensure the parent record exists (UPSERT)
-    // This prevents the Foreign Key Error 19
+    // MODIFIED: Use INSERT ... ON CONFLICT to ensure the parent exists for Foreign Keys
+    // while updating the is_in_library status.
     db.runSync(
-      `INSERT OR REPLACE INTO library_manga 
-       (manga_id, manga_url, title, cover_url, source_id, added_at, is_favorite)
-       VALUES (?, ?, ?, ?, ?, ?, COALESCE((SELECT is_favorite FROM library_manga WHERE manga_id = ?), 0))`,
+      `INSERT INTO library_manga (manga_id, manga_url, title, cover_url, source_id, added_at, is_in_library, is_favorite)
+       VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT is_favorite FROM library_manga WHERE manga_id = ?), 0))
+       ON CONFLICT(manga_id) DO UPDATE SET 
+         is_in_library = excluded.is_in_library,
+         manga_url = excluded.manga_url,
+         title = excluded.title,
+         cover_url = excluded.cover_url`,
       [
         manga.manga_id,
         manga.manga_url,
@@ -159,25 +150,27 @@ export const updateMangaAssignments = (
         manga.cover_url,
         manga.source_id,
         Date.now(),
+        isInLibrary,
         manga.manga_id,
       ],
     );
 
-    // 3. Clear existing category links
+    // UNCHANGED: Refreshing category assignments
     db.runSync(`DELETE FROM manga_category WHERE manga_id = ?`, [
       manga.manga_id,
     ]);
 
-    // 4. Insert new assignments
-    const statement = db.prepareSync(
-      `INSERT INTO manga_category (manga_id, category_id) VALUES (?, ?)`,
-    );
-    try {
-      activeAssignments.forEach((cat) => {
-        statement.executeSync([manga.manga_id, cat.category_id]);
-      });
-    } finally {
-      statement.finalizeSync();
+    if (activeAssignments.length > 0) {
+      const statement = db.prepareSync(
+        `INSERT INTO manga_category (manga_id, category_id) VALUES (?, ?)`,
+      );
+      try {
+        activeAssignments.forEach((cat) =>
+          statement.executeSync([manga.manga_id, cat.category_id]),
+        );
+      } finally {
+        statement.finalizeSync();
+      }
     }
   });
 };

@@ -9,12 +9,13 @@ import MangaInfoHero from "@/components/manga-info-screen-components/MangaInfoHe
 import MangaInfoLoader from "@/components/manga-info-screen-components/MangaInfoLoader";
 import MangaStickyHeader from "@/components/manga-info-screen-components/MangaInfoStickyHeader";
 import { useMangaInfoScreenLogic } from "@/hooks/manga-info-screen-hooks/useMangaInfoScreenLogic";
+import { useLibraryStore } from "@/stores/library-store";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 const HERO_HEIGHT = SCREEN_HEIGHT * 0.7;
 
 type LocalSearchParams = {
-  mangaId?: string;
+  id?: string;
   mangaSourceId?: string;
   mangaCover?: string;
   mangaTitle?: string;
@@ -22,8 +23,17 @@ type LocalSearchParams = {
 };
 
 const MangaInfoScreen = () => {
-  const { mangaId, mangaTitle, mangaCover, mangaUrl, mangaSourceId } =
-    useLocalSearchParams<LocalSearchParams>();
+  const { id: mangaId } = useLocalSearchParams<LocalSearchParams>();
+
+  if (!mangaId) return null;
+
+  const getMangaById = useLibraryStore((state) => state.getMangaById);
+  const ghostManga = useMemo(() => getMangaById(mangaId!), [mangaId]);
+
+  const mangaUrl = ghostManga?.manga_url;
+  const mangaCover = ghostManga?.cover_url;
+  const mangaTitle = ghostManga?.title;
+  const mangaSourceId = ghostManga?.source_id;
 
   if (!mangaTitle || !mangaCover || !mangaUrl || !mangaSourceId || !mangaId)
     return null;
@@ -81,6 +91,7 @@ const MangaInfoScreen = () => {
         scrollY={scrollY}
       />
       <MangaInfoChapterList
+        mangaId={mangaId}
         mangaChapters={mangaInfo?.mangaChapters ?? []}
         onChapterPress={onChapterPress}
         onChapterLongPress={onChapterLongPress}

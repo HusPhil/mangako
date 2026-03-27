@@ -1,9 +1,9 @@
 import {
-  addMangaToLibraryWithCategory,
   getLibrary,
   getLibraryByCategory,
-  removeManga,
+  getLibraryMangaById,
   resetLibrary,
+  saveGhostManga,
   toggleFavorite,
 } from "@/services/db/repos/manga-library";
 import { AddMangaInput, LibraryManga } from "@/services/db/types";
@@ -16,12 +16,13 @@ type LibraryStore = {
   selectedCategory: string | null;
 
   setDB: (db: SQLiteDatabase) => void;
+  getMangaById: (mangaId: string) => LibraryManga | null;
+
   setSelectedCategory: (categoryId: string | null) => void;
   loadLibrary: (categoryId?: string) => void;
 
-  addMangaToLibrary: (manga: AddMangaInput, categoryId?: string) => void;
+  saveGhostManga: (manga: AddMangaInput) => void;
   toggleFavorite: (mangaId: string) => void;
-  removeMangaFromLibrary: (mangaId: string) => void;
   resetMangaLibrary: () => void;
 };
 
@@ -33,6 +34,12 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
   setDB: (db) => {
     set({ db });
     get().loadLibrary();
+  },
+
+  getMangaById: (mangaId) => {
+    const { db } = get();
+    if (!db) return null;
+    return getLibraryMangaById(db, mangaId);
   },
 
   // New Action: Explicitly set and load
@@ -59,24 +66,16 @@ export const useLibraryStore = create<LibraryStore>((set, get) => ({
     set({ library: data, selectedCategory: targetCategory ?? null });
   },
 
-  addMangaToLibrary: (manga, categoryId = "favorites") => {
+  saveGhostManga: (manga) => {
     const { db } = get();
     if (!db) return;
-    addMangaToLibraryWithCategory(db, manga, categoryId);
-    get().loadLibrary();
+    saveGhostManga(db, manga);
   },
 
   toggleFavorite: (mangaId) => {
     const { db } = get();
     if (!db) return;
     toggleFavorite(db, mangaId);
-    get().loadLibrary();
-  },
-
-  removeMangaFromLibrary: (mangaId) => {
-    const { db } = get();
-    if (!db) return;
-    removeManga(db, mangaId);
     get().loadLibrary();
   },
 

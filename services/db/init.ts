@@ -1,6 +1,7 @@
 // /services/db/init.ts
 import { useCategoryStore } from "@/stores/categories-store";
 import { useLibraryStore } from "@/stores/library-store";
+import { useReadingStore } from "@/stores/reading-progress-store";
 import { SQLiteDatabase } from "expo-sqlite";
 import { db } from "./index";
 import { runMigrations } from "./migration";
@@ -63,9 +64,29 @@ export const initDB = () => {
 };
 
 export const initializeDB = async (db: SQLiteDatabase) => {
+  // 1. Critical DB Settings
   db.execSync(`PRAGMA foreign_keys = ON;`);
-  initDB();
+  db.execSync(`PRAGMA journal_mode = WAL;`); // Expert Tip: High performance concurrent reads/writes
+
+  // 2. Schema Handling
+  // It's better to let runMigrations handle the initDB logic
   await runMigrations(db);
-  useLibraryStore.getState().setDB(db);
-  useCategoryStore.getState().setDB(db);
+
+  // 3. Store Injection
+  const libraryStore = useLibraryStore.getState();
+  const categoryStore = useCategoryStore.getState();
+  const readingStore = useReadingStore.getState();
+
+  // Inject the DB reference to all stores first
+  libraryStore.setDB(db);
+  categoryStore.setDB(db);
+  readingStore.setDB(db);
+
+  // 4. Initial Data Load (Optional: Move this to a "Loading" screen)
+  // Loading these in parallel is faster than awaiting them one by one
+  await Promise.all([
+    libraryStore.loadLibrary(),
+    categoryStore.loadCategories(),
+    readingStore.loadLastRead(),
+  ]);
 };
