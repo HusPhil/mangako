@@ -6,23 +6,28 @@ export const BASE_URL = "https://mangako-api.vercel.app" + API_VER;
 type ApiOptions = RequestInit & {
   params?: Record<string, string | number | boolean>;
 };
-
 export async function apiClient<T>(
   endpoint: string,
-  options?: ApiOptions, // Use the extended type here
+  options?: ApiOptions,
 ): Promise<T> {
   const { params, ...fetchOptions } = options || {};
 
-  // Construct the URL with query parameters
-  let url = endpoint;
+  // 1. Robust URL Construction
+  // Using URL object handles trailing slashes and complex characters automatically
+  const url = new URL(endpoint);
   if (params) {
-    const searchParams = new URLSearchParams(params as any).toString();
-    url = `${endpoint}?${searchParams}`;
+    Object.entries(params).forEach(([key, value]) => {
+      url.searchParams.append(key, String(value));
+    });
   }
 
-  const response = await fetch(url, {
+  const response = await fetch(url.toString(), {
     ...fetchOptions,
-    headers: { "Content-Type": "application/json", ...fetchOptions?.headers },
+    // fetchOptions.signal is automatically included here via the spread
+    headers: {
+      "Content-Type": "application/json",
+      ...fetchOptions?.headers,
+    },
   });
 
   if (!response.ok) {
