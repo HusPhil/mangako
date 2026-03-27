@@ -6,6 +6,29 @@ import { SQLiteDatabase } from "expo-sqlite";
 import { db } from "./index";
 import { runMigrations } from "./migration";
 
+import * as FileSystem from "expo-file-system/legacy";
+
+const checkDbSize = async (dbName: string) => {
+  try {
+    // Expo SQLite database path convention
+    const dbPath = `${FileSystem.documentDirectory}SQLite/${dbName}`;
+
+    const fileInfo = await FileSystem.getInfoAsync(dbPath);
+
+    if (fileInfo.exists) {
+      const sizeInBytes = fileInfo.size;
+      const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
+
+      console.log(`Database Size: ${sizeInBytes} bytes (~${sizeInMB} MB)`);
+      return sizeInBytes;
+    } else {
+      console.log("Database file does not exist at path:", dbPath);
+    }
+  } catch (error) {
+    console.error("Error checking DB size:", error);
+  }
+};
+
 export const initDB = () => {
   db.execSync(`
     
@@ -89,4 +112,7 @@ export const initializeDB = async (db: SQLiteDatabase) => {
     categoryStore.loadCategories(),
     readingStore.loadLastRead(),
   ]);
+
+  // 5. Check DB Size
+  checkDbSize("app.db");
 };
