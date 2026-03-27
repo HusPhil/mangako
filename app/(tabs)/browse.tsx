@@ -5,7 +5,7 @@ import { mapResponseListToRenderList } from "@/types/ResponseTypes";
 import React from "react";
 import { Text, View } from "react-native";
 
-const DUMMY_SOURCE = "mangafox";
+const DUMMY_SOURCE = "asura_scans";
 
 const Browse = () => {
   const { data, isLoading, isError } = useGetLatestMangaList(DUMMY_SOURCE);

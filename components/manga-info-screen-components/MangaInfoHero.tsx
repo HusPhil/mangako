@@ -20,6 +20,8 @@ interface MangaInfoHeroSectionProps {
   mangaStatus: string;
   mangaTags: string[];
   mangaAlternativeNames: string[];
+  readChaptersCount: number;
+  totalChapters: number;
   mangaRating: string;
   scrollY: SharedValue<number>;
   HERO_HEIGHT: number;
@@ -36,6 +38,8 @@ const MangaInfoHeroSection = memo(
     mangaStatus,
     mangaTags,
     mangaRating,
+    readChaptersCount,
+    totalChapters,
     scrollY,
     HERO_HEIGHT,
     onBack,
@@ -162,12 +166,14 @@ const MangaInfoHeroSection = memo(
                   Progress
                 </Text>
                 <Text className="text-[10px] font-bold text-muted uppercase">
-                  53 / 124
+                  {`${readChaptersCount} / ${totalChapters}`}
                 </Text>
               </View>
               <View className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                 <View
-                  style={{ width: `${(53 / 124) * 100}%` }}
+                  style={{
+                    width: `${(readChaptersCount / totalChapters) * 100}%`,
+                  }}
                   className="h-full bg-indigo-400 rounded-full"
                 />
               </View>
@@ -240,7 +246,7 @@ const MangaInfoHeroSection = memo(
         {/* CHAPTERS HEADER */}
         <View className="px-6 pb-4 flex-row justify-between items-center">
           <Text className="text-xl font-bold text-white">Chapters</Text>
-          <Text className="text-xs text-gray-500">124 Chapters</Text>
+          <Text className="text-xs text-gray-500">{`${totalChapters} Chapters`}</Text>
         </View>
       </>
     );

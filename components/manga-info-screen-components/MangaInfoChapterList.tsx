@@ -39,6 +39,8 @@ const MangaInfoChapterList = ({
         chapterTitle={item.chapterTitle}
         chapterTimeUploaded={item.chapterTimeUploaded}
         chapterUrl={item.chapterUrl}
+        isRead={item.isRead}
+        isSelected={item.isSelected}
         onChapterPress={onChapterPress}
         onChapterLongPress={onChapterLongPress}
       />

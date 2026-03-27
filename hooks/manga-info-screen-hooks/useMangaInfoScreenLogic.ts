@@ -21,27 +21,39 @@ export const useMangaInfoScreenLogic = (
   const scrollY = useSharedValue(0);
   const mangaInfo = useGetMangaInfo(mangaSourceId!, mangaUrl!);
 
-  const { onChapterPress, onChapterLongPress } = useChapterListControls(
-    mangaInfo?.data?.mangaChapters || [],
-  );
-
   const onScroll = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollY.value = event.contentOffset.y;
     },
   });
+
+  const {
+    controlledChapters,
+
+    isSelectionMode,
+    selectedCount,
+    readChaptersCount,
+
+    onMarkChaptersAsRead,
+    onMarkChaptersAsUnread,
+    onSelectAll,
+    onInvertSelect,
+    onClose,
+
+    onChapterPress,
+    onChapterLongPress,
+  } = useChapterListControls(mangaId, mangaInfo?.data?.mangaChapters);
+
   const onBack = useCallback(() => router.back(), [router]);
 
   const onAddToLibrary = useCallback(() => {
-    useMangaInfoScreenUIStore
-      .getState()
-      .openModal("add_to_library", {
-        mangaId,
-        mangaTitle,
-        mangaCover,
-        mangaUrl,
-        mangaSourceId,
-      });
+    useMangaInfoScreenUIStore.getState().openModal("add_to_library", {
+      mangaId,
+      mangaTitle,
+      mangaCover,
+      mangaUrl,
+      mangaSourceId,
+    });
   }, []);
 
   useEffect(() => {
@@ -53,7 +65,11 @@ export const useMangaInfoScreenLogic = (
       });
     });
 
-    return () => cancelAnimationFrame(frameId);
+    return () => {
+      useMangaInfoScreenUIStore.getState().closeModal();
+      cancelAnimationFrame(frameId);
+      onClose();
+    };
   }, []);
 
   return {
@@ -61,6 +77,17 @@ export const useMangaInfoScreenLogic = (
     isLoading: mangaInfo.isLoading || !isReady,
     mangaInfo: mangaInfo.data,
     scrollY,
+    mangaChapters: controlledChapters,
+
+    isSelectionMode,
+    selectedCount,
+    readChaptersCount,
+
+    onMarkChaptersAsRead,
+    onMarkChaptersAsUnread,
+    onSelectAll,
+    onInvertSelect,
+    onClose,
 
     onChapterPress,
     onChapterLongPress,
