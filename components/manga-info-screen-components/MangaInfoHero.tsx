@@ -85,7 +85,7 @@ const MangaInfoHeroSection = memo(
               recyclingKey="hero-blur"
             />
             <LinearGradient
-              colors={["transparent", "rgba(0,0,0,0.5)", Colors.secondary]}
+              colors={["transparent", "rgba(0,0,0,0.5)", Colors.background]}
               style={StyleSheet.absoluteFill}
             />
           </Animated.View>
@@ -168,24 +168,26 @@ const MangaInfoHeroSection = memo(
             </Pressable>
 
             {/* PROGRESS SECTION */}
-            <View className="w-full max-w-[280px] mt-3 px-1">
-              <View className="flex-row justify-between mb-2">
-                <Text className="text-[10px] font-bold text-muted/85 uppercase">
-                  Progress
-                </Text>
-                <Text className="text-[10px] font-bold text-muted uppercase">
-                  {`${readChaptersCount} / ${totalChapters}`}
-                </Text>
+            {readChaptersCount > 0 && (
+              <View className="w-full max-w-[280px] mt-5 px-1">
+                <View className="flex-row justify-between mb-2">
+                  <Text className="text-[10px] font-bold text-muted/85 uppercase">
+                    Progress
+                  </Text>
+                  <Text className="text-[10px] font-bold text-muted uppercase">
+                    {`${readChaptersCount} / ${totalChapters}`}
+                  </Text>
+                </View>
+                <View className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                  <View
+                    style={{
+                      width: `${(readChaptersCount / totalChapters) * 100}%`,
+                    }}
+                    className="h-full bg-primary rounded-full"
+                  />
+                </View>
               </View>
-              <View className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                <View
-                  style={{
-                    width: `${(readChaptersCount / totalChapters) * 100}%`,
-                  }}
-                  className="h-full bg-primary rounded-full"
-                />
-              </View>
-            </View>
+            )}
           </Animated.View>
         </View>
 

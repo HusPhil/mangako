@@ -106,7 +106,7 @@ const MangaInfoScreen = () => {
   if (isError) return <Text>Error</Text>;
 
   return (
-    <View className="flex-1 bg-secondary">
+    <View className="flex-1 bg-background">
       <StatusBar barStyle="light-content" />
       {!isSelectionMode && (
         <MangaStickyHeader
