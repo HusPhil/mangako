@@ -8,11 +8,8 @@ interface MangaInfoChapterListItemProps {
   chapterTitle: string;
   chapterTimeUploaded: string;
   chapterUrl: string;
-  // index: number;
-  // isRead: boolean;
-  // initialIsSelected: boolean;
-  // selectionModeOn: boolean;
-  // lastPageRead: number;
+  isRead?: boolean; // Added
+  isSelected?: boolean; // Added
   onChapterPress: (mangaId: string, chapter: ChapterMetadata) => void;
   onChapterLongPress: (chapterId: string) => void;
 }
@@ -23,7 +20,8 @@ const MangaInfoChapterListItem = ({
   chapterUrl,
   chapterTitle,
   chapterTimeUploaded,
-
+  isRead = false,
+  isSelected = false,
   onChapterLongPress,
   onChapterPress,
 }: MangaInfoChapterListItemProps) => {
@@ -43,14 +41,37 @@ const MangaInfoChapterListItem = ({
     <Pressable
       onPress={handleChapterPress}
       onLongPress={handleChapterLongPress}
+      // Added visual feedback for pressing
+      className={`${isSelected ? "bg-primary/20" : "active:bg-white/5"}`}
     >
-      <View className="py-5 px-6 border-b border-white/5">
-        <View>
-          <Text className="text-white font-medium">{chapterTitle}</Text>
-          <Text className="text-gray-500 text-xs mt-1">
+      <View
+        className={`py-5 px-6 border-b border-white/5 flex-row items-center justify-between ${
+          isSelected ? "bg-blue-500/20" : ""
+        }`}
+      >
+        <View className="flex-1">
+          <Text
+            className={`font-medium ${
+              isSelected
+                ? "text-blue-400"
+                : isRead
+                  ? "text-gray-500"
+                  : "text-white"
+            }`}
+          >
+            {chapterTitle}
+          </Text>
+          <Text
+            className={`text-xs mt-1 ${isRead ? "text-gray-600" : "text-gray-400"}`}
+          >
             {chapterTimeUploaded}
           </Text>
         </View>
+
+        {/* Optional: Add a small indicator for "Read" status if you want more than just text color changes */}
+        {isRead && !isSelected && (
+          <View className="w-2 h-2 rounded-full bg-gray-600 ml-2" />
+        )}
       </View>
     </Pressable>
   );

@@ -8,6 +8,8 @@ import MangaInfoChapterList from "@/components/manga-info-screen-components/Mang
 import MangaInfoHero from "@/components/manga-info-screen-components/MangaInfoHero";
 import MangaInfoLoader from "@/components/manga-info-screen-components/MangaInfoLoader";
 import MangaStickyHeader from "@/components/manga-info-screen-components/MangaInfoStickyHeader";
+import SelectionActionFooter from "@/components/manga-info-screen-components/SelectionActionFooter";
+import SelectionHeader from "@/components/manga-info-screen-components/SelectionHeader";
 import { useMangaInfoScreenLogic } from "@/hooks/manga-info-screen-hooks/useMangaInfoScreenLogic";
 import { useLibraryStore } from "@/stores/library-store";
 
@@ -43,6 +45,17 @@ const MangaInfoScreen = () => {
     isError,
     mangaInfo,
     scrollY,
+    mangaChapters,
+
+    isSelectionMode,
+    selectedCount,
+    readChaptersCount,
+    onMarkChaptersAsRead,
+    onMarkChaptersAsUnread,
+    onSelectAll,
+    onInvertSelect,
+    onClose,
+
     onChapterPress,
     onChapterLongPress,
     onBack: handleBack,
@@ -68,6 +81,8 @@ const MangaInfoScreen = () => {
         mangaStatus={mangaDetails?.mangaStatus ?? ""}
         mangaTags={mangaDetails?.mangaTags ?? []}
         mangaAlternativeNames={mangaDetails?.mangaAlternativeNames ?? []}
+        readChaptersCount={readChaptersCount}
+        totalChapters={mangaChapters.length}
         mangaRating={"4.9"}
         scrollY={scrollY}
         HERO_HEIGHT={HERO_HEIGHT}
@@ -75,7 +90,14 @@ const MangaInfoScreen = () => {
         onAddToLibrary={handleAddToLibrary}
       />
     ),
-    [mangaCover, mangaTitle, mangaDetails, scrollY, handleBack],
+    [
+      mangaCover,
+      mangaTitle,
+      mangaDetails,
+      scrollY,
+      readChaptersCount,
+      handleBack,
+    ],
   );
 
   if (isLoading) return <MangaInfoLoader />;
@@ -85,19 +107,35 @@ const MangaInfoScreen = () => {
   return (
     <View className="flex-1 bg-black">
       <StatusBar barStyle="light-content" />
-      <MangaStickyHeader
-        mangaCover={mangaCover}
-        mangaTitle={mangaTitle}
-        scrollY={scrollY}
-      />
+      {!isSelectionMode && (
+        <MangaStickyHeader
+          mangaCover={mangaCover}
+          mangaTitle={mangaTitle}
+          scrollY={scrollY}
+        />
+      )}
+      {isSelectionMode && (
+        <SelectionHeader
+          selectedCount={selectedCount}
+          onInvert={onInvertSelect}
+          onSelectAll={onSelectAll}
+          onClose={onClose}
+        />
+      )}
       <MangaInfoChapterList
         mangaId={mangaId}
-        mangaChapters={mangaInfo?.mangaChapters ?? []}
+        mangaChapters={mangaChapters}
         onChapterPress={onChapterPress}
         onChapterLongPress={onChapterLongPress}
         listHeader={listHeader}
         onScroll={handleScroll}
       />
+      {isSelectionMode && (
+        <SelectionActionFooter
+          onMarkRead={onMarkChaptersAsRead}
+          onMarkUnread={onMarkChaptersAsUnread}
+        />
+      )}
       <AddToLibraryModal />
     </View>
   );
