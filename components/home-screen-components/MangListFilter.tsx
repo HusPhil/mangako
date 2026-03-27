@@ -2,6 +2,7 @@ import { useCategoryStore } from "@/stores/categories-store";
 import { useLibraryStore } from "@/stores/library-store";
 import useCategoryScreenUIStore from "@/stores/ui-stores/category-screen-ui-store";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import React, { useEffect } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
@@ -13,69 +14,111 @@ const MangaListFilter = () => {
   );
   const categories = useCategoryStore((state) => state.categories);
 
+  const handleCategoryPress = (id: string | null) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedCategory(id);
+  };
+
+  const handleAddPress = () => {
+    useCategoryScreenUIStore.getState().openModal("add_category");
+    requestAnimationFrame(() => {
+      router.push("/(modals)/category-settings");
+    });
+  };
+
   useEffect(() => {
-    if (categories.length > 0 && selectedCategory === null) {
+    if (categories.length > 0) {
       setSelectedCategory(categories[0].category_id);
     }
-  }, [categories, selectedCategory]);
+  }, [categories]);
 
   return (
-    <View
-      className="border-white/10 py-4 bg-background/75"
-      style={{ borderTopWidth: 0.5, borderBottomWidth: 0.5 }}
-    >
+    <View className="bg-background pt-2 pb-4">
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 12, alignItems: "center" }}
+        contentContainerStyle={{ paddingHorizontal: 20, alignItems: "center" }}
       >
-        {/* 2. Add Category Button */}
-        <Pressable
-          onPress={() => {
-            router.push("/(modals)/category-settings");
-            useCategoryScreenUIStore.getState().openModal("add_category");
-          }}
-          className="w-10 h-10 rounded-xl bg-white/10 items-center justify-center border border-white/10 ml-2"
-          style={({ pressed }) => ({
-            opacity: pressed ? 0.7 : 1,
-            borderColor: pressed ? "white" : "rgba(255,255,255,0.1)",
-          })}
-        >
-          <Ionicons name="add" size={20} color="white" />
-        </Pressable>
+        {/* --- Unified Control Hub --- */}
+        <View className="flex-row bg-white/5 rounded-xl p-1 border border-white/10 mr-4 items-center">
+          {/* Add Category */}
+          <Pressable
+            onPress={handleAddPress}
+            className="w-10 h-10 items-center justify-center rounded-xl active:bg-white/10"
+          >
+            <Ionicons name="add" size={22} color="#FFFFFF" />
+          </Pressable>
 
-        {/* 3. The Vertical Separator */}
+          <View className="w-[1px] h-5 bg-white/10 mx-1" />
 
-        <Text className="text-muted text-2xl mx-5 font-plight -top-0.5">|</Text>
-        {/* 4. The Categories */}
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          {categories.map((category) => {
-            const isActive = selectedCategory === category.category_id;
+          {/* Manage Categories */}
+          <Pressable
+            onPress={() => router.push("/(modals)/category-settings")}
+            className="w-10 h-10 items-center justify-center rounded-xl active:bg-white/10"
+          >
+            <Ionicons name="settings-outline" size={18} color="#A0A0A0" />
+          </Pressable>
 
-            return (
-              <Pressable
-                key={category.name}
-                onPress={() => setSelectedCategory(category.category_id)}
-                className={`px-5 py-2 rounded-xl h-10 justify-center ${
-                  isActive
-                    ? "bg-white/10 border border-white/10"
-                    : "bg-transparent border border-transparent"
-                }`}
-              >
-                <Text
-                  className={`text-sm font-medium ${
-                    isActive ? "text-primary" : "text-muted"
-                  }`}
-                >
-                  {category.name}
-                </Text>
-              </Pressable>
-            );
-          })}
+          <View className="w-[1px] h-5 bg-white/10 mx-1" />
+
+          {/* "View All" Icon Button */}
+          <Pressable
+            onPress={() => handleCategoryPress(null)}
+            className={`w-12 h-10 items-center justify-center rounded-lg  ${
+              selectedCategory === null ? "bg-white" : "bg-transparent"
+            }`}
+          >
+            <Ionicons
+              name={selectedCategory === null ? "apps" : "apps-outline"}
+              size={20}
+              color={selectedCategory === null ? "#000000" : "#A0A0A0"}
+            />
+          </Pressable>
+        </View>
+
+        {/* Categories List */}
+        <View className="flex-row gap-x-3">
+          {categories.map((category) => (
+            <FilterChip
+              key={category.category_id}
+              label={category.name}
+              isActive={selectedCategory === category.category_id}
+              onPress={() => handleCategoryPress(category.category_id)}
+            />
+          ))}
         </View>
       </ScrollView>
     </View>
   );
 };
+
+const FilterChip = ({
+  label,
+  isActive,
+  onPress,
+}: {
+  label: string;
+  isActive: boolean;
+  onPress: () => void;
+}) => (
+  <Pressable
+    onPress={onPress}
+    className={`px-6 h-11 rounded-2xl justify-center border ${
+      isActive ? "bg-white border-white" : "bg-white/5 border-white/5"
+    }`}
+    style={({ pressed }) => ({
+      opacity: pressed ? 0.8 : 1,
+      transform: [{ scale: pressed ? 0.96 : 1 }],
+    })}
+  >
+    <Text
+      className={`text-[15px] ${
+        isActive ? "text-black font-pblack" : "text-muted font-pbold"
+      }`}
+    >
+      {label}
+    </Text>
+  </Pressable>
+);
 
 export default MangaListFilter;

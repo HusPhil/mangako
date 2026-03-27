@@ -7,13 +7,11 @@ export const addMangaToLibraryWithCategory = (
   categoryId: string,
 ) => {
   db.withTransactionSync(() => {
-    // 1️⃣ Ensure the category exists
     db.runSync(
       `INSERT OR IGNORE INTO categories (category_id, name) VALUES (?, ?)`,
       [categoryId, categoryId],
     );
 
-    // 2️⃣ Insert/Update library_manga (Including manga_url)
     db.runSync(
       `INSERT OR REPLACE INTO library_manga
        (manga_id, manga_url, title, cover_url, source_id, added_at, is_favorite)
@@ -29,7 +27,6 @@ export const addMangaToLibraryWithCategory = (
       ],
     );
 
-    // 3️⃣ Link in junction table
     db.runSync(
       `INSERT OR REPLACE INTO manga_category (manga_id, category_id) VALUES (?, ?)`,
       [manga.manga_id, categoryId],

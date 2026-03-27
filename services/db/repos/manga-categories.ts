@@ -1,13 +1,13 @@
+import { randomUUID } from "expo-crypto";
 import { SQLiteDatabase } from "expo-sqlite";
-import { Category, MangaCategoryResult } from "../types";
+import { AddMangaInput, AssignedCategory, Category } from "../types";
 
-// Get all available categories
 export const getAllCategories = (db: SQLiteDatabase): Category[] => {
   return db.getAllSync<Category>(
     `SELECT category_id, name, sort_order FROM categories ORDER BY sort_order ASC`,
   );
 };
-// Helper to check if name exists
+
 export const categoryNameExists = (
   db: SQLiteDatabase,
   name: string,
@@ -19,31 +19,32 @@ export const categoryNameExists = (
   return (result?.count ?? 0) > 0;
 };
 
-// Update Create: Throw error or return boolean if exists
 export const createCategory = (db: SQLiteDatabase, name: string): void => {
-  if (categoryNameExists(db, name)) {
-    throw new Error("Category name already exists");
-  }
+  const trimmedName = name.trim();
 
-  // 1. Get the current maximum sort_order
-  const result = db.getFirstSync<{ maxOrder: number }>(
-    `SELECT MAX(sort_order) as maxOrder FROM categories`,
-  );
+  if (!trimmedName) throw new Error("Category name cannot be empty");
+  if (trimmedName.toLowerCase() === "all")
+    throw new Error("Category ALL already provided");
 
-  // 2. Calculate next order (default to 0 if table is empty)
-  const nextOrder =
-    result && result.maxOrder !== null ? result.maxOrder + 1 : 0;
+  db.withTransactionSync(() => {
+    if (categoryNameExists(db, trimmedName)) {
+      throw new Error("Category name already exists");
+    }
 
-  const categoryId = name.toLowerCase().trim().replace(/\s+/g, "-");
+    const result = db.getFirstSync<{ maxOrder: number | null }>(
+      `SELECT MAX(sort_order) as maxOrder FROM categories`,
+    );
 
-  // 3. Insert with the new sort_order
-  db.runSync(
-    `INSERT OR IGNORE INTO categories (category_id, name, sort_order) VALUES (?, ?, ?)`,
-    [categoryId, name.trim(), nextOrder],
-  );
+    const nextOrder = (result?.maxOrder ?? -1) + 1;
+    const categoryId = randomUUID();
+
+    db.runSync(
+      `INSERT OR IGNORE INTO categories (category_id, name, sort_order) VALUES (?, ?, ?)`,
+      [categoryId, trimmedName, nextOrder],
+    );
+  });
 };
 
-// Update Rename: Check if the NEW name is taken by a DIFFERENT category
 export const renameCategory = (
   db: SQLiteDatabase,
   categoryId: string,
@@ -51,75 +52,33 @@ export const renameCategory = (
 ): void => {
   const trimmedName = newName.trim();
 
-  // Check if any OTHER category already has this name
-  const existing = db.getFirstSync<{ category_id: string }>(
-    `SELECT category_id FROM categories WHERE LOWER(name) = LOWER(?) AND category_id != ?`,
-    [trimmedName, categoryId],
-  );
+  db.withTransactionSync(() => {
+    const existing = db.getFirstSync<{ category_id: string }>(
+      `SELECT category_id FROM categories WHERE LOWER(name) = LOWER(?) AND category_id != ?`,
+      [trimmedName, categoryId],
+    );
 
-  if (existing) {
-    throw new Error("Another category already has this name");
-  }
+    if (existing) {
+      throw new Error("Another category already has this name");
+    }
 
-  db.runSync(`UPDATE categories SET name = ? WHERE category_id = ?`, [
-    trimmedName,
-    categoryId,
-  ]);
+    db.runSync(`UPDATE categories SET name = ? WHERE category_id = ?`, [
+      trimmedName,
+      categoryId,
+    ]);
+  });
 };
 
-// Delete a category and its associations
 export const deleteCategory = (
   db: SQLiteDatabase,
   categoryId: string,
 ): void => {
   db.withTransactionSync(() => {
-    // Clean up junction table first to maintain referential integrity
     db.runSync(`DELETE FROM manga_category WHERE category_id = ?`, [
       categoryId,
     ]);
     db.runSync(`DELETE FROM categories WHERE category_id = ?`, [categoryId]);
   });
-};
-
-// Add manga to a category
-export const assignMangaToCategory = (
-  db: SQLiteDatabase,
-  mangaId: string,
-  categoryId: string,
-): void => {
-  db.runSync(
-    `INSERT OR IGNORE INTO manga_category (manga_id, category_id) VALUES (?, ?)`,
-    [mangaId, categoryId],
-  );
-};
-
-// Remove manga from a category
-export const removeMangaFromCategory = (
-  db: SQLiteDatabase,
-  mangaId: string,
-  categoryId: string,
-): void => {
-  db.runSync(
-    `DELETE FROM manga_category WHERE manga_id = ? AND category_id = ?`,
-    [mangaId, categoryId],
-  );
-};
-
-// Get all categories for a specific manga
-export const getCategoriesForManga = (
-  db: SQLiteDatabase,
-  mangaId: string,
-): MangaCategoryResult[] => {
-  return db.getAllSync<MangaCategoryResult>(
-    `
-    SELECT c.category_id, c.name as category_name
-    FROM categories c
-    JOIN manga_category mc ON mc.category_id = c.category_id
-    WHERE mc.manga_id = ?
-    ORDER BY c.name ASC
-    `,
-    [mangaId],
-  );
 };
 
 export const updateCategoryOrders = (
@@ -133,6 +92,89 @@ export const updateCategoryOrders = (
     try {
       orders.forEach((item) => {
         statement.executeSync([item.sort_order, item.category_id]);
+      });
+    } finally {
+      statement.finalizeSync();
+    }
+  });
+};
+
+export const getAllCategoriesWithAssignment = (
+  db: SQLiteDatabase,
+  mangaId: string,
+): AssignedCategory[] => {
+  return db
+    .getAllSync<Category & { is_assigned: number }>(
+      `
+    SELECT 
+      c.category_id, 
+      c.name, 
+      c.sort_order,
+      CASE WHEN mc.manga_id IS NOT NULL THEN 1 ELSE 0 END as is_assigned
+    FROM categories c
+    LEFT JOIN manga_category mc 
+      ON c.category_id = mc.category_id 
+      AND mc.manga_id = ?
+    ORDER BY c.sort_order ASC
+    `,
+      [mangaId],
+    )
+    .map((row) => ({
+      ...row,
+      is_assigned: row.is_assigned === 1,
+    }));
+};
+
+export const updateMangaAssignments = (
+  db: SQLiteDatabase,
+  manga: AddMangaInput,
+  assignedCategories: AssignedCategory[],
+): void => {
+  db.withTransactionSync(() => {
+    const activeAssignments = assignedCategories.filter(
+      (cat) => cat.is_assigned,
+    );
+
+    // 1. If NO categories are selected, remove it from the library and stop
+    if (activeAssignments.length === 0) {
+      db.runSync(`DELETE FROM manga_category WHERE manga_id = ?`, [
+        manga.manga_id,
+      ]);
+      db.runSync(`DELETE FROM library_manga WHERE manga_id = ?`, [
+        manga.manga_id,
+      ]);
+      return;
+    }
+
+    // 2. Ensure the parent record exists (UPSERT)
+    // This prevents the Foreign Key Error 19
+    db.runSync(
+      `INSERT OR REPLACE INTO library_manga 
+       (manga_id, manga_url, title, cover_url, source_id, added_at, is_favorite)
+       VALUES (?, ?, ?, ?, ?, ?, COALESCE((SELECT is_favorite FROM library_manga WHERE manga_id = ?), 0))`,
+      [
+        manga.manga_id,
+        manga.manga_url,
+        manga.title,
+        manga.cover_url,
+        manga.source_id,
+        Date.now(),
+        manga.manga_id,
+      ],
+    );
+
+    // 3. Clear existing category links
+    db.runSync(`DELETE FROM manga_category WHERE manga_id = ?`, [
+      manga.manga_id,
+    ]);
+
+    // 4. Insert new assignments
+    const statement = db.prepareSync(
+      `INSERT INTO manga_category (manga_id, category_id) VALUES (?, ?)`,
+    );
+    try {
+      activeAssignments.forEach((cat) => {
+        statement.executeSync([manga.manga_id, cat.category_id]);
       });
     } finally {
       statement.finalizeSync();
