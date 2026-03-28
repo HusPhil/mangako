@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/colors";
 import { initializeDB } from "@/services/db/init";
+import { useReactQueryDevTools } from "@dev-plugins/react-query";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
 import { Stack } from "expo-router";
@@ -18,6 +19,7 @@ const DrizzleDbStudio = () => {
 };
 
 const RootLayout = () => {
+  useReactQueryDevTools(queryClient);
   return (
     <Suspense fallback={<LoadingScreen />}>
       <SQLiteProvider
@@ -41,6 +43,14 @@ const RootLayout = () => {
               <Stack.Screen
                 name="manga/[id]/index"
                 options={{ animation: "fade_from_bottom" }}
+              />
+              <Stack.Screen
+                name="manga/[id]/[chapterId]"
+                options={{
+                  animation: "simple_push",
+                  autoHideHomeIndicator: true,
+                  navigationBarHidden: true,
+                }}
               />
               <Stack.Screen
                 name="(modals)/test-modal"

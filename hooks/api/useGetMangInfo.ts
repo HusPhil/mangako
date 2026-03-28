@@ -24,6 +24,6 @@ export const useGetMangaInfo = (source: string, mangaUrl?: string) => {
       return getMangaInfo(source, mangaUrl, signal);
     },
     enabled: !!source && !!mangaUrl, // Critical: prevent empty fetches
-    staleTime: 1000 * 60 * 15, // Cache info for 15 mins
+    staleTime: 1000 * 60 * 5, // Cache info for 15 mins
   });
 };

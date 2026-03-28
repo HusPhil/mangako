@@ -4,11 +4,17 @@ import { useMangaReaderScreenLogic } from "@/hooks/manga-reader-screen-hooks/use
 import { MangaChapterPage } from "@/types/ResponseTypes";
 import { FlashList } from "@shopify/flash-list";
 import React, { useCallback } from "react";
-import { ActivityIndicator, StatusBar, View } from "react-native";
+import { ActivityIndicator, Dimensions, StatusBar, View } from "react-native";
+
+// 1. Extract both width and height for layout calculations
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+// Standard estimate for 2:3 aspect ratio manga pages
+const ESTIMATED_PAGE_HEIGHT = SCREEN_WIDTH * 1.5;
 
 const MangaReaderScreen = () => {
-  const { pages, isLoading, isError, getItemLayout, onBack } =
-    useMangaReaderScreenLogic();
+  // 2. Extract the overrideItemLayout from your updated hook
+  const { pages, isLoading } = useMangaReaderScreenLogic();
 
   const renderItem = useCallback(
     ({ item }: { item: MangaChapterPage }) => <MangaReaderPage item={item} />,
@@ -31,11 +37,9 @@ const MangaReaderScreen = () => {
         data={pages}
         renderItem={renderItem}
         keyExtractor={(item) => item.pageId}
-        removeClippedSubviews={true} // Physically destroy off-screen views
-        drawDistance={500} // Only render 500px above/below the screen
+        maxItemsInRecyclePool={2} // Reduced to 2 for maximum aggressiveness
+        drawDistance={SCREEN_HEIGHT * 1.25} // Severely limits off-screen native rendering
       />
-
-      {/* We will add Overlays (Header/Footer) here next */}
     </View>
   );
 };

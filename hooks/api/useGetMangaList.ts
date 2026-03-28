@@ -20,7 +20,7 @@ export const useGetLatestMangaList = (source: string, page: number = 1) => {
     queryKey: ["manga", "latest", source, page] as const,
     queryFn: ({ signal }) => getLatestMangaList({ source, page, signal }),
     enabled: !!source,
-    staleTime: 1000 * 60 * 5, // 5 minutes is standard for "Latest" feeds
     refetchOnWindowFocus: false,
+    cacheTime: 1000 * 60 * 5,
   });
 };
