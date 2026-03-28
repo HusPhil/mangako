@@ -3,11 +3,8 @@ import { useLibraryStore } from "@/stores/library-store";
 import { useReadingStore } from "@/stores/reading-progress-store";
 import { MangaChapterPage } from "@/types/ResponseTypes";
 import { Image } from "expo-image";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Dimensions } from "react-native";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export const useMangaReaderScreenLogic = () => {
   const router = useRouter();
@@ -19,26 +16,32 @@ export const useMangaReaderScreenLogic = () => {
   }>();
 
   const [isReady, setIsReady] = useState(false);
+  const [activePages, setActivePages] = useState<MangaChapterPage[]>([]);
+  const isFocusedRef = useRef(false);
+  // Track the prefetch loop so we can cancel it mid-flight
+  const prefetchAbortRef = useRef(false);
 
-  // 1. Resolve Manga Metadata from Store
   const getMangaById = useLibraryStore((state) => state.getMangaById);
   const mangaInfo = useMemo(() => getMangaById(params.id!), [params.id]);
 
-  // 2. API: Fetch Chapter Pages
   const {
-    data: pages = [],
+    data: fetchedPages,
     isLoading: isApiLoading,
     isError,
   } = useGetChapterPages(mangaInfo?.source_id ?? "", params.chapterUrl);
 
-  // 3. Database: Progress Persistence
   const markChapters = useReadingStore((state) => state.markChapters);
-  const saveProgress = useReadingStore((state) => state.saveProgress);
+
+  // Centralized cleanup — call this anywhere you need to free memory
+  const purgeMemory = useCallback(async () => {
+    prefetchAbortRef.current = true; // Stop any in-flight prefetch loop
+    setActivePages([]);
+    await Image.clearMemoryCache();
+  }, []);
 
   const handleToggleReadStatus = useCallback(
     (isRead: boolean) => {
       if (!params.id || !params.chapterId) return;
-
       markChapters(
         params.id,
         [
@@ -54,18 +57,13 @@ export const useMangaReaderScreenLogic = () => {
     [params, markChapters],
   );
 
-  // 4. Performance: Layout Calculation for FlashList
-  // This prevents layout jumps and improves scroll performance
-  const getItemLayout = useCallback(
-    (layout: { height: number }, item: MangaChapterPage) => {
-      layout.height = (item.pageHeight / item.pageWidth) * SCREEN_WIDTH;
-    },
-    [],
-  );
+  const onBack = useCallback(async () => {
+    await purgeMemory();
+    router.back();
+  }, [purgeMemory, router]);
 
-  const onBack = useCallback(() => router.back(), [router]);
-
-  // 5. Lifecycle: Ensure JS thread is clear before rendering heavy images
+  // Double rAF trick — waits for the JS thread to be fully idle before marking ready.
+  // Prevents FlashList from rendering during the screen transition animation.
   useEffect(() => {
     let frameId = requestAnimationFrame(() => {
       frameId = requestAnimationFrame(() => setIsReady(true));
@@ -73,62 +71,72 @@ export const useMangaReaderScreenLogic = () => {
     return () => cancelAnimationFrame(frameId);
   }, []);
 
+  // Sync fetched pages into active state only while screen is focused
   useEffect(() => {
-    let isMounted = true;
+    if (fetchedPages && fetchedPages.length > 0 && isFocusedRef.current) {
+      setActivePages(fetchedPages);
+    }
+  }, [fetchedPages]);
+
+  // On focus: populate pages. On blur: purge everything.
+  useFocusEffect(
+    useCallback(() => {
+      isFocusedRef.current = true;
+      prefetchAbortRef.current = false; // Reset abort flag when focusing
+
+      if (fetchedPages && fetchedPages.length > 0) {
+        setActivePages(fetchedPages);
+      }
+
+      return () => {
+        isFocusedRef.current = false;
+        // Fire-and-forget is fine here — screen is already losing focus
+        purgeMemory();
+      };
+    }, [fetchedPages, purgeMemory]),
+  );
+
+  // Prefetch to DISK only — keeps pages out of RAM until FlashList actually needs them
+  useEffect(() => {
+    if (!fetchedPages || fetchedPages.length === 0 || !isFocusedRef.current) {
+      return;
+    }
+
+    prefetchAbortRef.current = false;
+
     const CHUNK_SIZE = 3;
+    const allUrls = fetchedPages.map((p) => p.pageImageUrl);
 
-    const prioritizedPrefetch = async () => {
-      // 1. Guard against empty data
-      if (!pages || pages.length === 0) return;
-
-      const allUrls = pages.map((p) => p.pageImageUrl);
-      console.log(`[Reader] Starting prefetch for ${allUrls.length} pages`);
-
+    const run = async () => {
       for (let i = 0; i < allUrls.length; i += CHUNK_SIZE) {
-        // 2. The Check: Stop if user left OR changed chapter
-        if (!isMounted) break;
+        // Bail out if screen lost focus or component unmounted mid-loop
+        if (prefetchAbortRef.current) break;
 
         const chunk = allUrls.slice(i, i + CHUNK_SIZE);
-
         try {
-          await Promise.all(chunk.map((url) => Image.prefetch(url)));
+          await Promise.all(chunk.map((url) => Image.prefetch(url, "disk")));
         } catch (err) {
-          console.error(err);
+          console.error("[Reader] Prefetch error:", err);
         }
       }
     };
 
-    prioritizedPrefetch();
+    run();
 
+    // If fetchedPages changes mid-prefetch (shouldn't happen, but just in case)
     return () => {
-      isMounted = false;
+      prefetchAbortRef.current = true;
     };
-  }, [pages]); // This correctly resets if pages change
-
-  useEffect(() => {
-    // This runs whenever you switch to a new chapter
-    console.log(
-      "[Reader] New chapter detected, purging previous image textures...",
-    );
-    Image.clearMemoryCache();
-
-    return () => {
-      // This runs when you exit the reader entirely
-      Image.clearMemoryCache();
-    };
-  }, [params.chapterId]); // Bind strictly to the ID change
+  }, [fetchedPages]);
 
   return {
     mangaId: params.id,
     chapterId: params.chapterId,
     chapterTitle: params.chapterTitle,
-
-    pages,
+    pages: activePages,
     isLoading: isApiLoading || !isReady,
     isError,
-
     onBack,
     onToggleReadStatus: handleToggleReadStatus,
-    getItemLayout,
   };
 };
