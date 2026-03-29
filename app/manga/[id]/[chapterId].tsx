@@ -1,68 +1,28 @@
-import MangaReaderPage from "@/components/manga-reader-screen-components/MangaReaderPage";
+import PageIndicator from "@/components/manga-reader-screen-components/PageIndicator";
+import ReaderSettingsOverlay from "@/components/manga-reader-screen-components/ReaderSettingsOverlay";
+import VerticalReader from "@/components/manga-reader-screen-components/VerticalReader";
 import { Colors } from "@/constants/colors";
 import { useMangaReaderScreenLogic } from "@/hooks/manga-reader-screen-hooks/useMangaReaderScreenLogic";
-import { MangaChapterPage } from "@/types/ResponseTypes";
-import { FlashList, ViewToken } from "@shopify/flash-list";
-import React, { useCallback, useRef } from "react";
-import { ActivityIndicator, Dimensions, StatusBar, View } from "react-native";
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-const ESTIMATED_PAGE_HEIGHT = SCREEN_WIDTH * 1.5;
-const VISIBILITY_WINDOW = 3;
+import React from "react";
+import { ActivityIndicator, StatusBar, Text, View } from "react-native";
 
 const MangaReaderScreen = () => {
-  const { pages, isLoading } = useMangaReaderScreenLogic();
+  const {
+    mangaId,
 
-  // Map of index -> setter from each mounted cell
-  const setVisibilityMapRef = useRef<Map<number, (v: boolean) => void>>(
-    new Map(),
-  );
+    readingMode,
+    isSettingsVisible,
+    pages,
+    currentPageIndex,
+    totalPages,
 
-  const onViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: ViewToken<MangaChapterPage>[] }) => {
-      // Build the new visible set
-      const newVisible = new Set<number>();
-      viewableItems.forEach(({ index }) => {
-        if (index == null) return;
-        for (
-          let i = index - VISIBILITY_WINDOW;
-          i <= index + VISIBILITY_WINDOW;
-          i++
-        ) {
-          if (i >= 0 && i < pages.length) newVisible.add(i);
-        }
-      });
+    isLoading,
+    isError,
 
-      // Push changes directly to each mounted cell's setter — no polling needed
-      setVisibilityMapRef.current.forEach((setter, index) => {
-        setter(newVisible.has(index));
-      });
-    },
-    [pages.length],
-  );
-
-  const registerVisibilitySetter = useCallback(
-    (index: number, setter: (v: boolean) => void) => {
-      setVisibilityMapRef.current.set(index, setter);
-    },
-    [],
-  );
-
-  const unregisterVisibilitySetter = useCallback((index: number) => {
-    setVisibilityMapRef.current.delete(index);
-  }, []);
-
-  const renderItem = useCallback(
-    ({ item, index }: { item: MangaChapterPage; index: number }) => (
-      <MangaReaderPage
-        item={item}
-        index={index}
-        registerVisibilitySetter={registerVisibilitySetter}
-        unregisterVisibilitySetter={unregisterVisibilitySetter}
-      />
-    ),
-    [registerVisibilitySetter, unregisterVisibilitySetter],
-  );
+    onViewableItemsChanged,
+    registerVisibilitySetter,
+    unregisterVisibilitySetter,
+  } = useMangaReaderScreenLogic();
 
   if (isLoading) {
     return (
@@ -72,17 +32,41 @@ const MangaReaderScreen = () => {
     );
   }
 
+  if (isError || !pages) {
+    return (
+      <View className="flex-1 bg-background justify-center items-center px-4">
+        <Text className="text-white text-lg font-bold">Error</Text>
+      </View>
+    );
+  }
+
   return (
     <View className="flex-1 bg-black">
       <StatusBar hidden />
-      <FlashList
-        data={pages}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.pageId}
-        maxItemsInRecyclePool={5}
-        drawDistance={SCREEN_HEIGHT * 1.25}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={{ itemVisiblePercentThreshold: 1 }}
+
+      {readingMode === "vertical" && (
+        <VerticalReader
+          pages={pages}
+          onViewableItemsChanged={onViewableItemsChanged}
+          registerVisibilitySetter={registerVisibilitySetter}
+          unregisterVisibilitySetter={unregisterVisibilitySetter}
+        />
+      )}
+
+      {isSettingsVisible && (
+        <ReaderSettingsOverlay
+          canGoNext={currentPageIndex < totalPages - 1}
+          canGoPrev={currentPageIndex > 0}
+          onNavigateToPrev={() => {}}
+          onNavigateToNext={() => {}}
+          mangaId={mangaId}
+          onJumpToPage={() => {}}
+        />
+      )}
+
+      <PageIndicator
+        currentPageIndex={currentPageIndex}
+        totalPages={totalPages}
       />
     </View>
   );

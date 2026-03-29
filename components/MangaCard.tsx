@@ -49,6 +49,7 @@ const MangaCard = ({
             {/* Image Container */}
             <View className="relative w-full" style={{ aspectRatio: 0.7 }}>
               <Image
+                recyclingKey={mangaId}
                 source={mangaCover}
                 style={StyleSheet.absoluteFill}
                 contentFit="cover"

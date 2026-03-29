@@ -1,5 +1,6 @@
 import { ChapterMetadata } from "@/services/db/types";
-import { useReadingStore } from "@/stores/reading-progress-store";
+import { useReadingProgressStore } from "@/stores/reading-progress-store";
+import { useReaderSessionStore } from "@/stores/ui-stores/manga-reader-screen-ui-store";
 import { MangaChapter } from "@/types/ResponseTypes";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
@@ -9,9 +10,12 @@ export const useChapterListControls = (
   mangaId: string,
   mangaChapters?: MangaChapter[],
 ) => {
-  const readChapterIds = useReadingStore((state) => state.readChapterIds);
-  const loadReadChapters = useReadingStore((state) => state.loadReadChapters);
-  const markChapters = useReadingStore((state) => state.markChapters);
+  const readChapterIds = useReadingProgressStore(
+    (state) => state.readChapterIds,
+  );
+  const loadReadChapters = useReadingProgressStore.getState().loadReadChapters;
+  const markChapters = useReadingProgressStore.getState().markChapters;
+  const setChapterContext = useReaderSessionStore.getState().setChapterContext;
 
   // 1. Selection State
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
@@ -57,27 +61,35 @@ export const useChapterListControls = (
 
   // 3. Interaction Handlers
   const onChapterPress = useCallback(
-    (mangaId: string, chapter: ChapterMetadata) => {
+    (mangaId: string, chapter: MangaChapter) => {
       const currentIndex = (mangaChapters || []).findIndex(
-        (c) => c.chapterId === chapter.id,
+        (c) => c.chapterId === chapter.chapterId,
       );
 
       if (isSelectionMode) {
-        toggleSelection(chapter.id, currentIndex);
+        toggleSelection(chapter.chapterId, currentIndex);
         return;
       }
+
+      const mangaChapter = {
+        chapterId: chapter.chapterId,
+        chapterTitle: chapter.chapterTitle,
+        chapterUrl: chapter.chapterUrl,
+        chapterTimeUploaded: chapter.chapterTimeUploaded, // This will be updated in the reader screen when we fetch chapter details
+      } as MangaChapter;
 
       router.push({
         pathname: `/manga/[id]/[chapterId]`,
         params: {
           id: mangaId,
-          chapterId: chapter.id,
-          chapterTitle: chapter.title,
-          chapterUrl: chapter.url,
+          chapterId: chapter.chapterId,
+          chapterTitle: chapter.chapterTitle,
+          chapterUrl: chapter.chapterUrl,
         },
       });
+      setChapterContext(mangaChapter, mangaChapters || []);
     },
-    [isSelectionMode, toggleSelection, mangaChapters],
+    [isSelectionMode, setChapterContext, toggleSelection, mangaChapters],
   );
 
   const onChapterLongPress = useCallback(

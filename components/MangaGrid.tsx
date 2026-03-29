@@ -17,7 +17,6 @@ const MangaGrid = <T extends MangaGridItem>({
 }: MangaGridProps<T>) => {
   const renderItem = ({ item }: { item: MangaGridItem }) => (
     <MangaCard
-      key={item.mangaId}
       mangaSourceId={item.mangaSourceId}
       mangaId={item.mangaId}
       mangaUrl={item.mangaUrl}

@@ -10,6 +10,7 @@ import MangaInfoLoader from "@/components/manga-info-screen-components/MangaInfo
 import MangaStickyHeader from "@/components/manga-info-screen-components/MangaInfoStickyHeader";
 import SelectionActionFooter from "@/components/manga-info-screen-components/SelectionActionFooter";
 import SelectionHeader from "@/components/manga-info-screen-components/SelectionHeader";
+import { Colors } from "@/constants/colors";
 import { useMangaInfoScreenLogic } from "@/hooks/manga-info-screen-hooks/useMangaInfoScreenLogic";
 import { useLibraryStore } from "@/stores/library-store";
 
@@ -107,7 +108,7 @@ const MangaInfoScreen = () => {
 
   return (
     <View className="flex-1 bg-background">
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
       {!isSelectionMode && (
         <MangaStickyHeader
           mangaCover={mangaCover}

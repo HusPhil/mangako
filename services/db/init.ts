@@ -1,7 +1,7 @@
 // /services/db/init.ts
 import { useCategoryStore } from "@/stores/categories-store";
 import { useLibraryStore } from "@/stores/library-store";
-import { useReadingStore } from "@/stores/reading-progress-store";
+import { useReadingProgressStore } from "@/stores/reading-progress-store";
 import { SQLiteDatabase } from "expo-sqlite";
 import { db } from "./index";
 import { runMigrations } from "./migration";
@@ -98,7 +98,7 @@ export const initializeDB = async (db: SQLiteDatabase) => {
   // 3. Store Injection
   const libraryStore = useLibraryStore.getState();
   const categoryStore = useCategoryStore.getState();
-  const readingStore = useReadingStore.getState();
+  const readingStore = useReadingProgressStore.getState();
 
   // Inject the DB reference to all stores first
   libraryStore.setDB(db);
