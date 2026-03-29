@@ -2,23 +2,66 @@ import MangaReaderPage from "@/components/manga-reader-screen-components/MangaRe
 import { Colors } from "@/constants/colors";
 import { useMangaReaderScreenLogic } from "@/hooks/manga-reader-screen-hooks/useMangaReaderScreenLogic";
 import { MangaChapterPage } from "@/types/ResponseTypes";
-import { FlashList } from "@shopify/flash-list";
-import React, { useCallback } from "react";
+import { FlashList, ViewToken } from "@shopify/flash-list";
+import React, { useCallback, useRef } from "react";
 import { ActivityIndicator, Dimensions, StatusBar, View } from "react-native";
 
-// 1. Extract both width and height for layout calculations
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-
-// Standard estimate for 2:3 aspect ratio manga pages
 const ESTIMATED_PAGE_HEIGHT = SCREEN_WIDTH * 1.5;
+const VISIBILITY_WINDOW = 3;
 
 const MangaReaderScreen = () => {
-  // 2. Extract the overrideItemLayout from your updated hook
   const { pages, isLoading } = useMangaReaderScreenLogic();
 
-  const renderItem = useCallback(
-    ({ item }: { item: MangaChapterPage }) => <MangaReaderPage item={item} />,
+  // Map of index -> setter from each mounted cell
+  const setVisibilityMapRef = useRef<Map<number, (v: boolean) => void>>(
+    new Map(),
+  );
+
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken<MangaChapterPage>[] }) => {
+      // Build the new visible set
+      const newVisible = new Set<number>();
+      viewableItems.forEach(({ index }) => {
+        if (index == null) return;
+        for (
+          let i = index - VISIBILITY_WINDOW;
+          i <= index + VISIBILITY_WINDOW;
+          i++
+        ) {
+          if (i >= 0 && i < pages.length) newVisible.add(i);
+        }
+      });
+
+      // Push changes directly to each mounted cell's setter — no polling needed
+      setVisibilityMapRef.current.forEach((setter, index) => {
+        setter(newVisible.has(index));
+      });
+    },
+    [pages.length],
+  );
+
+  const registerVisibilitySetter = useCallback(
+    (index: number, setter: (v: boolean) => void) => {
+      setVisibilityMapRef.current.set(index, setter);
+    },
     [],
+  );
+
+  const unregisterVisibilitySetter = useCallback((index: number) => {
+    setVisibilityMapRef.current.delete(index);
+  }, []);
+
+  const renderItem = useCallback(
+    ({ item, index }: { item: MangaChapterPage; index: number }) => (
+      <MangaReaderPage
+        item={item}
+        index={index}
+        registerVisibilitySetter={registerVisibilitySetter}
+        unregisterVisibilitySetter={unregisterVisibilitySetter}
+      />
+    ),
+    [registerVisibilitySetter, unregisterVisibilitySetter],
   );
 
   if (isLoading) {
@@ -32,13 +75,14 @@ const MangaReaderScreen = () => {
   return (
     <View className="flex-1 bg-black">
       <StatusBar hidden />
-
       <FlashList
         data={pages}
         renderItem={renderItem}
         keyExtractor={(item) => item.pageId}
-        maxItemsInRecyclePool={2} // Reduced to 2 for maximum aggressiveness
-        drawDistance={SCREEN_HEIGHT * 1.25} // Severely limits off-screen native rendering
+        maxItemsInRecyclePool={5}
+        drawDistance={SCREEN_HEIGHT * 1.25}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={{ itemVisiblePercentThreshold: 1 }}
       />
     </View>
   );
