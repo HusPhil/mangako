@@ -1,4 +1,3 @@
-import { ChapterMetadata } from "@/services/db/types";
 import { MangaChapter } from "@/types/ResponseTypes";
 import { FlashList, ListRenderItem } from "@shopify/flash-list";
 import React, { useCallback } from "react";
@@ -15,7 +14,7 @@ interface MangaInfoChapterListProps {
   mangaChapters: MangaChapter[];
   listHeader: React.JSX.Element;
 
-  onChapterPress: (mangaId: string, chapter: ChapterMetadata) => void;
+  onChapterPress: (mangaId: string, chapter: MangaChapter) => void;
   onChapterLongPress: (chapterId: string) => void;
   onScroll: ScrollHandlerProcessed<Record<string, unknown>>;
 }

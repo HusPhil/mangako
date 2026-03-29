@@ -1,50 +1,120 @@
+import { MangaChapter } from "@/types/ResponseTypes";
+import * as Haptics from "expo-haptics";
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 type ReadingMode = "vertical" | "horizontal-rtl" | "horizontal-ltr";
 
-interface ReaderUIState {
-  // Visibility States
-  isControlsVisible: boolean;
-  isSettingsOpen: boolean;
-  isPageSliderVisible: boolean;
+// ─── Reader Settings (persisted) ─────────────────────────────────────────────
+// These are user preferences that survive app restarts
 
-  // Layout States
+interface ReaderSettingsState {
   readingMode: ReadingMode;
-  showPageNumbers: boolean;
-  keepScreenOn: boolean;
 
-  // Interaction Actions
-  toggleControls: () => void;
-  setControlsVisible: (visible: boolean) => void;
-  setSettingsOpen: (open: boolean) => void;
   setReadingMode: (mode: ReadingMode) => void;
-
-  // Reset
-  resetUI: () => void;
 }
 
-export const useReaderUIStore = create<ReaderUIState>((set) => ({
-  // Defaults
-  isControlsVisible: true,
-  isSettingsOpen: false,
-  isPageSliderVisible: false,
-  readingMode: "vertical",
-  showPageNumbers: true,
-  keepScreenOn: true,
-
-  toggleControls: () =>
-    set((state) => ({ isControlsVisible: !state.isControlsVisible })),
-
-  setControlsVisible: (visible) => set({ isControlsVisible: visible }),
-
-  setSettingsOpen: (open) => set({ isSettingsOpen: open }),
-
-  setReadingMode: (mode) => set({ readingMode: mode }),
-
-  resetUI: () =>
-    set({
-      isControlsVisible: true,
-      isSettingsOpen: false,
-      isPageSliderVisible: false,
+export const useReaderSettingsStore = create<ReaderSettingsState>()(
+  persist(
+    (set) => ({
+      readingMode: "vertical",
+      setReadingMode: (mode) => set({ readingMode: mode }),
     }),
-}));
+    { name: "reader-settings" },
+  ),
+);
+
+interface ReaderSessionState {
+  // Chapter context
+  currentChapter: MangaChapter | null;
+  listOfChapters: MangaChapter[];
+  nextChapter: MangaChapter | null;
+  prevChapter: MangaChapter | null;
+
+  // Page tracking — critical for horizontal mode, cosmetic for vertical
+  currentPageIndex: number;
+  totalPages: number;
+
+  isOverlayVisible: boolean;
+  isSettingsVisible: boolean;
+  isChapterListVisible: boolean;
+
+  // Actions
+  setChapterContext: (
+    currentChapter: MangaChapter,
+    listOfChapters: MangaChapter[],
+  ) => void;
+  setCurrentPageIndex: (index: number) => void;
+  setTotalPages: (total: number) => void;
+
+  toggleIsSettingsVisible: () => void;
+  toggleIsOverlayVisible: () => void;
+  toggleIsChapterListVisible: () => void;
+
+  reset: () => void;
+
+  // Gesture handlers — logging for now, will wire up later
+  onTap: (x: number, y: number) => void; // x,y for tap zone detection (left/right/center)
+  onDoubleTap: (x: number, y: number) => void; // x,y for zoom-to-point later
+  onLongPress: () => void; // image save / share sheet
+}
+
+const defaultSessionState = {
+  currentChapter: null,
+  listOfChapters: [],
+  nextChapter: null,
+  prevChapter: null,
+  currentPageIndex: 0,
+  totalPages: 0,
+
+  isOverlayVisible: false,
+  isSettingsVisible: false,
+  isChapterListVisible: false,
+};
+
+export const useReaderSessionStore = create<ReaderSessionState>()(
+  (set, get) => ({
+    ...defaultSessionState,
+
+    setChapterContext: (currentChapter, listOfChapters) => {
+      const currentIndex = listOfChapters.findIndex(
+        (c) => c.chapterId === currentChapter.chapterId,
+      );
+      set({
+        currentChapter,
+        listOfChapters,
+        prevChapter: listOfChapters[currentIndex - 1] ?? null, // manga order — prev is higher index
+        nextChapter: listOfChapters[currentIndex + 1] ?? null,
+      });
+    },
+
+    setCurrentPageIndex: (index) => {
+      set({
+        currentPageIndex: index,
+      });
+    },
+
+    setTotalPages: (total) => {
+      set({ totalPages: total });
+    },
+
+    toggleIsSettingsVisible: async () => {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      set((state) => ({ isSettingsVisible: !state.isSettingsVisible }));
+    },
+
+    toggleIsOverlayVisible: () => {
+      set((state) => ({ isOverlayVisible: !state.isOverlayVisible }));
+    },
+    toggleIsChapterListVisible: () => {
+      set((state) => ({ isChapterListVisible: !state.isChapterListVisible }));
+    },
+
+    reset: () => set(defaultSessionState),
+
+    onTap: (x, y) => console.log("[Reader] tap", { x, y }),
+    onDoubleTap: (x, y) => console.log("[Reader] double tap", { x, y }),
+    onLongPress: () => console.log("[Reader] long press"),
+  }),
+);

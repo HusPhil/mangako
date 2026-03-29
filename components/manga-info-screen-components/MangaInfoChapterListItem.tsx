@@ -1,4 +1,4 @@
-import { ChapterMetadata } from "@/services/db/types";
+import { MangaChapter } from "@/types/ResponseTypes";
 import React from "react";
 import { Pressable, Text, View } from "react-native";
 
@@ -10,7 +10,7 @@ interface MangaInfoChapterListItemProps {
   chapterUrl: string;
   isRead?: boolean; // Added
   isSelected?: boolean; // Added
-  onChapterPress: (mangaId: string, chapter: ChapterMetadata) => void;
+  onChapterPress: (mangaId: string, chapter: MangaChapter) => void;
   onChapterLongPress: (chapterId: string) => void;
 }
 
@@ -27,9 +27,10 @@ const MangaInfoChapterListItem = ({
 }: MangaInfoChapterListItemProps) => {
   const handleChapterPress = () => {
     onChapterPress(mangaId, {
-      id: chapterId,
-      title: chapterTitle,
-      url: chapterUrl,
+      chapterId: chapterId,
+      chapterTitle: chapterTitle,
+      chapterUrl: chapterUrl,
+      chapterTimeUploaded: chapterTimeUploaded,
     });
   };
 

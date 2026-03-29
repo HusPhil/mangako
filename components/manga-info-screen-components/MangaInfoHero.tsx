@@ -12,6 +12,7 @@ import Animated, {
   SharedValue,
   useAnimatedStyle,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface MangaInfoHeroSectionProps {
   mangaCover: string;
@@ -48,6 +49,7 @@ const MangaInfoHeroSection = memo(
     onBack,
     onAddToLibrary,
   }: MangaInfoHeroSectionProps) => {
+    const insets = useSafeAreaInsets();
     const animatedCoverStyle = useAnimatedStyle(() => {
       const translateY = interpolate(
         scrollY.value,
@@ -91,7 +93,10 @@ const MangaInfoHeroSection = memo(
           </Animated.View>
 
           {/* Back & Fav Buttons */}
-          <View className="absolute top-14 left-0 right-0 z-20 flex-row justify-between px-6">
+          <View
+            style={{ paddingTop: insets.top + 16 }}
+            className="absolute top-0 left-0 right-0 z-20 flex-row justify-between px-6"
+          >
             <Pressable
               onPress={onBack}
               className="w-10 h-10 rounded-full bg-secondary/10 items-center justify-center border border-white/10"
@@ -145,15 +150,7 @@ const MangaInfoHeroSection = memo(
               By {mangaAuthor}
             </Text>
 
-            <Pressable
-              className="px-8 gap-2 max-w-xs bg-white py-3 rounded-2xl mt-5 flex-row items-center justify-center active:scale-95 shadow-lg"
-              style={{
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.2,
-                shadowRadius: 8,
-              }}
-            >
+            <Pressable className="px-8 gap-2 max-w-xs bg-white py-3 rounded-2xl mt-5 flex-row items-center justify-center active:scale-95">
               {/* The Icon: 'book-open-page-variant' gives a premium reader feel */}
               <MaterialCommunityIcons
                 name="book-open-page-variant-outline"

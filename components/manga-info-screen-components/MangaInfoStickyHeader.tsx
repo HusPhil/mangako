@@ -53,7 +53,7 @@ const MangaStickyHeader = ({
     <Animated.View
       style={[
         styles.stickyHeader,
-        { paddingTop: insets.top + 8 }, // Adjusted padding for balance
+        { paddingTop: insets.top + 13 }, // Adjusted padding for balance
         animatedStickyHeaderStyle,
       ]}
       className="z-50 flex-row items-center px-4 pb-4 border-b border-white/10 bg-background"

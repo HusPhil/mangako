@@ -3,7 +3,7 @@ import { ChapterMetadata, ReadingProgress } from "@/services/db/types";
 import { SQLiteDatabase } from "expo-sqlite";
 import { create } from "zustand";
 
-type ReadingStore = {
+type ReadingProgressStore = {
   db: SQLiteDatabase | null;
   lastRead: (ReadingProgress & { title: string; cover_url: string }) | null;
   readChapterIds: string[];
@@ -25,36 +25,38 @@ type ReadingStore = {
   ) => void;
 };
 
-export const useReadingStore = create<ReadingStore>((set, get) => ({
-  db: null,
-  lastRead: null,
-  readChapterIds: [],
+export const useReadingProgressStore = create<ReadingProgressStore>(
+  (set, get) => ({
+    db: null,
+    lastRead: null,
+    readChapterIds: [],
 
-  setDB: (db) => set({ db }),
+    setDB: (db) => set({ db }),
 
-  loadLastRead: () => {
-    const { db } = get();
-    if (db) set({ lastRead: Repo.getLastReadManga(db) });
-  },
+    loadLastRead: () => {
+      const { db } = get();
+      if (db) set({ lastRead: Repo.getLastReadManga(db) });
+    },
 
-  loadReadChapters: (mangaId) => {
-    const { db } = get();
-    if (db) set({ readChapterIds: Repo.getReadChapterIds(db, mangaId) });
-  },
+    loadReadChapters: (mangaId) => {
+      const { db } = get();
+      if (db) set({ readChapterIds: Repo.getReadChapterIds(db, mangaId) });
+    },
 
-  markChapters: (mangaId, chapters, isRead) => {
-    const { db } = get();
-    if (!db) return;
-    Repo.setChaptersReadStatus(db, mangaId, chapters, isRead);
-    get().loadReadChapters(mangaId);
-  },
+    markChapters: (mangaId, chapters, isRead) => {
+      const { db } = get();
+      if (!db) return;
+      Repo.setChaptersReadStatus(db, mangaId, chapters, isRead);
+      get().loadReadChapters(mangaId);
+    },
 
-  saveProgress: (mangaId, chapter, page) => {
-    const { db } = get();
-    if (!db) return;
-    Repo.saveReadingProgress(db, mangaId, chapter, page);
+    saveProgress: (mangaId, chapter, page) => {
+      const { db } = get();
+      if (!db) return;
+      Repo.saveReadingProgress(db, mangaId, chapter, page);
 
-    get().loadLastRead();
-    get().loadReadChapters(mangaId);
-  },
-}));
+      get().loadLastRead();
+      get().loadReadChapters(mangaId);
+    },
+  }),
+);
