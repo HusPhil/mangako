@@ -42,7 +42,11 @@ export const useMangaInfoScreenLogic = (
 
     onChapterPress,
     onChapterLongPress,
-  } = useChapterListControls(mangaId, mangaInfo?.data?.mangaChapters);
+  } = useChapterListControls(
+    mangaId,
+    mangaSourceId,
+    mangaInfo?.data?.mangaChapters,
+  );
 
   const onBack = useCallback(() => router.back(), [router]);
 

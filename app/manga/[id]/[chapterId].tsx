@@ -3,12 +3,17 @@ import ReaderSettingsOverlay from "@/components/manga-reader-screen-components/R
 import VerticalReader from "@/components/manga-reader-screen-components/VerticalReader";
 import { Colors } from "@/constants/colors";
 import { useMangaReaderScreenLogic } from "@/hooks/manga-reader-screen-hooks/useMangaReaderScreenLogic";
+import { useReaderSessionStore } from "@/stores/ui-stores/manga-reader-screen-ui-store";
 import React from "react";
 import { ActivityIndicator, StatusBar, Text, View } from "react-native";
 
 const MangaReaderScreen = () => {
+  const listOfChapters = useReaderSessionStore((state) => state.listOfChapters);
+
   const {
     mangaId,
+    mangaSourceId,
+    mangaUrl,
 
     readingMode,
     isSettingsVisible,
@@ -18,6 +23,10 @@ const MangaReaderScreen = () => {
 
     isLoading,
     isError,
+
+    onNavigateToNextChapter,
+    onNavigateToPrevChapter,
+    onNavigateJumpToChapter,
 
     onViewableItemsChanged,
     registerVisibilitySetter,
@@ -55,11 +64,12 @@ const MangaReaderScreen = () => {
 
       {isSettingsVisible && (
         <ReaderSettingsOverlay
-          canGoNext={currentPageIndex < totalPages - 1}
-          canGoPrev={currentPageIndex > 0}
-          onNavigateToPrev={() => {}}
-          onNavigateToNext={() => {}}
           mangaId={mangaId}
+          mangaUrl={mangaUrl}
+          mangaSourceId={mangaSourceId}
+          onNavigateToPrev={onNavigateToPrevChapter}
+          onNavigateToNext={onNavigateToNextChapter}
+          onNavigateToChapter={onNavigateJumpToChapter}
           onJumpToPage={() => {}}
         />
       )}

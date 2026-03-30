@@ -5,9 +5,11 @@ import { MangaChapter } from "@/types/ResponseTypes";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { MangaReaderScreenParams } from "../manga-reader-screen-hooks/useMangaReaderScreenLogic";
 
 export const useChapterListControls = (
   mangaId: string,
+  mangaSourceId: string,
   mangaChapters?: MangaChapter[],
 ) => {
   const readChapterIds = useReadingProgressStore(
@@ -15,7 +17,6 @@ export const useChapterListControls = (
   );
   const loadReadChapters = useReadingProgressStore.getState().loadReadChapters;
   const markChapters = useReadingProgressStore.getState().markChapters;
-  const setChapterContext = useReaderSessionStore.getState().setChapterContext;
 
   // 1. Selection State
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
@@ -71,25 +72,32 @@ export const useChapterListControls = (
         return;
       }
 
-      const mangaChapter = {
+      const readerScreenParams: MangaReaderScreenParams = {
+        id: mangaId,
+        mangaSourceId,
         chapterId: chapter.chapterId,
         chapterTitle: chapter.chapterTitle,
         chapterUrl: chapter.chapterUrl,
-        chapterTimeUploaded: chapter.chapterTimeUploaded, // This will be updated in the reader screen when we fetch chapter details
-      } as MangaChapter;
+        chapterTimeUploaded: chapter.chapterTimeUploaded,
+      };
 
       router.push({
         pathname: `/manga/[id]/[chapterId]`,
         params: {
-          id: mangaId,
-          chapterId: chapter.chapterId,
-          chapterTitle: chapter.chapterTitle,
-          chapterUrl: chapter.chapterUrl,
+          ...readerScreenParams,
         },
       });
-      setChapterContext(mangaChapter, mangaChapters || []);
+
+      const chaptersWithReadStatus = (mangaChapters || []).map((chapter) => ({
+        ...chapter,
+        isRead: readChapterIds.includes(chapter.chapterId),
+      }));
+      const orderedChapters = [...chaptersWithReadStatus].reverse();
+
+      useReaderSessionStore.getState().listOfChapters = orderedChapters || [];
     },
-    [isSelectionMode, setChapterContext, toggleSelection, mangaChapters],
+
+    [isSelectionMode, readChapterIds, toggleSelection, mangaChapters],
   );
 
   const onChapterLongPress = useCallback(
