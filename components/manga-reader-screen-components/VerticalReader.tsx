@@ -23,6 +23,9 @@ const VerticalReader = ({
   registerVisibilitySetter,
   unregisterVisibilitySetter,
 }: VerticalReaderProps) => {
+  const toggleIsSettingsVisible =
+    useReaderSessionStore.getState().toggleIsSettingsVisible;
+  const currentChapter = useReaderSessionStore((state) => state.currentChapter);
   const renderItem = useCallback(
     ({ item, index }: { item: MangaChapterPage; index: number }) => (
       <Pressable
@@ -32,8 +35,7 @@ const VerticalReader = ({
             "Page pressed, showing settings overlay:",
             useReaderSessionStore.getState().currentChapter,
           );
-
-          useReaderSessionStore.getState().toggleIsSettingsVisible();
+          toggleIsSettingsVisible();
         }}
       >
         <MangaReaderPage
@@ -44,7 +46,7 @@ const VerticalReader = ({
         />
       </Pressable>
     ),
-    [registerVisibilitySetter, unregisterVisibilitySetter],
+    [currentChapter, registerVisibilitySetter, unregisterVisibilitySetter],
   );
   return (
     <FlashList

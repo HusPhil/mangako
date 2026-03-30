@@ -5,7 +5,7 @@ import {
   useReaderSessionStore,
   useReaderSettingsStore,
 } from "@/stores/ui-stores/manga-reader-screen-ui-store";
-import { MangaChapterPage } from "@/types/ResponseTypes";
+import { MangaChapter, MangaChapterPage } from "@/types/ResponseTypes";
 import { ViewToken } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -14,14 +14,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 const VISIBILITY_WINDOW = 3;
 const PREFETCH_CHUNK_SIZE = 3;
 
+export type MangaReaderScreenParams = {
+  id: string;
+  mangaSourceId: string;
+  chapterId: string;
+  chapterTitle: string;
+  chapterUrl: string;
+  chapterTimeUploaded: string;
+};
+
 export const useMangaReaderScreenLogic = () => {
   const router = useRouter();
-  const params = useLocalSearchParams<{
-    id: string;
-    chapterId: string;
-    chapterTitle: string;
-    chapterUrl: string;
-  }>();
+  const params = useLocalSearchParams<MangaReaderScreenParams>();
 
   const [isReady, setIsReady] = useState(false);
   const [activePages, setActivePages] = useState<MangaChapterPage[]>([]);
@@ -35,12 +39,15 @@ export const useMangaReaderScreenLogic = () => {
   const setCurrentPageIndex = useReaderSessionStore(
     (state) => state.setCurrentPageIndex,
   );
-  const resetSession = useReaderSessionStore((state) => state.reset);
+  const resetSession = useReaderSessionStore(
+    (state) => state.resetForNavigation,
+  );
 
   const readingMode = useReaderSettingsStore((state) => state.readingMode);
   const isSettingsVisible = useReaderSessionStore(
     (state) => state.isSettingsVisible,
   );
+
   const currentPageIndex = useReaderSessionStore(
     (state) => state.currentPageIndex,
   );
@@ -48,6 +55,15 @@ export const useMangaReaderScreenLogic = () => {
 
   const getMangaById = useLibraryStore((state) => state.getMangaById);
   const mangaInfo = useMemo(() => getMangaById(params.id!), [params.id]);
+  const mangaChapter = useMemo(
+    () => ({
+      chapterId: params.chapterId,
+      chapterTitle: params.chapterTitle,
+      chapterUrl: params.chapterUrl,
+      chapterTimeUploaded: params.chapterTimeUploaded,
+    }),
+    [params],
+  ); // only re-run if these change
 
   const {
     data: fetchedPages,
@@ -87,6 +103,65 @@ export const useMangaReaderScreenLogic = () => {
     },
     [params, markChapters],
   );
+
+  const onNavigateToNextChapter = useCallback(() => {
+    const nextChapter = useReaderSessionStore.getState().nextChapter;
+
+    if (!nextChapter) return;
+    const readerScreenParams: MangaReaderScreenParams = {
+      id: params.id!,
+      mangaSourceId: mangaInfo?.source_id ?? "",
+      chapterId: nextChapter.chapterId,
+      chapterTitle: nextChapter.chapterTitle,
+      chapterUrl: nextChapter.chapterUrl,
+      chapterTimeUploaded: nextChapter.chapterTimeUploaded,
+    };
+
+    router.replace({
+      pathname: `/manga/[id]/[chapterId]`,
+      params: {
+        ...readerScreenParams,
+      },
+    });
+  }, [mangaChapter, mangaInfo, params, router]);
+
+  const onNavigateToPrevChapter = useCallback(() => {
+    const prevChapter = useReaderSessionStore.getState().prevChapter;
+    if (!prevChapter) return;
+    const readerScreenParams: MangaReaderScreenParams = {
+      id: params.id!,
+      mangaSourceId: mangaInfo?.source_id ?? "",
+      chapterId: prevChapter.chapterId,
+      chapterTitle: prevChapter.chapterTitle,
+      chapterUrl: prevChapter.chapterUrl,
+      chapterTimeUploaded: prevChapter.chapterTimeUploaded,
+    };
+
+    router.replace({
+      pathname: `/manga/[id]/[chapterId]`,
+      params: {
+        ...readerScreenParams,
+      },
+    });
+  }, [mangaChapter, mangaInfo, params, router]);
+
+  const onNavigateJumpToChapter = useCallback((chapter: MangaChapter) => {
+    const readerScreenParams: MangaReaderScreenParams = {
+      id: params.id!,
+      mangaSourceId: mangaInfo?.source_id ?? "",
+      chapterId: chapter.chapterId,
+      chapterTitle: chapter.chapterTitle,
+      chapterUrl: chapter.chapterUrl,
+      chapterTimeUploaded: chapter.chapterTimeUploaded,
+    };
+
+    router.replace({
+      pathname: `/manga/[id]/[chapterId]`,
+      params: {
+        ...readerScreenParams,
+      },
+    });
+  }, []);
 
   const registerVisibilitySetter = useCallback(
     (index: number, setter: (v: boolean) => void) => {
@@ -139,10 +214,27 @@ export const useMangaReaderScreenLogic = () => {
   // Double rAF — prevents FlashList from rendering during screen transition animation
   useEffect(() => {
     let frameId = requestAnimationFrame(() => {
+      const mangaChapters = useReaderSessionStore.getState().listOfChapters;
+      const currentChapterIndex = mangaChapters.findIndex(
+        (c) => c.chapterId === mangaChapter.chapterId,
+      );
+
+      if (currentChapterIndex !== -1) {
+        const nextChapter = mangaChapters[currentChapterIndex + 1] ?? null;
+        const prevChapter = mangaChapters[currentChapterIndex - 1] ?? null;
+
+        useReaderSessionStore.getState().setCurrentChapter(mangaChapter);
+        useReaderSessionStore.getState().nextChapter = nextChapter;
+        useReaderSessionStore.getState().canGoNext = !!nextChapter;
+        useReaderSessionStore.getState().prevChapter = prevChapter;
+        useReaderSessionStore.getState().canGoPrev = !!prevChapter;
+      }
+
       frameId = requestAnimationFrame(() => setIsReady(true));
     });
+
     return () => cancelAnimationFrame(frameId);
-  }, []);
+  }, [mangaChapter]);
 
   // Sync fetched pages into active state only while focused
   useEffect(() => {
@@ -199,6 +291,8 @@ export const useMangaReaderScreenLogic = () => {
 
   return {
     mangaId: params.id,
+    mangaUrl: mangaInfo?.manga_url ?? "",
+    mangaSourceId: mangaInfo?.source_id ?? "",
 
     readingMode,
     pages: activePages,
@@ -213,7 +307,12 @@ export const useMangaReaderScreenLogic = () => {
     isLoading: isApiLoading || !isReady,
     isError,
 
+    onNavigateToNextChapter,
+    onNavigateToPrevChapter,
+    onNavigateJumpToChapter,
+
     onBack,
+
     onToggleReadStatus,
     onViewableItemsChanged,
 

@@ -27,9 +27,13 @@ export const useReaderSettingsStore = create<ReaderSettingsState>()(
 
 interface ReaderSessionState {
   // Chapter context
-  currentChapter: MangaChapter | null;
   listOfChapters: MangaChapter[];
+  currentChapter: MangaChapter | null;
+
+  canGoNext: boolean;
   nextChapter: MangaChapter | null;
+
+  canGoPrev: boolean;
   prevChapter: MangaChapter | null;
 
   // Page tracking — critical for horizontal mode, cosmetic for vertical
@@ -41,10 +45,7 @@ interface ReaderSessionState {
   isChapterListVisible: boolean;
 
   // Actions
-  setChapterContext: (
-    currentChapter: MangaChapter,
-    listOfChapters: MangaChapter[],
-  ) => void;
+  setCurrentChapter: (currentChapter: MangaChapter) => void;
   setCurrentPageIndex: (index: number) => void;
   setTotalPages: (total: number) => void;
 
@@ -52,7 +53,8 @@ interface ReaderSessionState {
   toggleIsOverlayVisible: () => void;
   toggleIsChapterListVisible: () => void;
 
-  reset: () => void;
+  resetForNavigation: () => void; // Resets UI state but keeps chapter list (for smooth back-and-forth)
+  resetAll: () => void;
 
   // Gesture handlers — logging for now, will wire up later
   onTap: (x: number, y: number) => void; // x,y for tap zone detection (left/right/center)
@@ -63,8 +65,13 @@ interface ReaderSessionState {
 const defaultSessionState = {
   currentChapter: null,
   listOfChapters: [],
+
   nextChapter: null,
+  canGoNext: false,
+
   prevChapter: null,
+  canGoPrev: false,
+
   currentPageIndex: 0,
   totalPages: 0,
 
@@ -77,15 +84,9 @@ export const useReaderSessionStore = create<ReaderSessionState>()(
   (set, get) => ({
     ...defaultSessionState,
 
-    setChapterContext: (currentChapter, listOfChapters) => {
-      const currentIndex = listOfChapters.findIndex(
-        (c) => c.chapterId === currentChapter.chapterId,
-      );
+    setCurrentChapter: (currentChapter) => {
       set({
         currentChapter,
-        listOfChapters,
-        prevChapter: listOfChapters[currentIndex - 1] ?? null, // manga order — prev is higher index
-        nextChapter: listOfChapters[currentIndex + 1] ?? null,
       });
     },
 
@@ -111,7 +112,13 @@ export const useReaderSessionStore = create<ReaderSessionState>()(
       set((state) => ({ isChapterListVisible: !state.isChapterListVisible }));
     },
 
-    reset: () => set(defaultSessionState),
+    resetForNavigation: () =>
+      set((state) => ({
+        ...defaultSessionState,
+        listOfChapters: state.listOfChapters, // PERSIST the list!
+      })),
+
+    resetAll: () => set(defaultSessionState),
 
     onTap: (x, y) => console.log("[Reader] tap", { x, y }),
     onDoubleTap: (x, y) => console.log("[Reader] double tap", { x, y }),
