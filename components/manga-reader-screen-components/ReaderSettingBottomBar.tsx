@@ -9,6 +9,7 @@ import { Platform, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ReaderSettingBottomBarProps {
+  mangaId: string;
   onOpenSettings: () => void;
   onNavigateToPrev: () => void;
   onNavigateToNext: () => void;
@@ -16,6 +17,7 @@ interface ReaderSettingBottomBarProps {
 }
 
 const ReaderSettingBottomBar = ({
+  mangaId,
   onOpenSettings,
   onNavigateToPrev,
   onNavigateToNext,
@@ -24,7 +26,7 @@ const ReaderSettingBottomBar = ({
   const insets = useSafeAreaInsets();
   const currentPage = useReaderSessionStore((s) => s.currentPageIndex);
   const totalPages = useReaderSessionStore((s) => s.totalPages);
-  const readingMode = useReaderSettingsStore((s) => s.readingMode);
+  const readingMode = useReaderSettingsStore((s) => s.getReadingMode(mangaId));
 
   const [sliderValue, setSliderValue] = useState(currentPage);
   const isSliding = useRef(false);

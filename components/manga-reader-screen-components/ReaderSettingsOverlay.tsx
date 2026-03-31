@@ -36,6 +36,7 @@ const ReaderSettingsOverlay = ({
       />
 
       <ReaderSettingBottomBar
+        mangaId={mangaId}
         onOpenSettings={() => setActiveModal("settings")}
         onNavigateToPrev={onNavigateToPrev}
         onNavigateToNext={onNavigateToNext}
@@ -52,6 +53,7 @@ const ReaderSettingsOverlay = ({
       />
 
       <ReaderSettingReadModes
+        mangaId={mangaId}
         isVisible={activeModal === "settings"}
         onClose={() => setActiveModal(null)}
       />

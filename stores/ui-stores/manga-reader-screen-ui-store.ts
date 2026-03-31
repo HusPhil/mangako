@@ -1,27 +1,40 @@
 import { MangaChapter } from "@/types/ResponseTypes";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type ReadingMode = "vertical" | "horizontal-rtl" | "horizontal-ltr";
+export type ReadingMode = "vertical" | "horizontal-rtl" | "horizontal-ltr";
 
-// ─── Reader Settings (persisted) ─────────────────────────────────────────────
-// These are user preferences that survive app restarts
+const DEFAULT_READING_MODE: ReadingMode = "vertical";
 
 interface ReaderSettingsState {
-  readingMode: ReadingMode;
+  // Per-manga reading mode — key is mangaId
+  readingModes: Record<string, ReadingMode>;
 
-  setReadingMode: (mode: ReadingMode) => void;
+  getReadingMode: (mangaId: string) => ReadingMode;
+  setReadingMode: (mangaId: string, mode: ReadingMode) => void;
 }
 
 export const useReaderSettingsStore = create<ReaderSettingsState>()(
   persist(
-    (set) => ({
-      readingMode: "vertical",
-      setReadingMode: (mode) => set({ readingMode: mode }),
+    (set, get) => ({
+      readingModes: {},
+
+      getReadingMode: (mangaId) => {
+        return get().readingModes[mangaId] ?? DEFAULT_READING_MODE;
+      },
+
+      setReadingMode: (mangaId, mode) =>
+        set((state) => ({
+          readingModes: { ...state.readingModes, [mangaId]: mode },
+        })),
     }),
-    { name: "reader-settings" },
+    {
+      name: "reader-settings",
+      storage: createJSONStorage(() => AsyncStorage),
+    },
   ),
 );
 
