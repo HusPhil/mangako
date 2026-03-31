@@ -1,7 +1,7 @@
 import { MangaChapterPage } from "@/types/ResponseTypes";
 import { Image } from "expo-image";
 import React, { useEffect } from "react";
-import { Dimensions, StyleSheet } from "react-native";
+import { Dimensions, StyleSheet, Text, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   cancelAnimation,
@@ -21,9 +21,9 @@ const PAGE_WIDTH = SCREEN_WIDTH + GAP_SIZE;
 const AXIS_LOCK_THRESHOLD = 8;
 
 export interface ZoomablePageRef {
-  reset: () => void;
-  onInit: () => void;
+  reset: (currentPageIndex: number) => void;
   getCurrentScale: () => number;
+  getIndex: () => number;
 }
 
 interface ZoomableMangaReaderPageProps {
@@ -33,7 +33,8 @@ interface ZoomableMangaReaderPageProps {
   isZoomed: SharedValue<boolean>;
   scrollX: SharedValue<number>;
   totalPages: number;
-  setPageRef: (index: number, ref: ZoomablePageRef) => void;
+  setPageRef: (pageId: string, ref: ZoomablePageRef) => void;
+  removePageRef: (pageId: string) => void;
   disableScroll: () => void;
   enableScroll: () => void;
 }
@@ -42,15 +43,16 @@ const ZoomableMangaReaderPage = ({
   item,
   index,
   isScrollEnabled,
+  isZoomed,
   scrollX,
   totalPages,
   setPageRef,
+  removePageRef,
   disableScroll,
   enableScroll,
 }: ZoomableMangaReaderPageProps) => {
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
-  const isZoomed = useSharedValue(false); // <-- Moved inside component for isolated state
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -64,50 +66,58 @@ const ZoomableMangaReaderPage = ({
 
   const reset = () => {
     "worklet";
-    scheduleOnRN(enableScroll); // <-- Ensure you use scheduleOnRN()()
-    if (scale.value !== 1 || translateX.value !== 0 || translateY.value !== 0) {
-      cancelAnimation(scale);
-      cancelAnimation(translateX);
-      cancelAnimation(translateY);
 
-      scale.value = 1;
-      translateX.value = 0;
-      translateY.value = 0;
-      savedScale.value = 1;
-      savedTranslateX.value = 0;
-      savedTranslateY.value = 0;
+    console.log("cleaning up:", item.pageId);
+    cancelAnimation(scale);
+    cancelAnimation(translateX);
+    cancelAnimation(translateY);
 
-      isZoomed.value = false;
-    }
-  };
-
-  const onInit = () => {
-    "worklet";
+    scale.value = 1;
+    translateX.value = 0;
+    translateY.value = 0;
+    savedScale.value = 1;
+    savedTranslateX.value = 0;
+    savedTranslateY.value = 0;
+    isZoomed.value = false;
   };
 
   const getCurrentScale = () => {
-    "worklet";
     return scale.value;
   };
 
+  const getIndex = () => {
+    return index;
+  };
+
   useEffect(() => {
-    setPageRef(index, { reset, onInit, getCurrentScale });
+    setPageRef(item.pageId, { reset, getCurrentScale, getIndex });
+
+    return () => {
+      removePageRef(item.pageId);
+    };
   }, [index, setPageRef]);
+  // ──────────────────────────────────────────────────────────────────────
 
   const pinchGesture = Gesture.Pinch()
     .onUpdate((e) => {
+      cancelAnimation(translateX);
+      cancelAnimation(translateY);
+      cancelAnimation(scrollX);
       scale.value = Math.min(Math.max(savedScale.value * e.scale, 1), 4);
     })
     .onEnd(() => {
+      cancelAnimation(translateX);
+      cancelAnimation(translateY);
+      cancelAnimation(scrollX);
       savedScale.value = scale.value;
       if (scale.value <= 1.1) {
         scale.value = withSpring(1);
         savedScale.value = 1;
         isZoomed.value = false;
-        scheduleOnRN(enableScroll); // <-- Fix invocation
+        scheduleOnRN(enableScroll);
       } else {
         isZoomed.value = true;
-        scheduleOnRN(disableScroll); // <-- Fix invocation
+        scheduleOnRN(disableScroll);
       }
     });
 
@@ -256,6 +266,9 @@ const ZoomableMangaReaderPage = ({
             displayedImageHeight.value = h * ratio;
           }}
         />
+        <View className="absolute top-5 p-5 bg-white">
+          <Text>{item.pageId}</Text>
+        </View>
       </Animated.View>
     </GestureDetector>
   );

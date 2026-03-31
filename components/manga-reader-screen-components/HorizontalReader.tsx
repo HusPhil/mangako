@@ -20,7 +20,7 @@ interface HorizontalReaderProps {
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-const GAP_SIZE = 20;
+const GAP_SIZE = 0;
 const PAGE_WIDTH = SCREEN_WIDTH + GAP_SIZE;
 
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList) as <T>(
@@ -31,13 +31,21 @@ const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
   const toggleIsSettingsVisible = useReaderSessionStore(
     (state) => state.toggleIsSettingsVisible,
   );
+
   const setCurrentPageIndex = useReaderSessionStore(
     (state) => state.setCurrentPageIndex,
   );
 
-  const pageRefs = useRef<ZoomablePageRef[]>([]);
-  const setPageRef = useCallback((i: number, val: ZoomablePageRef) => {
-    pageRefs.current[i] = val;
+  const pageRefs = useRef<Map<string, ZoomablePageRef>>(new Map());
+
+  const setPageRef = useCallback((pageId: string, val: ZoomablePageRef) => {
+    // 2. Use .set() to add or update the ref
+    pageRefs.current.set(pageId, val);
+  }, []);
+
+  const removePageRef = useCallback((pageId: string) => {
+    // 3. Use .delete() to completely remove it from memory
+    pageRefs.current.delete(pageId);
   }, []);
 
   const [isScrollEnabled, setIsScrollEnabled] = useState(true);
@@ -70,6 +78,7 @@ const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
     () => scrollX.value,
     (currentX, previousX) => {
       if (currentX !== previousX) {
+        const currentPageIndex = Math.round(currentX / PAGE_WIDTH);
         scrollTo(
           scrollRef as AnimatedRef<Animated.ScrollView>,
           currentX,
@@ -93,30 +102,23 @@ const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
 
         setCurrentPageIndex(currentPageIndex);
 
-        pageRefs.current.forEach((ref, index) => {
-          if (index === currentPageIndex) {
-            // ref.onInit();
-            const currentScale = ref.getCurrentScale();
-            console.log(currentScale);
-            if (currentScale > 1) {
-              disableScroll();
-            }
-          } else if (true || Math.abs(index - currentPageIndex) > 1) {
-            ref.reset();
+        let hasZoomedPage = false;
+
+        const viewItemKeys = viewableItems.map((item) => item.key);
+
+        pageRefs.current.forEach((ref, key) => {
+          if (!ref) return;
+          const currentScale = ref.getCurrentScale();
+
+          if (!viewItemKeys.includes(key)) {
+            ref.reset(currentPageIndex);
           }
+
+          hasZoomedPage = hasZoomedPage || currentScale > 1;
         });
-
-        // pageRefs.forEach((ref, index) => {
-        //   if (index === viewableItems[0].index) {
-        //     // Optionally reset zoom on the newly focused page
-        //     ref.reset();
-        //   } else {
-        //     // Reset zoom on non-focused pages to prevent recycled nodes from retaining zoom state
-        //     ref.reset();
-        //   }
-        // });
-
-        // console.log(pageRefs);
+        if (!hasZoomedPage) {
+          enableScroll();
+        }
       }
     },
     [disableScroll],
@@ -128,6 +130,7 @@ const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
         <View>
           <ZoomableMangaReaderPage
             setPageRef={setPageRef}
+            removePageRef={removePageRef}
             item={item}
             index={index}
             isZoomed={isZoomed}
@@ -158,7 +161,7 @@ const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
         keyExtractor={(item: any) => item.pageId}
         horizontal
         pagingEnabled
-        drawDistance={PAGE_WIDTH}
+        drawDistance={PAGE_WIDTH * 2}
         // ItemSeparatorComponent={renderSeparator}
         showsHorizontalScrollIndicator={false}
         bounces={false}
