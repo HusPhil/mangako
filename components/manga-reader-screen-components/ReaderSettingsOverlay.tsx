@@ -36,6 +36,7 @@ const ReaderSettingsOverlay = ({
       />
 
       <ReaderSettingBottomBar
+        onOpenSettings={() => setActiveModal("settings")}
         onNavigateToPrev={onNavigateToPrev}
         onNavigateToNext={onNavigateToNext}
         onJumpToPage={onJumpToPage}
