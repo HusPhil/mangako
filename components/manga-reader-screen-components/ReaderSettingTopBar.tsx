@@ -42,10 +42,6 @@ const ReaderSettingTopBar = ({
       <Pressable className="p-2" onPress={onOpenChapters}>
         <Ionicons name="list" size={22} color="white" />
       </Pressable>
-
-      <Pressable className="p-2" onPress={onOpenSettings}>
-        <Ionicons name="options-outline" size={22} color="white" />
-      </Pressable>
     </View>
   );
 };
