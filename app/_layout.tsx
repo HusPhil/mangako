@@ -7,6 +7,7 @@ import { Stack } from "expo-router";
 import { SQLiteProvider, useSQLiteContext } from "expo-sqlite";
 import React, { Suspense } from "react";
 import { ActivityIndicator, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
 
 const queryClient = new QueryClient();
@@ -31,45 +32,47 @@ const RootLayout = () => {
         <DrizzleDbStudio />
 
         <QueryClientProvider client={queryClient}>
-          <View className="flex-1 bg-background">
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                animation: "simple_push",
-                contentStyle: { backgroundColor: Colors.background },
-              }}
-            >
-              <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
-              <Stack.Screen
-                name="manga/[id]/index"
-                options={{ animation: "fade_from_bottom" }}
-              />
-              <Stack.Screen
-                name="manga/[id]/[chapterId]"
-                options={{
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <View className="flex-1 bg-background">
+              <Stack
+                screenOptions={{
+                  headerShown: false,
                   animation: "simple_push",
-                  autoHideHomeIndicator: true,
-                  navigationBarHidden: true,
+                  contentStyle: { backgroundColor: Colors.background },
                 }}
-              />
-              <Stack.Screen
-                name="(modals)/test-modal"
-                options={{
-                  presentation: "transparentModal",
-                  headerShown: false,
-                  animation: "fade_from_bottom",
-                }}
-              />
-              <Stack.Screen
-                name="(modals)/category-settings"
-                options={{
-                  presentation: "pageSheet",
-                  headerShown: false,
-                  animation: "fade_from_bottom",
-                }}
-              />
-            </Stack>
-          </View>
+              >
+                <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
+                <Stack.Screen
+                  name="manga/[id]/index"
+                  options={{ animation: "fade_from_bottom" }}
+                />
+                <Stack.Screen
+                  name="manga/[id]/[chapterId]"
+                  options={{
+                    animation: "simple_push",
+                    autoHideHomeIndicator: true,
+                    navigationBarHidden: true,
+                  }}
+                />
+                <Stack.Screen
+                  name="(modals)/test-modal"
+                  options={{
+                    presentation: "transparentModal",
+                    headerShown: false,
+                    animation: "fade_from_bottom",
+                  }}
+                />
+                <Stack.Screen
+                  name="(modals)/category-settings"
+                  options={{
+                    presentation: "pageSheet",
+                    headerShown: false,
+                    animation: "fade_from_bottom",
+                  }}
+                />
+              </Stack>
+            </View>
+          </GestureHandlerRootView>
         </QueryClientProvider>
       </SQLiteProvider>
     </Suspense>

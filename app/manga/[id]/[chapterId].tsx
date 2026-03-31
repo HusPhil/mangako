@@ -84,7 +84,7 @@ const MangaReaderScreen = () => {
           unregisterVisibilitySetter={unregisterVisibilitySetter}
         />
       ) : readingMode === "horizontal-rtl" ? (
-        <HorizontalReader />
+        <HorizontalReader pages={pages} />
       ) : null}
 
       {isSettingsVisible && (
