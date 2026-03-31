@@ -12,18 +12,16 @@ const PageIndicator = ({
 }: PageIndicatorProps) => {
   return (
     <View className="absolute bottom-0 right-0 w-full pb-10 items-center opacity-80">
-      <View
+      <Text
+        className="text-white text-xs font-bold"
         style={{
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 1,
-          shadowRadius: 2,
+          textShadowColor: "rgba(0, 0, 0, 1)",
+          textShadowOffset: { width: 0, height: 0.5 },
+          textShadowRadius: 1,
         }}
       >
-        <Text className="text-white text-xs font-bold">
-          {currentPageIndex + 1} / {totalPages}
-        </Text>
-      </View>
+        {currentPageIndex + 1} / {totalPages}
+      </Text>
     </View>
   );
 };
