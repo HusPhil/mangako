@@ -43,7 +43,10 @@ export const useMangaReaderScreenLogic = () => {
     (state) => state.resetForNavigation,
   );
 
-  const readingMode = useReaderSettingsStore((state) => state.readingMode);
+  const readingMode = useReaderSettingsStore((state) =>
+    state.getReadingMode(params.id!),
+  );
+
   const isSettingsVisible = useReaderSessionStore(
     (state) => state.isSettingsVisible,
   );

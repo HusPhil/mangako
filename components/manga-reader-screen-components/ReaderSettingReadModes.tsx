@@ -1,25 +1,35 @@
+import {
+  ReadingMode,
+  useReaderSettingsStore,
+} from "@/stores/ui-stores/manga-reader-screen-ui-store";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React from "react";
 import { Pressable, Text, View } from "react-native";
 
 interface ReaderSettingReadModesProps {
+  mangaId: string;
   isVisible: boolean;
   onClose: () => void;
 }
-type ReadingMode = "Webtoon" | "Manga" | "Manhwa";
 const ReaderSettingReadModes = ({
+  mangaId,
   isVisible,
   onClose,
 }: ReaderSettingReadModesProps) => {
-  const [selectedMode, setSelectedMode] = useState<ReadingMode>("Webtoon");
+  const readingMode = useReaderSettingsStore((state) =>
+    state.getReadingMode(mangaId),
+  );
+  const setReadingMode = useReaderSettingsStore(
+    (state) => state.setReadingMode,
+  );
   const modes: {
     id: ReadingMode;
     icon: keyof typeof Ionicons.glyphMap;
     label: string;
   }[] = [
-    { id: "Webtoon", icon: "reorder-three-outline", label: "Webtoon" },
-    { id: "Manga", icon: "book-outline", label: "Manga" },
-    { id: "Manhwa", icon: "document-text-outline", label: "Manhwa" },
+    { id: "vertical", icon: "reorder-three-outline", label: "Webtoon" },
+    { id: "horizontal-rtl", icon: "book-outline", label: "Manga" },
+    { id: "horizontal-ltr", icon: "document-text-outline", label: "Manhua" },
   ];
   if (!isVisible) return null;
 
@@ -38,13 +48,13 @@ const ReaderSettingReadModes = ({
           {/* Segmented Control UI */}
           <View className="flex-row bg-black/40 p-1.5 rounded-2xl mb-8 border border-white/5">
             {modes.map((mode) => {
-              const isActive = selectedMode === mode.id;
+              const isActive = readingMode === mode.id;
               return (
                 <Pressable
                   key={mode.id}
-                  onPress={() => console.log(mode.id)}
-                  className={`flex-1 py-4 items-center rounded-xl transition-all ${
-                    isActive ? "bg-[#3A3A3C] shadow-sm" : ""
+                  onPress={() => setReadingMode(mangaId, mode.id)}
+                  className={`flex-1 py-3 items-center rounded-xl ${
+                    isActive ? "bg-[#3A3A3C]" : ""
                   }`}
                 >
                   <Ionicons
@@ -53,16 +63,12 @@ const ReaderSettingReadModes = ({
                     color={isActive ? "#FFFFFF" : "#636366"}
                   />
                   <Text
-                    className={`text-[11px] font-semibold mt-1.5 ${
+                    className={`text-[11px] font-semibold mt-1 ${
                       isActive ? "text-white" : "text-[#636366]"
                     }`}
                   >
                     {mode.label}
                   </Text>
-                  {/* Active Indicator Dot */}
-                  {isActive && (
-                    <View className="h-1 w-1 bg-blue-500 rounded-full mt-1" />
-                  )}
                 </Pressable>
               );
             })}
