@@ -1,44 +1,56 @@
 import { MangaChapterPage } from "@/types/ResponseTypes";
 import { Image } from "expo-image";
-import React from "react";
+import React, { useEffect } from "react";
 import { Dimensions, StyleSheet } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
-    cancelAnimation,
-    clamp,
-    SharedValue,
-    useAnimatedStyle,
-    useSharedValue,
-    withDecay,
-    withSpring,
+  cancelAnimation,
+  clamp,
+  SharedValue,
+  useAnimatedStyle,
+  useSharedValue,
+  withDecay,
+  withSpring,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
+const GAP_SIZE = 0;
+const PAGE_WIDTH = SCREEN_WIDTH + GAP_SIZE;
+const AXIS_LOCK_THRESHOLD = 8;
+
+export interface ZoomablePageRef {
+  reset: () => void;
+  onInit: () => void;
+  getCurrentScale: () => number;
+}
+
 interface ZoomableMangaReaderPageProps {
   index: number;
+  isScrollEnabled: boolean;
   item: MangaChapterPage;
-  isZoomed: SharedValue<boolean>; // ← was: isScrollEnabled: boolean
+  isZoomed: SharedValue<boolean>;
   scrollX: SharedValue<number>;
   totalPages: number;
+  setPageRef: (index: number, ref: ZoomablePageRef) => void;
   disableScroll: () => void;
   enableScroll: () => void;
 }
 
-const AXIS_LOCK_THRESHOLD = 8;
-
 const ZoomableMangaReaderPage = ({
   item,
-  isZoomed,
-  disableScroll,
-  enableScroll,
   index,
+  isScrollEnabled,
   scrollX,
   totalPages,
+  setPageRef,
+  disableScroll,
+  enableScroll,
 }: ZoomableMangaReaderPageProps) => {
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
+  const isZoomed = useSharedValue(false); // <-- Moved inside component for isolated state
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -50,6 +62,38 @@ const ZoomableMangaReaderPage = ({
 
   const gestureLocked = useSharedValue<"none" | "x" | "y">("none");
 
+  const reset = () => {
+    "worklet";
+    scheduleOnRN(enableScroll); // <-- Ensure you use scheduleOnRN()()
+    if (scale.value !== 1 || translateX.value !== 0 || translateY.value !== 0) {
+      cancelAnimation(scale);
+      cancelAnimation(translateX);
+      cancelAnimation(translateY);
+
+      scale.value = 1;
+      translateX.value = 0;
+      translateY.value = 0;
+      savedScale.value = 1;
+      savedTranslateX.value = 0;
+      savedTranslateY.value = 0;
+
+      isZoomed.value = false;
+    }
+  };
+
+  const onInit = () => {
+    "worklet";
+  };
+
+  const getCurrentScale = () => {
+    "worklet";
+    return scale.value;
+  };
+
+  useEffect(() => {
+    setPageRef(index, { reset, onInit, getCurrentScale });
+  }, [index, setPageRef]);
+
   const pinchGesture = Gesture.Pinch()
     .onUpdate((e) => {
       scale.value = Math.min(Math.max(savedScale.value * e.scale, 1), 4);
@@ -59,27 +103,25 @@ const ZoomableMangaReaderPage = ({
       if (scale.value <= 1.1) {
         scale.value = withSpring(1);
         savedScale.value = 1;
-        isZoomed.value = false; // ← worklet-thread write, no bridge
-        scheduleOnRN(enableScroll);
+        isZoomed.value = false;
+        scheduleOnRN(enableScroll); // <-- Fix invocation
       } else {
-        isZoomed.value = true; // ← worklet-thread write, no bridge
-        scheduleOnRN(disableScroll);
+        isZoomed.value = true;
+        scheduleOnRN(disableScroll); // <-- Fix invocation
       }
     });
 
   const panGesture = Gesture.Pan()
     .averageTouches(true)
-    // ── Always enabled at the gesture level. The worklet gates logic
-    //    internally on isZoomed.value — avoids .enabled() re-creating
-    //    the gesture on every scroll toggle. ──────────────────────────
-    .enabled(true)
+    .enabled(!isScrollEnabled)
     .hitSlop({ left: -20 })
     .maxPointers(1)
     .onStart(() => {
+      console.log("pan is enabled:", !isScrollEnabled);
       if (isZoomed.value) {
         savedTranslateX.value = translateX.value;
         savedTranslateY.value = translateY.value;
-        scrollX.value = index * SCREEN_WIDTH;
+        scrollX.value = index * PAGE_WIDTH;
         gestureLocked.value = "none";
       }
     })
@@ -120,7 +162,7 @@ const ZoomableMangaReaderPage = ({
         }
 
         if (gestureLocked.value === "y") {
-          scrollX.value = index * SCREEN_WIDTH;
+          scrollX.value = index * PAGE_WIDTH;
           translateX.value = clampedTranslateX;
           translateY.value = clamp(
             savedTranslateY.value + e.translationY,
@@ -130,9 +172,9 @@ const ZoomableMangaReaderPage = ({
         } else {
           translateX.value = clampedTranslateX;
           if (isAtXBoundary) {
-            scrollX.value = index * SCREEN_WIDTH - direction * overflowX;
+            scrollX.value = index * PAGE_WIDTH - direction * overflowX;
           } else {
-            scrollX.value = index * SCREEN_WIDTH;
+            scrollX.value = index * PAGE_WIDTH;
             translateY.value = clamp(
               savedTranslateY.value + e.translationY,
               -maxTranslateY,
@@ -141,8 +183,7 @@ const ZoomableMangaReaderPage = ({
           }
         }
       } else {
-        // Not zoomed — behave as a normal list swipe
-        scrollX.value = index * SCREEN_WIDTH - direction * e.translationX;
+        scrollX.value = index * PAGE_WIDTH - direction * e.translationX;
       }
     })
     .onEnd((e) => {
@@ -158,7 +199,7 @@ const ZoomableMangaReaderPage = ({
         (displayedImageHeight.value * scale.value - SCREEN_HEIGHT) / 2,
       );
 
-      const currentOffset = scrollX.value - index * SCREEN_WIDTH;
+      const currentOffset = scrollX.value - index * PAGE_WIDTH;
       const isPageChange = Math.abs(currentOffset) > 5;
 
       if (isZoomed.value && !isPageChange) {
@@ -173,17 +214,17 @@ const ZoomableMangaReaderPage = ({
           rubberBandEffect: false,
         });
         cancelAnimation(scrollX);
-        scrollX.value = index * SCREEN_WIDTH;
+        scrollX.value = index * PAGE_WIDTH;
       } else {
         const scrollVelocity = -direction * e.velocityX;
-        let targetIndex = Math.round(scrollX.value / SCREEN_WIDTH);
+        let targetIndex = Math.round(scrollX.value / PAGE_WIDTH);
 
         if (Math.abs(scrollVelocity) > 500) {
           targetIndex = scrollVelocity > 0 ? index + 1 : index - 1;
         }
 
         const clampedIndex = Math.max(0, Math.min(targetIndex, totalPages - 1));
-        scrollX.value = withSpring(clampedIndex * SCREEN_WIDTH, {
+        scrollX.value = withSpring(clampedIndex * PAGE_WIDTH, {
           overshootClamping: true,
         });
       }
@@ -201,11 +242,13 @@ const ZoomableMangaReaderPage = ({
     <GestureDetector gesture={Gesture.Simultaneous(pinchGesture, panGesture)}>
       <Animated.View style={[styles.pageContainer, animatedStyle]}>
         <Image
+          recyclingKey={item.pageId}
           source={{ uri: item.pageImageUrl }}
           style={{ width: SCREEN_WIDTH, height: item.pageHeight }}
           contentFit="contain"
-          transition={200}
-          cachePolicy="memory-disk"
+          cachePolicy="none"
+          enforceEarlyResizing={true}
+          transition={0}
           onLoad={(e) => {
             const { width: w, height: h } = e.source;
             const ratio = Math.min(SCREEN_WIDTH / w, SCREEN_HEIGHT / h);
@@ -217,6 +260,8 @@ const ZoomableMangaReaderPage = ({
     </GestureDetector>
   );
 };
+
+ZoomableMangaReaderPage.displayName = "ZoomableMangaReaderPage";
 
 const styles = StyleSheet.create({
   container: {
@@ -235,4 +280,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ZoomableMangaReaderPage;
+export default React.memo(ZoomableMangaReaderPage);
