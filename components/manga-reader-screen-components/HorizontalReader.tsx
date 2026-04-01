@@ -1,15 +1,16 @@
 import { useReaderSessionStore } from "@/stores/ui-stores/manga-reader-screen-ui-store";
 import { MangaChapterPage } from "@/types/ResponseTypes";
-import { FlashList, FlashListRef } from "@shopify/flash-list";
-import React, { useCallback } from "react";
-import { Dimensions, Pressable, StyleSheet, View } from "react-native";
+import { FlashList, FlashListRef, ViewToken } from "@shopify/flash-list";
+import React, { useCallback, useRef } from "react";
+import { Dimensions, StyleSheet, View } from "react-native";
 import {
-  scrollTo,
-  useAnimatedReaction,
+  cancelAnimation,
   useAnimatedRef,
   useSharedValue,
 } from "react-native-reanimated";
-import ZoomableMangaReaderPage from "./ZoomableMangaReaderPage";
+import ZoomableMangaReaderPage, {
+  ZoomablePageRef,
+} from "./ZoomableMangaReaderPage";
 
 interface HorizontalReaderProps {
   pages: MangaChapterPage[];
@@ -26,6 +27,27 @@ const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
     (state) => state.setCurrentPageIndex,
   );
 
+  const pagesRef = useRef<Map<string, ZoomablePageRef>>(new Map());
+
+  const setPagesRef = useCallback(
+    (pageId: string, ref: ZoomablePageRef) => {
+      console.log("adding ref");
+      if (pagesRef.current) {
+        pagesRef.current.set(pageId, ref);
+      }
+    },
+    [pagesRef],
+  );
+
+  const removePageRef = useCallback(
+    (pageId: string) => {
+      if (pagesRef.current) {
+        pagesRef.current.delete(pageId);
+      }
+    },
+    [pagesRef],
+  );
+
   const [isScrollEnabled, setIsScrollEnabled] = React.useState(true);
 
   const disableScroll = useCallback(() => setIsScrollEnabled(false), []);
@@ -38,18 +60,37 @@ const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
   const scrollX = useSharedValue(SCREEN_WIDTH * 0);
 
   // --- OPTIMIZED SCROLL HANDLER ---
-  useAnimatedReaction(
-    () => scrollX.value,
-    (currentX, previousX) => {
-      if (currentX !== previousX) {
-        scrollTo(
-          flashListRef,
-          currentX,
-          0,
-          false, // animated: false is CRITICAL for synchronous feel
-        );
-      }
+  // useAnimatedReaction(
+  //   () => scrollX.value,
+  //   (currentX, previousX) => {
+  //     if (currentX !== previousX && !isScrollEnabled) {
+  //       scrollTo(
+  //         flashListRef,
+  //         currentX,
+  //         0,
+  //         false, // animated: false is CRITICAL for synchronous feel
+  //       );
+  //     }
+  //   },
+  // );
+
+  const onViewableItemsChanged = useCallback(
+    ({
+      viewableItems,
+    }: {
+      viewableItems: ViewToken<MangaChapterPage>[];
+      changed: ViewToken<MangaChapterPage>[];
+    }) => {
+      const viewableItemsKeys = viewableItems.map((v) => v.key);
+      console.log(pagesRef.current.size);
+
+      // pagesRef.current.forEach((ref, pageId) => {
+      //   if (!viewableItemsKeys.includes(pageId)) {
+      //     ref?.reset();
+      //   }
+      // });
     },
+    [pagesRef],
   );
 
   // ─── Sync Store with Scroll Position ────────────────────────────────
@@ -62,26 +103,31 @@ const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
     [setCurrentPageIndex],
   );
 
+  const handleOnScrollBeginDrag = () => {
+    cancelAnimation(scrollX);
+    enableScroll();
+  };
+
   // ─── Render Item ────────────────────────────────────────────────────
   const renderItem = useCallback(
     ({ item, index }: { item: MangaChapterPage; index: number }) => {
       // Manga pages vary in aspect ratio.
       // We wrap the image in a SCREEN_WIDTH container to ensure one page per swipe.
       return (
-        <Pressable
-          onLongPress={toggleIsSettingsVisible}
-          delayLongPress={200} // Snappier feel
-        >
+        <View className="overflow-hidden">
           <ZoomableMangaReaderPage
             item={item}
             index={index}
+            listRef={flashListRef}
+            setPageRef={setPagesRef}
+            removePageRef={removePageRef}
             isScrollEnabled={isScrollEnabled}
             disableScroll={disableScroll}
             enableScroll={enableScroll}
             scrollX={scrollX}
             totalPages={pages.length}
           />
-        </Pressable>
+        </View>
       );
     },
     [
@@ -106,7 +152,9 @@ const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={handleScroll}
+        onViewableItemsChanged={onViewableItemsChanged}
+        // onScrollBeginDrag={handleOnScrollBeginDrag}
+        // onMomentumScrollEnd={handleScroll}
         drawDistance={SCREEN_WIDTH * 2}
         bounces={false}
       />

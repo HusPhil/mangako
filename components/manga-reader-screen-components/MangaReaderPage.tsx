@@ -113,15 +113,15 @@ const MangaReaderPage = memo(
           recyclingKey={item.pageId}
           source={isVisible ? { uri: item.pageImageUrl } : null}
           enforceEarlyResizing={true}
+          style={containerStyle}
           contentFit="cover"
           cachePolicy="disk"
           decodeFormat={Platform.OS === "android" ? "rgb" : undefined}
-          transition={150}
+          transition={0}
           priority={isVisible ? "normal" : "low"}
           onLoadStart={onLoadStart}
           onLoadEnd={onLoadEnd}
           onProgress={(e) => onProgress(e)}
-          style={containerStyle}
         />
 
         {showSpinner && (
