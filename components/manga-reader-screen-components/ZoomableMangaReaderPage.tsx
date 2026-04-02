@@ -115,19 +115,52 @@ const ZoomableMangaReaderPage = ({
       scale.value = clamp(savedScale.value * e.scale, 1, 4);
     })
     .onEnd(() => {
-      if (scale.value <= 1.1) {
+      // Determine the final resting scale
+      const finalScale =
+        scale.value <= 1.1 ? 1 : scale.value >= 3.9 ? 4 : scale.value;
+
+      // Compute max-translate bounds for the final scale
+      const maxTX = Math.max(
+        0,
+        (displayedImageWidth.value * finalScale - SCREEN_WIDTH) / 2,
+      );
+      const maxTY = Math.max(
+        0,
+        (displayedImageHeight.value * finalScale -
+          (SCREEN_HEIGHT + STATUS_BAR_HEIGHT * 2)) /
+          2,
+      );
+
+      // Clamp current translation into the bounds valid for finalScale.
+      // This prevents the image from sitting off-screen after a pinch release.
+      const clampedTX = clamp(translateX.value, -maxTX, maxTX);
+      const clampedTY = clamp(translateY.value, -maxTY, maxTY);
+
+      if (finalScale === 1) {
         scale.value = withSpring(1);
         savedScale.value = 1;
         translateX.value = withSpring(0);
         translateY.value = withSpring(0);
         savedTranslateX.value = 0;
         savedTranslateY.value = 0;
+        cachedMaxTranslateX.value = 0;
+        cachedMaxTranslateY.value = 0;
       } else {
-        savedScale.value = scale.value >= 3.9 ? 4 : scale.value;
         if (scale.value >= 3.9) scale.value = withSpring(4);
+        savedScale.value = finalScale;
+
+        // Animate back into bounds if translation overshot
+        if (clampedTX !== translateX.value) {
+          translateX.value = withSpring(clampedTX);
+        }
+        if (clampedTY !== translateY.value) {
+          translateY.value = withSpring(clampedTY);
+        }
+        savedTranslateX.value = clampedTX;
+        savedTranslateY.value = clampedTY;
+        cachedMaxTranslateX.value = maxTX;
+        cachedMaxTranslateY.value = maxTY;
       }
-      cachedMaxTranslateX.value = -1;
-      cachedMaxTranslateY.value = -1;
     });
 
   /**
@@ -406,7 +439,7 @@ const ZoomableMangaReaderPage = ({
 
   return (
     <GestureDetector
-      gesture={Gesture.Simultaneous(pinchGesture, panGesture, doubleTapGesture)}
+      gesture={Gesture.Simultaneous(doubleTapGesture, pinchGesture, panGesture)}
     >
       <Animated.View style={[styles.pageContainer, animatedStyle]}>
         <Image
