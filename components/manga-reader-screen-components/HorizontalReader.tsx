@@ -53,26 +53,8 @@ const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
   const disableScroll = useCallback(() => setIsScrollEnabled(false), []);
   const enableScroll = useCallback(() => setIsScrollEnabled(true), []);
 
-  // 2. Define the animated ref. (Type asserted to 'any' to prevent TS conflicts between FlashList and Reanimated ScrollView types)
   const flashListRef = useAnimatedRef<FlashListRef<MangaChapterPage>>();
-
-  // Initialize scrollX based on initialIndex if provided
   const scrollX = useSharedValue(SCREEN_WIDTH * 0);
-
-  // --- OPTIMIZED SCROLL HANDLER ---
-  // useAnimatedReaction(
-  //   () => scrollX.value,
-  //   (currentX, previousX) => {
-  //     if (currentX !== previousX && !isScrollEnabled) {
-  //       scrollTo(
-  //         flashListRef,
-  //         currentX,
-  //         0,
-  //         false, // animated: false is CRITICAL for synchronous feel
-  //       );
-  //     }
-  //   },
-  // );
 
   const onViewableItemsChanged = useCallback(
     ({
@@ -83,12 +65,6 @@ const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
     }) => {
       const viewableItemsKeys = viewableItems.map((v) => v.key);
       console.log(pagesRef.current.size);
-
-      // pagesRef.current.forEach((ref, pageId) => {
-      //   if (!viewableItemsKeys.includes(pageId)) {
-      //     ref?.reset();
-      //   }
-      // });
     },
     [pagesRef],
   );
