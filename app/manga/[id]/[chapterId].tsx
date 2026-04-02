@@ -78,14 +78,21 @@ const MangaReaderScreen = () => {
 
       {readingMode === "vertical" ? (
         <VerticalReader
+          key={readingMode}
           pages={pages}
           onViewableItemsChanged={onViewableItemsChanged}
           registerVisibilitySetter={registerVisibilitySetter}
           unregisterVisibilitySetter={unregisterVisibilitySetter}
         />
-      ) : readingMode === "horizontal-rtl" ? (
-        <HorizontalReader pages={pages} />
-      ) : null}
+      ) : (
+        readingMode.includes("horizontal") && (
+          <HorizontalReader
+            key={readingMode}
+            pages={pages}
+            isReversed={readingMode === "horizontal-rtl"}
+          />
+        )
+      )}
 
       {isSettingsVisible && (
         <ReaderSettingsOverlay
