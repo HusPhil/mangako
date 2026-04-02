@@ -2,7 +2,7 @@ import { MangaChapterPage } from "@/types/ResponseTypes";
 import { FlashListRef } from "@shopify/flash-list";
 import { Image } from "expo-image";
 import React, { useEffect } from "react";
-import { Dimensions, StyleSheet } from "react-native";
+import { Dimensions, StatusBar, StyleSheet } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   AnimatedRef,
@@ -18,6 +18,7 @@ import Animated, {
 import { scheduleOnUI } from "react-native-worklets";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const STATUS_BAR_HEIGHT = StatusBar.currentHeight ?? 0;
 
 const DIRECTION_LOCK_THRESHOLD = 10;
 const DIRECTION_LOCK_THRESHOLD_SQ =
@@ -141,7 +142,9 @@ const ZoomableMangaReaderPage = ({
         );
         cachedMaxTranslateY.value = Math.max(
           0,
-          (displayedImageHeight.value * scale.value - SCREEN_HEIGHT) / 2,
+          (displayedImageHeight.value * scale.value -
+            (SCREEN_HEIGHT + STATUS_BAR_HEIGHT * 2)) /
+            2,
         );
 
         // Standard ScrollView offset for the current page
@@ -153,7 +156,11 @@ const ZoomableMangaReaderPage = ({
       }
     })
     .onUpdate((e) => {
-      if (scale.value <= 1) return;
+      if (scale.value <= 1) {
+        cancelAnimation(translateX);
+        cancelAnimation(translateY);
+        return;
+      }
 
       const absX = Math.abs(e.translationX);
       const absY = Math.abs(e.translationY);
@@ -189,8 +196,10 @@ const ZoomableMangaReaderPage = ({
           Math.abs(overflowX) > LIST_DRAG_OVERFLOW_THRESHOLD;
 
         if (hasSignificantOverflow) {
-          isPanningImage.value = false;
+          cancelAnimation(translateX);
+          cancelAnimation(translateY);
 
+          isPanningImage.value = false;
           // ✅ FIX: In RTL, dragging right (positive overflow) should INCREASE offset to see the next page (index + 1)
           // In LTR, dragging right (positive overflow) should DECREASE offset to see the previous page (index - 1)
           const scrollDirectionMultiplier = isReversed ? 1 : -1;
