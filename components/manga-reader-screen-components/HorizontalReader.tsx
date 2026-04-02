@@ -14,11 +14,12 @@ import ZoomableMangaReaderPage, {
 
 interface HorizontalReaderProps {
   pages: MangaChapterPage[];
+  isReversed: boolean;
 }
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
+const HorizontalReader = ({ pages, isReversed }: HorizontalReaderProps) => {
   // ─── Store Actions & State ──────────────────────────────────────────
   const toggleIsSettingsVisible = useReaderSessionStore(
     (state) => state.toggleIsSettingsVisible,
@@ -92,13 +93,13 @@ const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
       return (
         <View
           className="overflow-hidden"
-          style={{ transform: [{ scaleX: -1 }] }}
+          style={{ transform: isReversed ? [{ scaleX: -1 }] : undefined }}
         >
           <ZoomableMangaReaderPage
             item={item}
             index={index}
             listRef={flashListRef}
-            isReversed
+            isReversed={isReversed}
             setPageRef={setPagesRef}
             removePageRef={removePageRef}
             isScrollEnabled={isScrollEnabled}
@@ -106,6 +107,7 @@ const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
             enableScroll={enableScroll}
             scrollX={scrollX}
             totalPages={pages.length}
+            onLongPress={toggleIsSettingsVisible}
           />
         </View>
       );
@@ -136,7 +138,7 @@ const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
         // onScrollBeginDrag={handleOnScrollBeginDrag}
         // onMomentumScrollEnd={handleScroll}
         drawDistance={SCREEN_WIDTH * 2}
-        style={{ transform: [{ scaleX: -1 }] }}
+        style={{ transform: isReversed ? [{ scaleX: -1 }] : undefined }}
         bounces={false}
       />
     </View>

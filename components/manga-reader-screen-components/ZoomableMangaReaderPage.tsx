@@ -1,7 +1,7 @@
 import { MangaChapterPage } from "@/types/ResponseTypes";
 import { FlashListRef } from "@shopify/flash-list";
 import { Image } from "expo-image";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Dimensions, StatusBar, StyleSheet } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -17,7 +17,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { scheduleOnUI } from "react-native-worklets";
+import { scheduleOnRN, scheduleOnUI } from "react-native-worklets";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const STATUS_BAR_HEIGHT = StatusBar.currentHeight ?? 0;
@@ -36,6 +36,9 @@ const DOUBLE_TAP_MAX_DURATION = 300; // ms between taps to count as double-tap
 const DOUBLE_TAP_MAX_DISTANCE = 40; // px max distance between the two taps
 const DOUBLE_TAP_ZOOM_DURATION = 300; // ms for the zoom animation
 
+// Left/right tap zone: how wide each side tap zone is (in pixels)
+const SIDE_TAP_ZONE_WIDTH = SCREEN_WIDTH / 3;
+
 export interface ZoomablePageRef {
   reset: () => void;
 }
@@ -52,6 +55,12 @@ interface ZoomableMangaReaderPageProps {
   removePageRef: (pageId: string) => void;
   disableScroll: () => void;
   enableScroll: () => void;
+  /** Called when the user long-presses anywhere on the page. Runs on the RN thread. */
+  onLongPress?: () => void;
+  /** Called when the user single-taps the left third of the page. Runs on the RN thread. */
+  onTapLeft?: () => void;
+  /** Called when the user single-taps the right third of the page. Runs on the RN thread. */
+  onTapRight?: () => void;
 }
 
 const ZoomableMangaReaderPage = ({
@@ -63,6 +72,9 @@ const ZoomableMangaReaderPage = ({
   isReversed,
   setPageRef,
   removePageRef,
+  onLongPress,
+  onTapLeft,
+  onTapRight,
 }: ZoomableMangaReaderPageProps) => {
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
@@ -81,6 +93,11 @@ const ZoomableMangaReaderPage = ({
   const lastTapTimestamp = useSharedValue(-1);
   const lastTapX = useSharedValue(0);
   const lastTapY = useSharedValue(0);
+
+  // Pending single-tap timer — cancelled if a second tap arrives in time (double-tap)
+  const pendingSingleTapTimer = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const resetValues = () => {
     "worklet";
@@ -105,6 +122,10 @@ const ZoomableMangaReaderPage = ({
   useEffect(() => {
     setPageRef(item.pageId, { reset: resetValues });
     return () => {
+      if (pendingSingleTapTimer.current !== null) {
+        clearTimeout(pendingSingleTapTimer.current);
+        pendingSingleTapTimer.current = null;
+      }
       scheduleOnUI(resetValues);
       removePageRef(item.pageId);
     };
@@ -115,11 +136,9 @@ const ZoomableMangaReaderPage = ({
       scale.value = clamp(savedScale.value * e.scale, 1, 4);
     })
     .onEnd(() => {
-      // Determine the final resting scale
       const finalScale =
         scale.value <= 1.1 ? 1 : scale.value >= 3.9 ? 4 : scale.value;
 
-      // Compute max-translate bounds for the final scale
       const maxTX = Math.max(
         0,
         (displayedImageWidth.value * finalScale - SCREEN_WIDTH) / 2,
@@ -131,8 +150,6 @@ const ZoomableMangaReaderPage = ({
           2,
       );
 
-      // Clamp current translation into the bounds valid for finalScale.
-      // This prevents the image from sitting off-screen after a pinch release.
       const clampedTX = clamp(translateX.value, -maxTX, maxTX);
       const clampedTY = clamp(translateY.value, -maxTY, maxTY);
 
@@ -149,7 +166,6 @@ const ZoomableMangaReaderPage = ({
         if (scale.value >= 3.9) scale.value = withSpring(4);
         savedScale.value = finalScale;
 
-        // Animate back into bounds if translation overshot
         if (clampedTX !== translateX.value) {
           translateX.value = withSpring(clampedTX);
         }
@@ -164,34 +180,21 @@ const ZoomableMangaReaderPage = ({
     });
 
   /**
-   * Double-tap gesture for zoom-in / zoom-out.
+   * Combined tap gesture handling double-tap zoom AND single-tap left/right navigation.
    *
-   * Algorithm for zoom-in to focal point:
-   *   The image renders centered at (0,0) in its own coordinate space.
-   *   The tap arrives as absolute screen coords (e.x, e.y), where
-   *   (SCREEN_WIDTH/2, SCREEN_HEIGHT/2) is the screen center.
+   * We use manual double-tap detection (timestamp + distance check) rather than
+   * numberOfTaps(2) so that double-taps anywhere on the screen — including the
+   * left/right nav zones — are always captured by zoom logic first.
    *
-   *   Focal offset from screen center (in screen-space):
-   *     focalX = e.x - SCREEN_WIDTH / 2
-   *     focalY = e.y - SCREEN_HEIGHT / 2
+   * On a confirmed single-tap we inspect e.x to decide which zone was tapped:
+   *   - left third  → onTapLeft()
+   *   - right third → onTapRight()
+   *   - centre      → no-op (reserved for future use, e.g. toggle UI)
    *
-   *   After zooming to `targetScale`, the image expands around its own
-   *   center. To keep the tapped point visually anchored we need to shift
-   *   the image by the inverse of how far the focal point would drift:
-   *
-   *     driftX = focalX * (targetScale - 1)
-   *
-   *   Since the image is currently offset by translateX, the new target
-   *   translation must also account for the existing offset scaled up:
-   *
-   *     targetTX = translateX.value * (targetScale / scale.value) - focalX * (targetScale - 1)
-   *
-   *   Simplified for the zoom-in case (scale == 1, translateX == 0):
-   *     targetTX = -focalX * (targetScale - 1)
-   *
-   *   This is then clamped to ±maxTranslate so we never pan past the image edges.
+   * Callbacks are dispatched to the RN thread via scheduleOnRN so callers don't
+   * need to worry about threading — they receive a plain JS function call.
    */
-  const doubleTapGesture = Gesture.Tap()
+  const tapGesture = Gesture.Tap()
     .numberOfTaps(1)
     .onEnd((e) => {
       "worklet";
@@ -207,7 +210,13 @@ const ZoomableMangaReaderPage = ({
         distanceSq < DOUBLE_TAP_MAX_DISTANCE * DOUBLE_TAP_MAX_DISTANCE;
 
       if (isDoubleTap) {
-        // Reset last tap so a third tap doesn't trigger another double-tap
+        // Cancel any pending single-tap nav — this is a double-tap
+        if (pendingSingleTapTimer.current !== null) {
+          clearTimeout(pendingSingleTapTimer.current);
+          pendingSingleTapTimer.current = null;
+        }
+
+        // Reset so a third tap doesn't chain into another double-tap
         lastTapTimestamp.value = -1;
 
         const springConfig = {
@@ -238,11 +247,9 @@ const ZoomableMangaReaderPage = ({
 
           const targetScale = DOUBLE_TAP_ZOOM_SCALE;
 
-          // Focal offset relative to screen center (image's own origin)
           const focalX = e.x - SCREEN_WIDTH / 2;
           const focalY = e.y - SCREEN_HEIGHT / 2;
 
-          // Compute max-translate bounds at target scale
           const imgW = displayedImageWidth.value;
           const imgH = displayedImageHeight.value;
           const maxTX = Math.max(0, (imgW * targetScale - SCREEN_WIDTH) / 2);
@@ -251,11 +258,6 @@ const ZoomableMangaReaderPage = ({
             (imgH * targetScale - (SCREEN_HEIGHT + STATUS_BAR_HEIGHT * 2)) / 2,
           );
 
-          // Translation needed to keep focal point visually stationary:
-          //   The image currently has translate=(0,0) and scale=1.
-          //   When we zoom to targetScale around the image center, a point
-          //   at focalX from center would move to focalX * targetScale from center.
-          //   We counter-shift by focalX * (targetScale - 1) to pin it.
           const rawTargetTX = -focalX * (targetScale - 1);
           const rawTargetTY = -focalY * (targetScale - 1);
 
@@ -273,12 +275,76 @@ const ZoomableMangaReaderPage = ({
           cachedMaxTranslateY.value = maxTY;
         }
       } else {
-        // Record this tap as the first tap of a potential double-tap
+        // ── Single tap: record for potential double-tap, then schedule nav ──
         lastTapTimestamp.value = now;
         lastTapX.value = e.x;
         lastTapY.value = e.y;
+
+        // Only trigger navigation when not zoomed in (panning takes over there).
+        // We defer by DOUBLE_TAP_MAX_DURATION so an incoming second tap (double-tap)
+        // gets a chance to cancel this before it fires.
+        if (scale.value <= 1.05) {
+          const tapX = e.x;
+          const capturedIndex = index;
+
+          if (pendingSingleTapTimer.current !== null) {
+            clearTimeout(pendingSingleTapTimer.current);
+          }
+
+          pendingSingleTapTimer.current = setTimeout(() => {
+            pendingSingleTapTimer.current = null;
+
+            if (tapX < SIDE_TAP_ZONE_WIDTH) {
+              if (onTapLeft) {
+                onTapLeft();
+              } else {
+                // Default: previous page (accounts for RTL manga via isReversed)
+                const targetIndex = clamp(
+                  isReversed ? capturedIndex + 1 : capturedIndex - 1,
+                  0,
+                  totalPages - 1,
+                );
+                const targetX = targetIndex * SCREEN_WIDTH;
+                scrollX.value = withSpring(targetX, {
+                  overshootClamping: true,
+                  duration: 300,
+                });
+                scrollTo(listRef, targetX, 0, true);
+              }
+            } else if (tapX > SCREEN_WIDTH - SIDE_TAP_ZONE_WIDTH) {
+              if (onTapRight) {
+                onTapRight();
+              } else {
+                // Default: next page (accounts for RTL manga via isReversed)
+                const targetIndex = clamp(
+                  isReversed ? capturedIndex - 1 : capturedIndex + 1,
+                  0,
+                  totalPages - 1,
+                );
+                const targetX = targetIndex * SCREEN_WIDTH;
+                scrollX.value = withSpring(targetX, {
+                  overshootClamping: true,
+                  duration: 300,
+                });
+                scrollTo(listRef, targetX, 0, true);
+              }
+            }
+          }, DOUBLE_TAP_MAX_DURATION);
+        }
       }
     });
+
+  /**
+   * Long-press gesture.
+   *
+   * Activates after the default 500 ms hold. The callback is dispatched to the
+   * RN thread via scheduleOnRN — no runOnJS / worklet annotation needed on the
+   * caller's side.
+   */
+  const longPressGesture = Gesture.LongPress().onStart(() => {
+    "worklet";
+    if (onLongPress) scheduleOnRN(onLongPress);
+  });
 
   const panGesture = Gesture.Pan()
     .averageTouches(true)
@@ -439,7 +505,12 @@ const ZoomableMangaReaderPage = ({
 
   return (
     <GestureDetector
-      gesture={Gesture.Simultaneous(doubleTapGesture, pinchGesture, panGesture)}
+      gesture={Gesture.Simultaneous(
+        longPressGesture,
+        tapGesture,
+        pinchGesture,
+        panGesture,
+      )}
     >
       <Animated.View style={[styles.pageContainer, animatedStyle]}>
         <Image
