@@ -114,11 +114,15 @@ const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
       // Manga pages vary in aspect ratio.
       // We wrap the image in a SCREEN_WIDTH container to ensure one page per swipe.
       return (
-        <View className="overflow-hidden">
+        <View
+          className="overflow-hidden"
+          style={{ transform: [{ scaleX: -1 }] }}
+        >
           <ZoomableMangaReaderPage
             item={item}
             index={index}
             listRef={flashListRef}
+            isReversed
             setPageRef={setPagesRef}
             removePageRef={removePageRef}
             isScrollEnabled={isScrollEnabled}
@@ -156,6 +160,7 @@ const HorizontalReader = ({ pages }: HorizontalReaderProps) => {
         // onScrollBeginDrag={handleOnScrollBeginDrag}
         // onMomentumScrollEnd={handleScroll}
         drawDistance={SCREEN_WIDTH * 2}
+        style={{ transform: [{ scaleX: -1 }] }}
         bounces={false}
       />
     </View>
