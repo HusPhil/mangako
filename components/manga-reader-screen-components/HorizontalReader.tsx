@@ -32,7 +32,6 @@ const HorizontalReader = ({ pages, isReversed }: HorizontalReaderProps) => {
 
   const setPagesRef = useCallback(
     (pageId: string, ref: ZoomablePageRef) => {
-      console.log("adding ref");
       if (pagesRef.current) {
         pagesRef.current.set(pageId, ref);
       }
@@ -65,7 +64,6 @@ const HorizontalReader = ({ pages, isReversed }: HorizontalReaderProps) => {
       changed: ViewToken<MangaChapterPage>[];
     }) => {
       const viewableItemsKeys = viewableItems.map((v) => v.key);
-      console.log(pagesRef.current.size);
     },
     [pagesRef],
   );
@@ -137,6 +135,7 @@ const HorizontalReader = ({ pages, isReversed }: HorizontalReaderProps) => {
         onViewableItemsChanged={onViewableItemsChanged}
         // onScrollBeginDrag={handleOnScrollBeginDrag}
         // onMomentumScrollEnd={handleScroll}
+        onScrollBeginDrag={(e) => console.log(e.nativeEvent)}
         drawDistance={SCREEN_WIDTH * 2}
         style={{ transform: isReversed ? [{ scaleX: -1 }] : undefined }}
         bounces={false}

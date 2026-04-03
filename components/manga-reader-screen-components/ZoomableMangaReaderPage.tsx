@@ -197,8 +197,6 @@ const ZoomableMangaReaderPage = ({
   const tapGesture = Gesture.Tap()
     .numberOfTaps(1)
     .onEnd((e) => {
-      "worklet";
-
       const now = Date.now();
       const timeDelta = now - lastTapTimestamp.value;
       const dx = e.x - lastTapX.value;
@@ -225,14 +223,20 @@ const ZoomableMangaReaderPage = ({
         };
 
         if (scale.value > 1.05) {
-          // ── Zoom out: snap back to identity ──────────────────────────────
-          cancelAnimation(scale);
-          cancelAnimation(translateX);
-          cancelAnimation(translateY);
+          // Snap translate to 0 first if wildly off, otherwise animate
+          const shouldSnapInstant =
+            Math.abs(translateX.value) > SCREEN_WIDTH ||
+            Math.abs(translateY.value) > SCREEN_HEIGHT;
 
           scale.value = withTiming(1, springConfig);
-          translateX.value = withTiming(0, springConfig);
-          translateY.value = withTiming(0, springConfig);
+
+          if (shouldSnapInstant) {
+            translateX.value = 0;
+            translateY.value = 0;
+          } else {
+            translateX.value = withTiming(0, springConfig);
+            translateY.value = withTiming(0, springConfig);
+          }
 
           savedScale.value = 1;
           savedTranslateX.value = 0;
@@ -342,46 +346,35 @@ const ZoomableMangaReaderPage = ({
    * caller's side.
    */
   const longPressGesture = Gesture.LongPress().onStart(() => {
-    "worklet";
     if (onLongPress) scheduleOnRN(onLongPress);
   });
 
   const panGesture = Gesture.Pan()
     .averageTouches(true)
     .maxPointers(1)
-    .manualActivation(true)
     .blocksExternalGesture(pinchGesture)
-    .onTouchesMove((e, m) => {
-      if (scale.value > 1) {
-        m.activate();
-      } else {
+    .onTouchesDown((e, m) => {
+      if (scale.value <= 1) {
         m.fail();
       }
     })
     .onStart(() => {
-      if (scale.value > 1) {
-        cancelAnimation(translateX);
-        cancelAnimation(translateY);
-        savedTranslateX.value = translateX.value;
-        savedTranslateY.value = translateY.value;
-        gestureIntent.value = 0;
-        isPanningImage.value = false;
-        cachedMaxTranslateX.value = Math.max(
-          0,
-          (displayedImageWidth.value * scale.value - SCREEN_WIDTH) / 2,
-        );
-        cachedMaxTranslateY.value = Math.max(
-          0,
-          (displayedImageHeight.value * scale.value -
-            (SCREEN_HEIGHT + STATUS_BAR_HEIGHT * 2)) /
-            2,
-        );
-        const expectedX = index * SCREEN_WIDTH;
-        if (Math.abs(scrollX.value - expectedX) > 1) {
-          scrollX.value = expectedX;
-          scrollTo(listRef, expectedX, 0, false);
-        }
-      }
+      cancelAnimation(translateX);
+      cancelAnimation(translateY);
+      savedTranslateX.value = translateX.value;
+      savedTranslateY.value = translateY.value;
+      gestureIntent.value = 0;
+      isPanningImage.value = false;
+      cachedMaxTranslateX.value = Math.max(
+        0,
+        (displayedImageWidth.value * scale.value - SCREEN_WIDTH) / 2,
+      );
+      cachedMaxTranslateY.value = Math.max(
+        0,
+        (displayedImageHeight.value * scale.value -
+          (SCREEN_HEIGHT + STATUS_BAR_HEIGHT * 2)) /
+          2,
+      );
     })
     .onUpdate((e) => {
       if (scale.value <= 1) {
