@@ -199,6 +199,35 @@ const migrations: Migration[] = [
       console.warn("No rollback");
     },
   },
+  {
+    version: 9,
+    up: (db) => {
+      console.log("Migration v9: Creating global_settings table");
+
+      // 1. Create the table
+      // We use a 'id' column with a CHECK constraint to ensure only ONE row ever exists.
+      db.execSync(`
+        CREATE TABLE IF NOT EXISTS global_settings (
+          id INTEGER PRIMARY KEY CHECK (id = 1),
+          selected_source TEXT,
+          is_adult_content_enabled INTEGER DEFAULT 0,
+          reader_mode TEXT DEFAULT 'horizontal'
+        );
+      `);
+
+      // 2. Seed the initial settings row if it doesn't exist
+      // This ensures that 'UPDATE' calls work immediately in your stores.
+      db.runSync(
+        `INSERT OR IGNORE INTO global_settings (id, selected_source) VALUES (1, ?);`,
+        ["mangadex"], // Default source
+      );
+
+      console.log("Migration v9: global_settings initialized.");
+    },
+    down: (db) => {
+      db.execSync(`DROP TABLE IF EXISTS global_settings;`);
+    },
+  },
 ];
 
 export const migrateTo = (db: SQLiteDatabase, targetVersion: number) => {

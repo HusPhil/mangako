@@ -63,7 +63,9 @@ const HorizontalReader = ({ pages, isReversed }: HorizontalReaderProps) => {
       viewableItems: ViewToken<MangaChapterPage>[];
       changed: ViewToken<MangaChapterPage>[];
     }) => {
-      const viewableItemsKeys = viewableItems.map((v) => v.key);
+      if (viewableItems.length > 0 && viewableItems[0].index != null) {
+        setCurrentPageIndex(viewableItems[0].index);
+      }
     },
     [pagesRef],
   );

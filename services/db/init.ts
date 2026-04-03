@@ -86,7 +86,37 @@ export const initDB = () => {
   `);
 };
 
+const seedDefaultData = (db: SQLiteDatabase) => {
+  // Check if we've already seeded the database once
+  const meta = db.getFirstSync<{ value: string }>(
+    "SELECT value FROM meta WHERE key = 'is_seeded'",
+  );
+
+  if (!meta) {
+    console.log("First run detected. Seeding default categories...");
+
+    // Use a transaction for atomicity
+    db.withTransactionSync(() => {
+      // 1. Insert the Favorites category
+      db.runSync(
+        "INSERT OR IGNORE INTO categories (category_id, name) VALUES (?, ?)",
+        ["default_favorites", "Favorites"],
+      );
+
+      // 2. Mark seeding as complete
+      db.runSync("INSERT INTO meta (key, value) VALUES (?, ?)", [
+        "is_seeded",
+        "true",
+      ]);
+    });
+  }
+};
+
 export const initializeDB = async (db: SQLiteDatabase) => {
+  // 0. Init DB
+  initDB();
+  seedDefaultData(db);
+
   // 1. Critical DB Settings
   db.execSync(`PRAGMA foreign_keys = ON;`);
   db.execSync(`PRAGMA journal_mode = WAL;`); // Expert Tip: High performance concurrent reads/writes
