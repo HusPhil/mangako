@@ -1,14 +1,18 @@
 import BrowseScreenHeader from "@/components/browse-screen-components/BrowseScreenHeader";
 import MangaGrid from "@/components/MangaGrid";
 import { useGetLatestMangaList } from "@/hooks/api/useGetMangaList";
+import { useSourceSelectionStore } from "@/stores/source-selection-store";
 import { mapResponseListToRenderList } from "@/types/ResponseTypes";
 import React from "react";
 import { Text, View } from "react-native";
 
-const DUMMY_SOURCE = "mangafox";
-
 const Browse = () => {
-  const { data, isLoading, isError } = useGetLatestMangaList(DUMMY_SOURCE);
+  const currentSelectedSource = useSourceSelectionStore(
+    (state) => state.currentSelectedSource,
+  );
+  const { data, isLoading, isError } = useGetLatestMangaList(
+    currentSelectedSource?.sourceId || "",
+  );
 
   if (isLoading) {
     return <Text>Loading...</Text>;
@@ -24,7 +28,7 @@ const Browse = () => {
 
   return (
     <View className="flex-1 bg-secondary">
-      <BrowseScreenHeader />
+      <BrowseScreenHeader currentSelectedSource={currentSelectedSource} />
       <MangaGrid mangaList={mapResponseListToRenderList(data?.latest_manga)} />
     </View>
   );

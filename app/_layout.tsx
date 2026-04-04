@@ -6,7 +6,7 @@ import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
 import { Stack } from "expo-router";
 import { SQLiteProvider, useSQLiteContext } from "expo-sqlite";
 import React, { Suspense } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
 
@@ -21,8 +21,9 @@ const DrizzleDbStudio = () => {
 
 const RootLayout = () => {
   useReactQueryDevTools(queryClient);
+
   return (
-    <Suspense fallback={<LoadingScreen />}>
+    <Suspense fallback={<LoadingOverlay message="Loading..." />}>
       <SQLiteProvider
         databaseName="app.db"
         onInit={initializeDB}
@@ -70,6 +71,15 @@ const RootLayout = () => {
                     animation: "fade_from_bottom",
                   }}
                 />
+
+                <Stack.Screen
+                  name="(modals)/source-settings"
+                  options={{
+                    presentation: "pageSheet",
+                    headerShown: false,
+                    animation: "fade_from_bottom",
+                  }}
+                />
               </Stack>
             </View>
           </GestureHandlerRootView>
@@ -79,16 +89,16 @@ const RootLayout = () => {
   );
 };
 
-const LoadingScreen = () => (
-  <View
-    style={{
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "#000",
-    }}
-  >
-    <ActivityIndicator size="large" color="#fff" />
+export const LoadingOverlay = ({
+  message = "Loading...",
+}: {
+  message?: string;
+}) => (
+  <View className="flex-1 justify-center items-center bg-background">
+    <ActivityIndicator size="large" color={Colors.primary} />
+    <Text className="text-white/50 mt-4 font-medium tracking-widest uppercase text-xs">
+      {message}
+    </Text>
   </View>
 );
 

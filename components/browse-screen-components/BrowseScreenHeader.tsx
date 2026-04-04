@@ -1,13 +1,23 @@
 import { Colors } from "@/constants/colors";
+import { Source } from "@/types/ResponseTypes";
 import { AntDesign, Ionicons, Octicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { router } from "expo-router";
 import React from "react";
 import { Pressable, StatusBar, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 const ramenIcon = require("@/assets/images/ramen_mini_icon.png");
 
-const BrowseScreenHeader = () => {
+const BrowseScreenHeader = ({
+  currentSelectedSource,
+}: {
+  currentSelectedSource: Source | null;
+}) => {
   const insets = useSafeAreaInsets();
+  const handleManageSourcesPress = () => {
+    router.push("/(modals)/source-settings");
+  };
+
   return (
     <View className="w-full bg-background" style={{ paddingTop: insets.top }}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
@@ -25,16 +35,13 @@ const BrowseScreenHeader = () => {
         </View>
         {/* Source Switcher */}
         <Pressable
-          style={({ pressed }) => [
-            {
-              opacity: pressed ? 0.8 : 1,
-              transform: [{ scale: pressed ? 0.96 : 1 }],
-            },
-          ]}
-          className="flex-row items-center bg-white/10 px-3 py-2 rounded-xl border border-white/5"
+          onPress={handleManageSourcesPress}
+          className="flex-row items-center bg-white/10 px-3 py-2 rounded-xl border border-white/5 active:opacity-50"
         >
           <Text className="text-white/80 text-xs font-bold uppercase  tracking-widest">
-            WEEB CENTRAL
+            {currentSelectedSource
+              ? currentSelectedSource.sourceName
+              : "Select Source"}
           </Text>
           {/* vertical separator */}
           <View className="border-l border-white/10 h-4 mx-2" />
