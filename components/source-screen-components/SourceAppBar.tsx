@@ -3,9 +3,9 @@ import { router } from "expo-router";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
-interface CategoryAppBarProps {}
+interface SourceAppBarProps {}
 
-const CategoryAppBar = ({}: CategoryAppBarProps) => {
+const SourceAppBar = ({}: SourceAppBarProps) => {
   return (
     <View className="h-16 flex-row items-center justify-between px-4 bg-background border-b border-white/5">
       <View className="flex-row items-center gap-3">
@@ -16,11 +16,11 @@ const CategoryAppBar = ({}: CategoryAppBarProps) => {
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text className="text-white text-lg font-pbold tracking-tight">
-          Manage Categories
+          Manage Sources
         </Text>
       </View>
     </View>
   );
 };
 
-export default CategoryAppBar;
+export default SourceAppBar;

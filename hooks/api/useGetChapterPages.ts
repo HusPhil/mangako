@@ -28,7 +28,7 @@ export const useGetChapterPages = (source: string, chapterUrl?: string) => {
     enabled: !!source && !!chapterUrl,
 
     staleTime: Infinity, // Chapter images are static; never go stale
-    cacheTime: 1000 * 60 * 1, // Cache for 1 day
+    cacheTime: 1000 * 60 * 1,
     retry: 2,
     retryDelay: 2000,
     refetchOnWindowFocus: false,
