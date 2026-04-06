@@ -1,4 +1,4 @@
-import { MangaRender } from "@/types/ResponseTypes";
+import { MangaRender, MangaResponse } from "@/types/ResponseTypes";
 
 export type LibraryManga = {
   manga_id: string;
@@ -28,6 +28,18 @@ export const mapLibraryToGridItem = (manga: LibraryManga): MangaRender => {
 // If you have an array of library items:
 export const mapLibraryListToGridItems = (list: LibraryManga[]) => {
   return list.map(mapLibraryToGridItem);
+};
+
+export const mapSearchResultToGridItem = (
+  manga: MangaResponse,
+): MangaRender => {
+  return {
+    mangaId: manga.mangaId,
+    mangaTitle: manga.mangaTitle,
+    mangaUrl: manga.mangaUrl,
+    mangaCover: manga.mangaCover,
+    mangaSourceId: manga.mangaSource.sourceId,
+  };
 };
 
 export interface Category {
