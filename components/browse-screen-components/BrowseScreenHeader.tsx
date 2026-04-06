@@ -51,8 +51,8 @@ const BrowseScreenHeader = ({
       {/* Improved Search Section */}
       <View className="px-5 mb-5">
         <Pressable
-          className="flex-row items-center bg-white/5 border border-white/10 py-2 px-4 rounded-xl"
-          style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+          className="flex-row items-center bg-white/5 border border-white/10 py-2 px-4 rounded-xl active:opacity-50"
+          onPress={() => router.push("/search")}
         >
           <Octicons
             name="triangle-right"

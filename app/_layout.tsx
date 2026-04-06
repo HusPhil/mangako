@@ -44,6 +44,11 @@ const RootLayout = () => {
               >
                 <Stack.Screen name="(tabs)" options={{ animation: "fade" }} />
                 <Stack.Screen
+                  name="search"
+                  options={{ animation: "fade_from_bottom" }}
+                />
+
+                <Stack.Screen
                   name="manga/[id]/index"
                   options={{ animation: "fade_from_bottom" }}
                 />
