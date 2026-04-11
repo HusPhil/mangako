@@ -1,6 +1,7 @@
 import HorizontalReader from "@/components/manga-reader-screen-components/HorizontalReader";
 import PageIndicator from "@/components/manga-reader-screen-components/PageIndicator";
 import ReaderSettingsOverlay from "@/components/manga-reader-screen-components/ReaderSettingsOverlay";
+import ReaderToast from "@/components/manga-reader-screen-components/ReaderToast";
 import VerticalReader from "@/components/manga-reader-screen-components/VerticalReader";
 import { Colors } from "@/constants/colors";
 import { useMangaReaderScreenLogic } from "@/hooks/manga-reader-screen-hooks/useMangaReaderScreenLogic";
@@ -8,17 +9,23 @@ import { useReaderSessionStore } from "@/stores/ui-stores/manga-reader-screen-ui
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect } from "react";
 import { ActivityIndicator, StatusBar, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MangaReaderScreen = () => {
   const listOfChapters = useReaderSessionStore((state) => state.listOfChapters);
+
+  const insets = useSafeAreaInsets();
 
   const {
     mangaId,
     mangaSourceId,
     mangaUrl,
 
+    chapterInitialIndex,
+
     readingMode,
     isSettingsVisible,
+    isToastVisible,
     pages,
     currentPageIndex,
     totalPages,
@@ -26,10 +33,14 @@ const MangaReaderScreen = () => {
     isLoading,
     isError,
 
+    openToast,
+    closeToast,
+
     onNavigateToNextChapter,
     onNavigateToPrevChapter,
     onNavigateJumpToChapter,
 
+    onEndReached,
     onViewableItemsChanged,
     registerVisibilitySetter,
     unregisterVisibilitySetter,
@@ -80,6 +91,8 @@ const MangaReaderScreen = () => {
         <VerticalReader
           key={readingMode}
           pages={pages}
+          initialIndex={chapterInitialIndex}
+          onEndReached={onEndReached}
           onViewableItemsChanged={onViewableItemsChanged}
           registerVisibilitySetter={registerVisibilitySetter}
           unregisterVisibilitySetter={unregisterVisibilitySetter}
@@ -89,6 +102,8 @@ const MangaReaderScreen = () => {
           <HorizontalReader
             key={readingMode}
             pages={pages}
+            initialIndex={chapterInitialIndex}
+            onEndReached={onEndReached}
             isReversed={readingMode === "horizontal-rtl"}
           />
         )
@@ -103,6 +118,15 @@ const MangaReaderScreen = () => {
           onNavigateToNext={onNavigateToNextChapter}
           onNavigateToChapter={onNavigateJumpToChapter}
           onJumpToPage={() => {}}
+        />
+      )}
+
+      {/* Place this AFTER the Readers but BEFORE the Settings Overlay or at the very bottom */}
+      {isToastVisible && !isSettingsVisible && (
+        <ReaderToast
+          isVisible={isToastVisible}
+          onClose={closeToast}
+          onAction={onNavigateToNextChapter}
         />
       )}
 

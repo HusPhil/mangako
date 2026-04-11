@@ -99,3 +99,18 @@ export const getReadingProgressByMangaId = (
     [mangaId],
   );
 };
+
+export const getChapterLastReadPage = (
+  db: SQLiteDatabase,
+  mangaId: string,
+  chapterId: string,
+): number | null => {
+  const result = db.getFirstSync<{ last_read_page: number }>(
+    `SELECT last_read_page 
+     FROM reading_progress 
+     WHERE manga_id = ? AND last_read_chapter_id = ?`,
+    [mangaId, chapterId],
+  );
+
+  return result ? result.last_read_page : null;
+};

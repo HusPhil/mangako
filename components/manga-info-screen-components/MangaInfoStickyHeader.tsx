@@ -88,8 +88,11 @@ const MangaStickyHeader = ({
         <Text className="text-white font-bold text-sm" numberOfLines={1}>
           {mangaTitle}
         </Text>
-        <Text className="text-[10px] text-gray-400 uppercase tracking-wider">
-          {lastReadChapterTitle || "Start reading"}{" "}
+        <Text
+          className="text-[10px] text-gray-400 uppercase tracking-wider"
+          numberOfLines={1}
+        >
+          {lastReadChapterTitle || "Read now"}{" "}
         </Text>
       </View>
 

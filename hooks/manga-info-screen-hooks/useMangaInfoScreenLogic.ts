@@ -1,5 +1,6 @@
 import { useReadingProgressStore } from "@/stores/reading-progress-store";
 import useMangaInfoScreenUIStore from "@/stores/ui-stores/manga-info-screen-ui-store";
+import { useReaderSessionStore } from "@/stores/ui-stores/manga-reader-screen-ui-store";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -52,6 +53,7 @@ export const useMangaInfoScreenLogic = (
     mangaId,
     mangaSourceId,
     mangaInfo?.data?.mangaChapters,
+    lastReadData?.last_read_page,
   );
 
   const onContinueReading = useCallback(() => {
@@ -60,19 +62,23 @@ export const useMangaInfoScreenLogic = (
       mangaSourceId,
       chapterId:
         lastReadData?.last_read_chapter_id ||
-        controlledChapters[0]?.chapterId ||
+        controlledChapters[controlledChapters.length - 1]?.chapterId ||
         "",
       chapterTitle:
         lastReadData?.last_read_chapter_title ||
-        controlledChapters[0]?.chapterTitle ||
+        controlledChapters[controlledChapters.length - 1]?.chapterTitle ||
         "",
       chapterUrl:
         lastReadData?.last_read_chapter_url ||
-        controlledChapters[0]?.chapterUrl ||
+        controlledChapters[controlledChapters.length - 1]?.chapterUrl ||
         "",
       chapterTimeUploaded:
         mangaInfo.data?.mangaChapters[0].chapterTimeUploaded || "",
+
+      chapterInitialPage: lastReadData?.last_read_page?.toString() || "",
     };
+
+    console.log(readerScreenParams.chapterInitialPage);
 
     router.push({
       pathname: `/manga/[id]/[chapterId]`,
@@ -80,7 +86,11 @@ export const useMangaInfoScreenLogic = (
         ...readerScreenParams,
       },
     });
-  }, [mangaInfo.data]);
+
+    const orderedChapters = [...(controlledChapters || [])].reverse();
+
+    useReaderSessionStore.getState().listOfChapters = orderedChapters;
+  }, [mangaInfo.data, lastReadData, controlledChapters]);
 
   const onBack = useCallback(() => router.back(), [router]);
 

@@ -14,12 +14,19 @@ import ZoomableMangaReaderPage, {
 
 interface HorizontalReaderProps {
   pages: MangaChapterPage[];
+  initialIndex: number;
+  onEndReached: () => void;
   isReversed: boolean;
 }
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-const HorizontalReader = ({ pages, isReversed }: HorizontalReaderProps) => {
+const HorizontalReader = ({
+  pages,
+  initialIndex,
+  isReversed,
+  onEndReached,
+}: HorizontalReaderProps) => {
   // ─── Store Actions & State ──────────────────────────────────────────
   const toggleIsSettingsVisible = useReaderSessionStore(
     (state) => state.toggleIsSettingsVisible,
@@ -137,6 +144,8 @@ const HorizontalReader = ({ pages, isReversed }: HorizontalReaderProps) => {
         onViewableItemsChanged={onViewableItemsChanged}
         // onScrollBeginDrag={handleOnScrollBeginDrag}
         // onMomentumScrollEnd={handleScroll}
+        initialScrollIndex={initialIndex}
+        onEndReached={onEndReached}
         onScrollBeginDrag={(e) => console.log(e.nativeEvent)}
         drawDistance={SCREEN_WIDTH * 2}
         style={{ transform: isReversed ? [{ scaleX: -1 }] : undefined }}

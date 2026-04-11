@@ -11,6 +11,7 @@ export const useChapterListControls = (
   mangaId: string,
   mangaSourceId: string,
   mangaChapters?: MangaChapter[],
+  chapterInitalPage?: number,
 ) => {
   const readChapterIds = useReadingProgressStore(
     (state) => state.readChapterIds,
@@ -79,6 +80,7 @@ export const useChapterListControls = (
         chapterTitle: chapter.chapterTitle,
         chapterUrl: chapter.chapterUrl,
         chapterTimeUploaded: chapter.chapterTimeUploaded,
+        chapterInitialPage: chapterInitalPage?.toString() || "0",
       };
 
       router.push({
