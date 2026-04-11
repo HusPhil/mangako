@@ -1,9 +1,6 @@
-// ============================================================================
-// 4. Chapter Navigation
-
-import { useRouter } from "@/.expo/types/router";
 import { useReaderSessionStore } from "@/stores/ui-stores/manga-reader-screen-ui-store";
 import { MangaChapter } from "@/types/ResponseTypes";
+import { useRouter } from "expo-router";
 import { useCallback } from "react";
 import { MangaReaderScreenParams } from "./useMangaReaderScreenLogic";
 
