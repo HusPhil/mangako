@@ -48,6 +48,10 @@ const MangaInfoScreen = () => {
     scrollY,
     mangaChapters,
 
+    lastReadChapterDate,
+    lastReadChapterTitle,
+
+    hasStartedReading,
     isSelectionMode,
     selectedCount,
     readChaptersCount,
@@ -62,6 +66,7 @@ const MangaInfoScreen = () => {
     onBack: handleBack,
     onScroll: handleScroll,
     onAddToLibrary: handleAddToLibrary,
+    onContinueReading,
   } = useMangaInfoScreenLogic(
     mangaSourceId,
     mangaUrl,
@@ -75,6 +80,7 @@ const MangaInfoScreen = () => {
   const listHeader = useMemo(
     () => (
       <MangaInfoHero
+        hasStartedReading={hasStartedReading}
         mangaCover={mangaCover}
         mangaTitle={mangaTitle}
         mangaAuthor={mangaDetails?.mangaAuthor ?? ""}
@@ -89,6 +95,7 @@ const MangaInfoScreen = () => {
         scrollY={scrollY}
         HERO_HEIGHT={HERO_HEIGHT}
         onBack={handleBack}
+        onContinueReading={onContinueReading}
         onAddToLibrary={handleAddToLibrary}
       />
     ),
@@ -98,6 +105,7 @@ const MangaInfoScreen = () => {
       mangaDetails,
       scrollY,
       readChaptersCount,
+      hasStartedReading,
       handleBack,
     ],
   );
@@ -111,9 +119,13 @@ const MangaInfoScreen = () => {
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
       {!isSelectionMode && (
         <MangaStickyHeader
+          lastReadChapterDate={lastReadChapterDate}
+          lastReadChapterTitle={lastReadChapterTitle}
+          hasStartedReading={hasStartedReading}
           mangaCover={mangaCover}
           mangaTitle={mangaTitle}
           scrollY={scrollY}
+          onContinueReading={onContinueReading}
           onBackPress={handleBack}
         />
       )}

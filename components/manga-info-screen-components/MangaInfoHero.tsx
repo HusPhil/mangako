@@ -28,6 +28,8 @@ interface MangaInfoHeroSectionProps {
   mangaRating: string;
   scrollY: SharedValue<number>;
   HERO_HEIGHT: number;
+  hasStartedReading: boolean;
+  onContinueReading: () => void;
   onBack: () => void;
   onAddToLibrary: () => void;
 }
@@ -46,8 +48,10 @@ const MangaInfoHeroSection = memo(
     totalChapters,
     scrollY,
     HERO_HEIGHT,
+    hasStartedReading,
     onBack,
     onAddToLibrary,
+    onContinueReading,
   }: MangaInfoHeroSectionProps) => {
     const insets = useSafeAreaInsets();
     const animatedCoverStyle = useAnimatedStyle(() => {
@@ -150,7 +154,10 @@ const MangaInfoHeroSection = memo(
               By {mangaAuthor}
             </Text>
 
-            <Pressable className="px-8 gap-2 max-w-xs bg-white py-3 rounded-2xl mt-5 flex-row items-center justify-center active:scale-95">
+            <Pressable
+              className="px-8 gap-2 max-w-xs bg-white py-3 rounded-2xl mt-5 flex-row items-center justify-center active:scale-95"
+              onPress={onContinueReading}
+            >
               {/* The Icon: 'book-open-page-variant' gives a premium reader feel */}
               <MaterialCommunityIcons
                 name="book-open-page-variant-outline"
@@ -160,7 +167,7 @@ const MangaInfoHeroSection = memo(
               />
 
               <Text className="text-black text-center font-bold uppercase text-base tracking-tighter">
-                CONTINUE NOW
+                {hasStartedReading ? "Continue Now" : "Start Reading"}
               </Text>
             </Pressable>
 

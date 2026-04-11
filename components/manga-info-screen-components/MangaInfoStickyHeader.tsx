@@ -14,6 +14,10 @@ interface MangaStickyHeaderProps {
   mangaTitle: string;
   mangaCover: string;
   scrollY: SharedValue<number>;
+  hasStartedReading: boolean;
+  lastReadChapterTitle?: string;
+  lastReadChapterDate?: number;
+  onContinueReading: () => void; // Added continue reading handler
   onBackPress?: () => void; // Added back press handler
 }
 
@@ -21,6 +25,10 @@ const MangaStickyHeader = ({
   mangaCover,
   mangaTitle,
   scrollY,
+  lastReadChapterDate,
+  lastReadChapterTitle,
+  hasStartedReading,
+  onContinueReading,
   onBackPress,
 }: MangaStickyHeaderProps) => {
   const insets = useSafeAreaInsets();
@@ -81,13 +89,14 @@ const MangaStickyHeader = ({
           {mangaTitle}
         </Text>
         <Text className="text-[10px] text-gray-400 uppercase tracking-wider">
-          Chapter 124 • Today
+          {lastReadChapterTitle || "Start reading"}{" "}
         </Text>
       </View>
 
       <Pressable
         className="bg-white flex-row items-center px-4 py-2 gap-2 rounded-md active:scale-95"
         style={{ shadowColor: "#fff", shadowOpacity: 0.1, shadowRadius: 10 }}
+        onPress={onContinueReading}
       >
         <MaterialCommunityIcons
           className="mb-0.5"
@@ -95,7 +104,9 @@ const MangaStickyHeader = ({
           size={18}
           color="black"
         />
-        <Text className="text-black text-sm font-bold uppercase ">Read</Text>
+        <Text className="text-black text-sm font-bold uppercase ">
+          {hasStartedReading ? "Read" : "Start"}
+        </Text>
       </Pressable>
     </Animated.View>
   );
