@@ -9,6 +9,8 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface VerticalReaderProps {
   pages: MangaChapterPage[];
+  onEndReached: () => void;
+  initialIndex: number;
   onViewableItemsChanged: ({ viewableItems }: { viewableItems: any[] }) => void;
   registerVisibilitySetter: (
     index: number,
@@ -19,6 +21,8 @@ interface VerticalReaderProps {
 
 const VerticalReader = ({
   pages,
+  initialIndex,
+  onEndReached,
   onViewableItemsChanged,
   registerVisibilitySetter,
   unregisterVisibilitySetter,
@@ -43,7 +47,9 @@ const VerticalReader = ({
     <FlashList
       data={pages}
       renderItem={renderItem}
+      initialScrollIndex={initialIndex}
       keyExtractor={(item) => item.pageId}
+      onEndReached={onEndReached}
       maxItemsInRecyclePool={5}
       drawDistance={SCREEN_HEIGHT * 1.25}
       onViewableItemsChanged={onViewableItemsChanged}

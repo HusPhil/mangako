@@ -33,12 +33,19 @@ function useChapterNavigation(
 
   const onNavigateToNextChapter = useCallback(() => {
     const nextChapter = useReaderSessionStore.getState().nextChapter;
+    console.log("sa home", nextChapter);
+
     if (nextChapter) navigateToChapter(nextChapter);
+    else {
+      console.log("sa home");
+      router.back();
+    }
   }, [navigateToChapter]);
 
   const onNavigateToPrevChapter = useCallback(() => {
     const prevChapter = useReaderSessionStore.getState().prevChapter;
     if (prevChapter) navigateToChapter(prevChapter);
+    else router.back();
   }, [navigateToChapter]);
 
   const onNavigateJumpToChapter = useCallback(
