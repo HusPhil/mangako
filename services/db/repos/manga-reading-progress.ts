@@ -79,10 +79,6 @@ export const getLastReadManga = (db: SQLiteDatabase) => {
   );
 };
 
-/**
- * 4. Get read chapters for a specific manga.
- * Used to show checkmarks or grayed-out text in the chapter list.
- */
 export const getReadChapterIds = (
   db: SQLiteDatabase,
   mangaId: string,
@@ -92,4 +88,14 @@ export const getReadChapterIds = (
     [mangaId],
   );
   return rows.map((r) => r.chapter_id);
+};
+
+export const getReadingProgressByMangaId = (
+  db: SQLiteDatabase,
+  mangaId: string,
+): ReadingProgress | null => {
+  return db.getFirstSync<ReadingProgress>(
+    `SELECT * FROM reading_progress WHERE manga_id = ?`,
+    [mangaId],
+  );
 };

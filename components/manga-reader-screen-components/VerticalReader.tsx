@@ -28,16 +28,7 @@ const VerticalReader = ({
   const currentChapter = useReaderSessionStore((state) => state.currentChapter);
   const renderItem = useCallback(
     ({ item, index }: { item: MangaChapterPage; index: number }) => (
-      <Pressable
-        className="flex-1"
-        onLongPress={() => {
-          console.log(
-            "Page pressed, showing settings overlay:",
-            useReaderSessionStore.getState().currentChapter,
-          );
-          toggleIsSettingsVisible();
-        }}
-      >
+      <Pressable className="flex-1" onLongPress={toggleIsSettingsVisible}>
         <MangaReaderPage
           item={item}
           index={index}

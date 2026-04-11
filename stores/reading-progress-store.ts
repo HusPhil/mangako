@@ -11,6 +11,7 @@ type ReadingProgressStore = {
   setDB: (db: SQLiteDatabase) => void;
   loadLastRead: () => void;
   loadReadChapters: (mangaId: string) => void;
+  getMangaProgress: (mangaId: string) => ReadingProgress | null;
 
   // Actions now take a ChapterMetadata object for cleaner data passing
   markChapters: (
@@ -57,6 +58,13 @@ export const useReadingProgressStore = create<ReadingProgressStore>(
 
       get().loadLastRead();
       get().loadReadChapters(mangaId);
+    },
+
+    getMangaProgress: (mangaId) => {
+      const { db } = get(); // Access the DB instance from the store
+      if (!db) return null;
+
+      return Repo.getReadingProgressByMangaId(db, mangaId);
     },
   }),
 );
