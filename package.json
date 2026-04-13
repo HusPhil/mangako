@@ -35,6 +35,7 @@
     "expo-sqlite": "~16.0.10",
     "expo-status-bar": "~3.0.9",
     "expo-symbols": "~1.0.8",
+    "expo-updates": "~29.0.16",
     "expo-web-browser": "~15.0.10",
     "just-throttle": "^4.2.0",
     "loadash": "^1.0.0",
