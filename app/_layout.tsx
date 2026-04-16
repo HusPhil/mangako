@@ -107,4 +107,17 @@ export const LoadingOverlay = ({
   </View>
 );
 
+export const ErrorOverlay = ({
+  message = "An error occurred.",
+}: {
+  message?: string;
+}) => (
+  <View className="flex-1 justify-center items-center bg-background">
+    <ActivityIndicator size="large" color={"red"} />
+    <Text className="text-red-500 mt-4 font-medium tracking-widest uppercase text-xs">
+      {message}
+    </Text>
+  </View>
+);
+
 export default RootLayout;
