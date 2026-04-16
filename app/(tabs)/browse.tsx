@@ -4,7 +4,8 @@ import { useGetLatestMangaList } from "@/hooks/api/useGetMangaList";
 import { useSourceSelectionStore } from "@/stores/source-selection-store";
 import { mapResponseListToRenderList } from "@/types/ResponseTypes";
 import React from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { ErrorOverlay, LoadingOverlay } from "../_layout";
 
 const Browse = () => {
   const currentSelectedSource = useSourceSelectionStore(
@@ -15,15 +16,15 @@ const Browse = () => {
   );
 
   if (isLoading) {
-    return <Text>Loading...</Text>;
+    return <LoadingOverlay message="Fetching Mangas.." />;
   }
 
   if (isError) {
-    return <Text>Error</Text>;
+    return <ErrorOverlay message="An error occurred while fetching mangas." />;
   }
 
   if (!data) {
-    return <Text>No data</Text>;
+    return <ErrorOverlay message="No data received from the server." />;
   }
 
   return (
