@@ -154,6 +154,7 @@ const Search = () => {
               autoCorrect={false}
               autoCapitalize="none"
               returnKeyType="search"
+              autoFocus
               selectionColor={Colors.primary}
             />
 
@@ -184,7 +185,10 @@ const Search = () => {
               </Text>
             </View>
           ) : (
-            <MangaGrid mangaList={mapResponseListToRenderList(results)} />
+            <MangaGrid
+              mangaList={mapResponseListToRenderList(results)}
+              listEmptyComponent={<></>}
+            />
           )}
         </View>
       </View>
