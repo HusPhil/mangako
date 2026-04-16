@@ -36,7 +36,12 @@ const MangaGrid = <T extends MangaGridItem>({
         renderItem={renderItem}
         keyExtractor={(item) => item.mangaId}
         numColumns={NUM_COLUMNS}
-        contentContainerStyle={{ padding: 10, flex: 1 }}
+        contentContainerStyle={[
+          {
+            padding: 10,
+          },
+          mangaList.length <= 0 && { flex: 1 },
+        ]} // Center the empty component if it exists
         ListEmptyComponent={listEmptyComponent || <EmptyListPlaceholder />}
       />
     </View>
