@@ -102,8 +102,6 @@ const HorizontalReader = ({
   // ─── Render Item ────────────────────────────────────────────────────
   const renderItem = useCallback(
     ({ item, index }: { item: MangaChapterPage; index: number }) => {
-      // Manga pages vary in aspect ratio.
-      // We wrap the image in a SCREEN_WIDTH container to ensure one page per swipe.
       return (
         <View
           className="overflow-hidden"
@@ -138,7 +136,6 @@ const HorizontalReader = ({
 
   return (
     <View style={styles.container}>
-      {/* 3. Use AnimatedFlashList and attach the scrollRef */}
       <FlashList
         ref={flashListRef}
         data={pages}
@@ -149,11 +146,8 @@ const HorizontalReader = ({
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onViewableItemsChanged={onViewableItemsChanged}
-        // onScrollBeginDrag={handleOnScrollBeginDrag}
-        // onMomentumScrollEnd={handleScroll}
         initialScrollIndex={initialIndex}
         onEndReached={onEndReached}
-        // onScrollBeginDrag={(e) => console.log(e.nativeEvent)}
         drawDistance={SCREEN_WIDTH * 2}
         style={{ transform: isReversed ? [{ scaleX: -1 }] : undefined }}
         bounces={false}
