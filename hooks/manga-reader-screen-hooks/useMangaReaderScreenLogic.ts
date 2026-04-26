@@ -411,16 +411,6 @@ export const useMangaReaderScreenLogic = () => {
     return () => cancelAnimationFrame(frameId);
   }, [mangaChapter, params]);
 
-  // Sync fetched pages into active state only while focused
-
-  useEffect(() => {
-    if (fetchedPages && fetchedPages.length > 0 && isFocusedRef.current) {
-      setActivePages(fetchedPages);
-
-      setTotalPages(fetchedPages.length);
-    }
-  }, [fetchedPages]);
-
   // On focus: populate. On blur: purge everything including visibility map.
 
   useFocusEffect(
