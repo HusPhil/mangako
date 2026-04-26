@@ -24,7 +24,7 @@ const ReaderSettingTopBar = ({
       className="absolute top-0 w-full z-50 flex-row items-center justify-between px-3 border-b border-white/15 bg-[#1C1C1E]/90"
       style={
         Platform.OS === "ios"
-          ? { paddingTop: insets.top }
+          ? { paddingTop: insets.top, paddingBottom: 12 }
           : { paddingTop: 12, paddingBottom: 12 }
       }
     >
