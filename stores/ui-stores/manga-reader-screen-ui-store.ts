@@ -68,11 +68,6 @@ interface ReaderSessionState {
 
   resetForNavigation: () => void; // Resets UI state but keeps chapter list (for smooth back-and-forth)
   resetAll: () => void;
-
-  // Gesture handlers — logging for now, will wire up later
-  onTap: (x: number, y: number) => void; // x,y for tap zone detection (left/right/center)
-  onDoubleTap: (x: number, y: number) => void; // x,y for zoom-to-point later
-  onLongPress: () => void; // image save / share sheet
 }
 
 const defaultSessionState = {
@@ -132,9 +127,5 @@ export const useReaderSessionStore = create<ReaderSessionState>()(
       })),
 
     resetAll: () => set(defaultSessionState),
-
-    onTap: (x, y) => console.log("[Reader] tap", { x, y }),
-    onDoubleTap: (x, y) => console.log("[Reader] double tap", { x, y }),
-    onLongPress: () => console.log("[Reader] long press"),
   }),
 );

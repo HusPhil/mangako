@@ -503,6 +503,8 @@ export const useMangaReaderScreenLogic = () => {
 
     isError,
 
+    throttledSave,
+
     openToast,
 
     closeToast,
