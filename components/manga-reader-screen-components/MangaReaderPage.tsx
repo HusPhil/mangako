@@ -1,7 +1,7 @@
 import { Colors } from "@/constants/colors";
 import { MangaChapterPage } from "@/types/ResponseTypes";
-import { Image, ImageProgressEventData } from "expo-image";
-import React, { memo, useCallback, useEffect, useRef, useState } from "react";
+import { Image } from "expo-image";
+import React, { memo, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Dimensions, View } from "react-native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -30,8 +30,6 @@ const MangaReaderPage = memo(
       : SCREEN_WIDTH * 1.5;
 
     const [isVisible, setIsVisible] = useState(true);
-    const [isImageLoading, setIsImageLoading] = useState(true);
-    const [loadProgress, setLoadProgress] = useState(0);
     const visibilityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
       null,
     );
@@ -58,42 +56,25 @@ const MangaReaderPage = memo(
       };
     }, [index, registerVisibilitySetter, unregisterVisibilitySetter]);
 
-    const onLoadStart = useCallback(() => {
-      setIsImageLoading(true);
-      setLoadProgress(0);
-    }, []);
-
-    const onProgress = useCallback((e: ImageProgressEventData) => {
-      const { loaded, total } = e;
-      if (total > 0) setLoadProgress(loaded / total);
-    }, []);
-
-    const onLoadEnd = useCallback(() => {
-      setLoadProgress(1);
-      setIsImageLoading(false);
-    }, []);
-
     const containerStyle = {
       width: SCREEN_WIDTH,
       height: displayHeight,
       backgroundColor: "#1a1a1a",
     };
 
-    const showSpinner = isImageLoading && isVisible;
+    const showSpinner = !isVisible;
 
     return (
       <View style={containerStyle}>
         <Image
           recyclingKey={item.pageId}
           source={isVisible ? { uri: item.pageImageUrl } : null}
-          style={containerStyle}
           contentFit="contain"
+          style={{ width: SCREEN_WIDTH, height: displayHeight }}
           cachePolicy="disk"
           transition={0}
           priority={isVisible ? "normal" : "low"}
-          onLoadStart={onLoadStart}
-          onLoadEnd={onLoadEnd}
-          onProgress={(e) => onProgress(e)}
+          decodeFormat="rgb"
         />
 
         {showSpinner && (
@@ -110,27 +91,6 @@ const MangaReaderPage = memo(
             }}
           >
             <ActivityIndicator size="small" color={Colors.primary} />
-
-            {loadProgress > 0 && loadProgress < 1 && (
-              <View
-                style={{
-                  width: 80,
-                  height: 2,
-                  backgroundColor: "rgba(255,255,255,0.15)",
-                  borderRadius: 1,
-                  overflow: "hidden",
-                }}
-              >
-                <View
-                  style={{
-                    width: `${Math.round(loadProgress * 100)}%`,
-                    height: "100%",
-                    backgroundColor: "rgba(255,255,255,0.8)",
-                    borderRadius: 1,
-                  }}
-                />
-              </View>
-            )}
           </View>
         )}
       </View>
