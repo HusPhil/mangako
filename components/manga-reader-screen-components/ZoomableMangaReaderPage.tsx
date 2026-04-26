@@ -1,5 +1,4 @@
 import { MangaChapterPage } from "@/types/ResponseTypes";
-import { FlashListRef } from "@shopify/flash-list";
 import React from "react";
 import { Dimensions, StyleSheet } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -14,10 +13,6 @@ import Animated, {
 
 interface ZoomableMangaReaderPageProps {
   item: MangaChapterPage;
-  index: number;
-  listRef: React.RefObject<FlashListRef<MangaChapterPage>>;
-  isReversed: boolean;
-  totalPages: number;
   scale: SharedValue<number>;
   translateX: SharedValue<number>;
   translateY: SharedValue<number>;
@@ -28,26 +23,24 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MIN_SCALE = 1;
 const MAX_SCALE = 4;
 
-const SNAPPY_SPRING = {
-  stiffness: 200,
-  damping: 25,
-  mass: 0.5,
-};
-
 const ZoomableMangaReaderPage = ({
   item,
   scale,
   translateX,
   translateY,
 }: ZoomableMangaReaderPageProps) => {
-  const savedScale = useSharedValue(1);
-  const savedTranslateX = useSharedValue(0);
-  const savedTranslateY = useSharedValue(0);
-  const isZooming = useSharedValue(false);
+  // Local values to track the "start" of a gesture to calculate offsets
+  const startScale = useSharedValue(1);
+  const startTranslateX = useSharedValue(0);
+  const startTranslateY = useSharedValue(0);
 
-  // Focus point for zooming
-  const focalX = useSharedValue(0);
-  const focalY = useSharedValue(0);
+  // Helper to reset everything back to center
+  const resetZoom = () => {
+    "worklet";
+    scale.value = withSpring(1);
+    translateX.value = withSpring(0);
+    translateY.value = withSpring(0);
+  };
 
   const stopAnimations = () => {
     "worklet";
@@ -56,78 +49,68 @@ const ZoomableMangaReaderPage = ({
     cancelAnimation(translateY);
   };
 
+  // --- PINCH GESTURE ---
   const pinchGesture = Gesture.Pinch()
-    .onStart((e) => {
-      if (isZooming.value) return;
+    .onStart(() => {
       stopAnimations();
-      savedScale.value = scale.value;
-      savedTranslateX.value = translateX.value;
-      savedTranslateY.value = translateY.value;
-
-      // Track focal point
-      focalX.value = e.focalX;
-      focalY.value = e.focalY;
+      startScale.value = scale.value;
+      startTranslateX.value = translateX.value;
+      startTranslateY.value = translateY.value;
     })
     .onUpdate((e) => {
-      if (isZooming.value) return;
+      // Calculate new scale
+      const newScale = startScale.value * e.scale;
 
-      const nextScale = savedScale.value * e.scale;
-      // Allow slight bounce-back feel by letting it go slightly below 1 during gesture
-      scale.value = Math.min(MAX_SCALE * 1.5, Math.max(0.7, nextScale));
+      // Allow slight bounce-back past boundaries during gesture
+      if (newScale >= MIN_SCALE * 0.8 && newScale <= MAX_SCALE * 1.2) {
+        scale.value = newScale;
 
-      // Adjust translation to zoom into focal point
-      // (Simplified logic: offset = (1 - scale/prevScale) * (focal - center))
-      translateX.value =
-        savedTranslateX.value +
-        (1 - e.scale) * (focalX.value - SCREEN_WIDTH / 2);
-      translateY.value =
-        savedTranslateY.value +
-        (1 - e.scale) * (focalY.value - SCREEN_HEIGHT / 2);
+        // Focal point logic: adjust translation so zoom happens at finger center
+        // focalX/Y is the point between fingers relative to the component center
+        const focalX = e.focalX - SCREEN_WIDTH / 2;
+        const focalY = e.focalY - SCREEN_HEIGHT / 2;
+
+        translateX.value =
+          startTranslateX.value +
+          (1 - e.scale) * (focalX - startTranslateX.value);
+        translateY.value =
+          startTranslateY.value +
+          (1 - e.scale) * (focalY - startTranslateY.value);
+      }
     })
     .onEnd(() => {
-      if (scale.value < MIN_SCALE) {
-        isZooming.value = true;
-        scale.value = withSpring(MIN_SCALE, SNAPPY_SPRING, (fin) => {
-          if (fin) isZooming.value = false;
-        });
-        translateX.value = withSpring(0, SNAPPY_SPRING);
-        translateY.value = withSpring(0, SNAPPY_SPRING);
+      if (scale.value < 1) {
+        resetZoom();
       } else if (scale.value > MAX_SCALE) {
-        scale.value = withSpring(MAX_SCALE, SNAPPY_SPRING);
+        scale.value = withSpring(MAX_SCALE);
       }
     });
 
+  // --- PAN GESTURE ---
   const panGesture = Gesture.Pan()
     .maxPointers(1)
     .manualActivation(true)
     .onTouchesMove((_e, m) => {
-      if (scale.value > 1 && !isZooming.value) m.activate();
+      if (scale.value > 1) m.activate();
       else m.fail();
     })
     .onStart(() => {
-      if (isZooming.value || scale.value <= 1.01) return;
       stopAnimations();
-      savedTranslateX.value = translateX.value;
-      savedTranslateY.value = translateY.value;
+      startTranslateX.value = translateX.value;
+      startTranslateY.value = translateY.value;
     })
     .onUpdate((e) => {
-      if (isZooming.value || scale.value <= 1.01) return;
+      if (scale.value > 1) {
+        const maxTX = (SCREEN_WIDTH * (scale.value - 1)) / 2;
+        const maxTY = (SCREEN_HEIGHT * (scale.value - 1)) / 2;
 
-      const maxTX = (SCREEN_WIDTH * (scale.value - 1)) / 2;
-      const maxTY = (SCREEN_HEIGHT * (scale.value - 1)) / 2;
-
-      translateX.value = savedTranslateX.value + e.translationX;
-      translateY.value = savedTranslateY.value + e.translationY;
-
-      // Add resistance at edges instead of hard stop (optional)
-      // For now, keep it simple and clamp in onEnd for smooth feel
-      translateY.value = Math.min(
-        maxTY,
-        Math.max(-maxTY, savedTranslateY.value + e.translationY),
-      );
+        // Apply pan with boundaries
+        translateX.value = startTranslateX.value + e.translationX;
+        translateY.value = startTranslateY.value + e.translationY;
+      }
     })
     .onEnd((e) => {
-      if (scale.value > 1.1 && !isZooming.value) {
+      if (scale.value > 1) {
         const maxX = (SCREEN_WIDTH * (scale.value - 1)) / 2;
         const maxY = (SCREEN_HEIGHT * (scale.value - 1)) / 2;
 
@@ -161,31 +144,25 @@ const ZoomableMangaReaderPage = ({
       }
     });
 
+  // --- DOUBLE TAP ---
   const doubleTapGesture = Gesture.Tap()
     .numberOfTaps(2)
     .onEnd((e) => {
-      if (isZooming.value) return;
-
-      if (scale.value > 1.1) {
-        isZooming.value = true;
-        scale.value = withSpring(1, SNAPPY_SPRING, (fin) => {
-          if (fin) isZooming.value = false;
-        });
-        translateX.value = withSpring(0, SNAPPY_SPRING);
-        translateY.value = withSpring(0, SNAPPY_SPRING);
+      if (scale.value > 1) {
+        resetZoom();
       } else {
-        scale.value = withSpring(2.5, SNAPPY_SPRING);
-        // Zoom toward the tap location
+        scale.value = withSpring(2.5);
+        // Zoom toward tap position
         const targetX = (SCREEN_WIDTH / 2 - e.x) * 1.5;
         const targetY = (SCREEN_HEIGHT / 2 - e.y) * 1.5;
-        translateX.value = withSpring(targetX, SNAPPY_SPRING);
-        translateY.value = withSpring(targetY, SNAPPY_SPRING);
+        translateX.value = withSpring(targetX);
+        translateY.value = withSpring(targetY);
       }
     });
 
-  const composed = Gesture.Simultaneous(
+  const composed = Gesture.Race(
     pinchGesture,
-    Gesture.Race(doubleTapGesture, panGesture),
+    Gesture.Race(panGesture, doubleTapGesture),
   );
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -198,7 +175,7 @@ const ZoomableMangaReaderPage = ({
 
   return (
     <GestureDetector gesture={composed}>
-      <Animated.View style={[styles.page, animatedStyle]}>
+      <Animated.View style={[styles.container, animatedStyle]}>
         <Animated.Image
           source={{ uri: item.pageImageUrl }}
           style={styles.image}
@@ -210,13 +187,14 @@ const ZoomableMangaReaderPage = ({
 };
 
 const styles = StyleSheet.create({
-  page: {
+  container: {
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT,
-    overflow: "hidden", // Ensures image doesn't bleed during large scales
   },
   image: {
     flex: 1,
+    width: "100%",
+    height: "100%",
   },
 });
 
