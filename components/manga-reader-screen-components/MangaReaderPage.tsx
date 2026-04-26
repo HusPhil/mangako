@@ -2,11 +2,9 @@ import { Colors } from "@/constants/colors";
 import { MangaChapterPage } from "@/types/ResponseTypes";
 import { Image, ImageProgressEventData } from "expo-image";
 import React, { memo, useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Dimensions, Platform, View } from "react-native";
+import { ActivityIndicator, Dimensions, View } from "react-native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
-const thumbhashCache = new Map<string, string>();
 
 const MangaReaderPage = memo(
   ({
@@ -34,10 +32,6 @@ const MangaReaderPage = memo(
     const [isVisible, setIsVisible] = useState(true);
     const [isImageLoading, setIsImageLoading] = useState(true);
     const [loadProgress, setLoadProgress] = useState(0);
-    const [thumbhash, setThumbhash] = useState<string | null>(
-      thumbhashCache.get(item.pageImageUrl) ?? null,
-    );
-    const thumbhashGeneratedRef = useRef(thumbhashCache.has(item.pageImageUrl));
     const visibilityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
       null,
     );
@@ -74,49 +68,27 @@ const MangaReaderPage = memo(
       if (total > 0) setLoadProgress(loaded / total);
     }, []);
 
-    const onLoadEnd = useCallback(async () => {
+    const onLoadEnd = useCallback(() => {
       setLoadProgress(1);
       setIsImageLoading(false);
+    }, []);
 
-      if (thumbhashGeneratedRef.current || !item.pageImageUrl) return;
-      thumbhashGeneratedRef.current = true;
-      try {
-        const hash = await Image.generateThumbhashAsync(item.pageImageUrl);
-        thumbhashCache.set(item.pageImageUrl, hash);
-        setThumbhash(hash);
-      } catch {
-        // Non-critical
-        console.warn("Failed to generate thumbhash for", item.pageImageUrl);
-      }
-    }, [item.pageImageUrl]);
+    const containerStyle = {
+      width: SCREEN_WIDTH,
+      height: displayHeight,
+      backgroundColor: "#1a1a1a",
+    };
 
-    const containerStyle = { width: SCREEN_WIDTH, height: displayHeight };
-    const showThumbhash = thumbhash && (!isVisible || isImageLoading);
-    const showSpinner = isImageLoading && isVisible && !thumbhash;
+    const showSpinner = isImageLoading && isVisible;
 
     return (
       <View style={containerStyle}>
-        {showThumbhash && (
-          <Image
-            source={{
-              thumbhash,
-              width: intrinsicWidth > 0 ? intrinsicWidth : SCREEN_WIDTH,
-              height: intrinsicHeight > 0 ? intrinsicHeight : displayHeight,
-            }}
-            contentFit="cover"
-            cachePolicy="none"
-            style={[containerStyle, { position: "absolute" }]}
-          />
-        )}
-
         <Image
           recyclingKey={item.pageId}
           source={isVisible ? { uri: item.pageImageUrl } : null}
-          enforceEarlyResizing={true}
           style={containerStyle}
-          contentFit="cover"
+          contentFit="contain"
           cachePolicy="disk"
-          decodeFormat={Platform.OS === "android" ? "rgb" : undefined}
           transition={0}
           priority={isVisible ? "normal" : "low"}
           onLoadStart={onLoadStart}
