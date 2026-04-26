@@ -16,15 +16,30 @@ const Browse = () => {
   );
 
   if (isLoading) {
-    return <LoadingOverlay message="Fetching Mangas.." />;
+    return (
+      <View className="flex-1 bg-secondary">
+        <BrowseScreenHeader currentSelectedSource={currentSelectedSource} />
+        <LoadingOverlay message="Fetching Mangas.." />
+      </View>
+    );
   }
 
   if (isError) {
-    return <ErrorOverlay message="An error occurred while fetching mangas." />;
+    return (
+      <View className="flex-1 bg-secondary">
+        <BrowseScreenHeader currentSelectedSource={currentSelectedSource} />
+        <ErrorOverlay message="An error occurred, Try again." />
+      </View>
+    );
   }
 
   if (!data) {
-    return <ErrorOverlay message="No data received from the server." />;
+    return (
+      <View className="flex-1 bg-secondary">
+        <BrowseScreenHeader currentSelectedSource={currentSelectedSource} />
+        <ErrorOverlay message="No data received, Try again." />
+      </View>
+    );
   }
 
   return (
