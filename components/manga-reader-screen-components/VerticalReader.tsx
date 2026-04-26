@@ -1,8 +1,10 @@
 import { useReaderSessionStore } from "@/stores/ui-stores/manga-reader-screen-ui-store";
 import { MangaChapterPage } from "@/types/ResponseTypes";
 import { FlashList } from "@shopify/flash-list";
-import React, { memo, useCallback } from "react";
-import { Dimensions, Pressable } from "react-native";
+import React, { memo, useCallback, useMemo } from "react";
+import { Dimensions, ScrollView } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { scheduleOnRN } from "react-native-worklets";
 import MangaReaderPage from "./MangaReaderPage";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -29,32 +31,46 @@ const VerticalReader = ({
 }: VerticalReaderProps) => {
   const toggleIsSettingsVisible =
     useReaderSessionStore.getState().toggleIsSettingsVisible;
-  const currentChapter = useReaderSessionStore((state) => state.currentChapter);
+
+  const gesture = useMemo(
+    () =>
+      Gesture.LongPress().onStart(() => {
+        scheduleOnRN(toggleIsSettingsVisible);
+      }),
+    [toggleIsSettingsVisible],
+  );
+
   const renderItem = useCallback(
     ({ item, index }: { item: MangaChapterPage; index: number }) => (
-      <Pressable className="flex-1" onLongPress={toggleIsSettingsVisible}>
-        <MangaReaderPage
-          item={item}
-          index={index}
-          registerVisibilitySetter={registerVisibilitySetter}
-          unregisterVisibilitySetter={unregisterVisibilitySetter}
-        />
-      </Pressable>
+      <MangaReaderPage
+        item={item}
+        index={index}
+        registerVisibilitySetter={registerVisibilitySetter}
+        unregisterVisibilitySetter={unregisterVisibilitySetter}
+      />
     ),
-    [currentChapter, registerVisibilitySetter, unregisterVisibilitySetter],
+    [registerVisibilitySetter, unregisterVisibilitySetter],
   );
+
+  const renderScrollComponent = useCallback(
+    (props: any) => <ScrollView {...props} bounces={false} />,
+    [gesture],
+  );
+
   return (
-    <FlashList
-      data={pages}
-      renderItem={renderItem}
-      initialScrollIndex={initialIndex}
-      keyExtractor={(item) => item.pageId}
-      onEndReached={onEndReached}
-      maxItemsInRecyclePool={5}
-      drawDistance={SCREEN_HEIGHT * 1.25}
-      onViewableItemsChanged={onViewableItemsChanged}
-      viewabilityConfig={{ itemVisiblePercentThreshold: 1 }}
-    />
+    <GestureDetector gesture={gesture}>
+      <FlashList
+        data={pages}
+        renderItem={renderItem}
+        initialScrollIndex={initialIndex}
+        keyExtractor={(item) => item.pageId}
+        renderScrollComponent={renderScrollComponent}
+        onEndReached={onEndReached}
+        maxItemsInRecyclePool={5}
+        drawDistance={SCREEN_HEIGHT * 1.25}
+        onViewableItemsChanged={onViewableItemsChanged}
+      />
+    </GestureDetector>
   );
 };
 
