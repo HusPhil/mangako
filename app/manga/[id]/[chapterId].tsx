@@ -6,8 +6,7 @@ import VerticalReader from "@/components/manga-reader-screen-components/Vertical
 import { Colors } from "@/constants/colors";
 import { useMangaReaderScreenLogic } from "@/hooks/manga-reader-screen-hooks/useMangaReaderScreenLogic";
 import { useReaderSessionStore } from "@/stores/ui-stores/manga-reader-screen-ui-store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { useEffect } from "react";
+import React from "react";
 import { ActivityIndicator, StatusBar, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -48,26 +47,26 @@ const MangaReaderScreen = () => {
     unregisterVisibilitySetter,
   } = useMangaReaderScreenLogic();
 
-  useEffect(() => {
-    // AsyncStorage.clear();
-    const debugAsyncStorage = async () => {
-      try {
-        const keys = await AsyncStorage.getAllKeys();
-        const result = await AsyncStorage.multiGet(keys);
+  // useEffect(() => {
+  //   // AsyncStorage.clear();
+  //   const debugAsyncStorage = async () => {
+  //     try {
+  //       const keys = await AsyncStorage.getAllKeys();
+  //       const result = await AsyncStorage.multiGet(keys);
 
-        console.log("--- 📦 Current AsyncStorage Content ---");
-        result.forEach(([key, value]) => {
-          console.log(`${key}:`, JSON.parse(value || "{}"));
-        });
-        console.log("---------------------------------------");
-      } catch (error) {
-        console.error("Error loading AsyncStorage", error);
-      }
-    };
+  //       console.log("--- 📦 Current AsyncStorage Content ---");
+  //       result.forEach(([key, value]) => {
+  //         console.log(`${key}:`, JSON.parse(value || "{}"));
+  //       });
+  //       console.log("---------------------------------------");
+  //     } catch (error) {
+  //       console.error("Error loading AsyncStorage", error);
+  //     }
+  //   };
 
-    // Call this inside a button press or useEffect
-    // debugAsyncStorage();
-  }, [listOfChapters]);
+  //   // Call this inside a button press or useEffect
+  //   // debugAsyncStorage();
+  // }, [listOfChapters]);
 
   if (isLoading) {
     return (
