@@ -54,12 +54,6 @@ export const saveReadingProgress = (
        VALUES (?, ?, ?, ?, ?, ?)`,
       [mangaId, chapter.id, chapter.title, chapter.url, page, Date.now()],
     );
-
-    // Also ensure this chapter is marked as read in the junction table
-    db.runSync(
-      `INSERT OR IGNORE INTO chapter_read (manga_id, chapter_id, chapter_title, chapter_url) VALUES (?, ?, ?, ?)`,
-      [mangaId, chapter.id, chapter.title, chapter.url],
-    );
   });
 };
 
