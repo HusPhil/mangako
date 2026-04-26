@@ -21,6 +21,7 @@ function useChapterNavigation(
         chapterTitle: chapter.chapterTitle,
         chapterUrl: chapter.chapterUrl,
         chapterTimeUploaded: chapter.chapterTimeUploaded,
+        chapterInitialPage: "0",
       };
 
       router.replace({
@@ -33,11 +34,9 @@ function useChapterNavigation(
 
   const onNavigateToNextChapter = useCallback(() => {
     const nextChapter = useReaderSessionStore.getState().nextChapter;
-    console.log("sa home", nextChapter);
 
     if (nextChapter) navigateToChapter(nextChapter);
     else {
-      console.log("sa home");
       router.back();
     }
   }, [navigateToChapter]);

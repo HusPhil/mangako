@@ -33,6 +33,8 @@ const MangaReaderScreen = () => {
     isLoading,
     isError,
 
+    throttledSave,
+
     openToast,
     closeToast,
 
@@ -64,7 +66,7 @@ const MangaReaderScreen = () => {
     };
 
     // Call this inside a button press or useEffect
-    debugAsyncStorage();
+    // debugAsyncStorage();
   }, [listOfChapters]);
 
   if (isLoading) {
@@ -104,6 +106,7 @@ const MangaReaderScreen = () => {
             pages={pages}
             initialIndex={chapterInitialIndex}
             onEndReached={onEndReached}
+            throttledSave={throttledSave}
             isReversed={readingMode === "horizontal-rtl"}
           />
         )

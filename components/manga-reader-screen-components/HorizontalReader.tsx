@@ -15,6 +15,7 @@ import ZoomableMangaReaderPage, {
 interface HorizontalReaderProps {
   pages: MangaChapterPage[];
   initialIndex: number;
+  throttledSave: (pageNumber: number) => void;
   onEndReached: () => void;
   isReversed: boolean;
 }
@@ -25,6 +26,7 @@ const HorizontalReader = ({
   pages,
   initialIndex,
   isReversed,
+  throttledSave,
   onEndReached,
 }: HorizontalReaderProps) => {
   // ─── Store Actions & State ──────────────────────────────────────────
@@ -70,8 +72,13 @@ const HorizontalReader = ({
       viewableItems: ViewToken<MangaChapterPage>[];
       changed: ViewToken<MangaChapterPage>[];
     }) => {
-      if (viewableItems.length > 0 && viewableItems[0].index != null) {
-        setCurrentPageIndex(viewableItems[0].index);
+      if (viewableItems.length > 0) {
+        const lastIndex = viewableItems[viewableItems.length - 1].index;
+
+        if (lastIndex !== null) {
+          setCurrentPageIndex(lastIndex);
+          throttledSave(lastIndex);
+        }
       }
     },
     [pagesRef],
@@ -146,7 +153,7 @@ const HorizontalReader = ({
         // onMomentumScrollEnd={handleScroll}
         initialScrollIndex={initialIndex}
         onEndReached={onEndReached}
-        onScrollBeginDrag={(e) => console.log(e.nativeEvent)}
+        // onScrollBeginDrag={(e) => console.log(e.nativeEvent)}
         drawDistance={SCREEN_WIDTH * 2}
         style={{ transform: isReversed ? [{ scaleX: -1 }] : undefined }}
         bounces={false}

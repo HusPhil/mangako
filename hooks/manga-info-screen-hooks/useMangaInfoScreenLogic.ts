@@ -53,6 +53,7 @@ export const useMangaInfoScreenLogic = (
     mangaId,
     mangaSourceId,
     mangaInfo?.data?.mangaChapters,
+    lastReadData?.last_read_chapter_id,
     lastReadData?.last_read_page,
   );
 
@@ -77,8 +78,6 @@ export const useMangaInfoScreenLogic = (
 
       chapterInitialPage: lastReadData?.last_read_page?.toString() || "",
     };
-
-    console.log(readerScreenParams.chapterInitialPage);
 
     router.push({
       pathname: `/manga/[id]/[chapterId]`,
@@ -110,7 +109,6 @@ export const useMangaInfoScreenLogic = (
     frameId = requestAnimationFrame(() => {
       frameId = requestAnimationFrame(() => {
         setIsReady(true);
-        console.log(lastReadData);
       });
     });
 

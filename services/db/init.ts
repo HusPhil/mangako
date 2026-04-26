@@ -19,10 +19,10 @@ const checkDbSize = async (dbName: string) => {
       const sizeInBytes = fileInfo.size;
       const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
 
-      console.log(`Database Size: ${sizeInBytes} bytes (~${sizeInMB} MB)`);
+      // console.log(`Database Size: ${sizeInBytes} bytes (~${sizeInMB} MB)`);
       return sizeInBytes;
     } else {
-      console.log("Database file does not exist at path:", dbPath);
+      // console.log("Database file does not exist at path:", dbPath);
     }
   } catch (error) {
     console.error("Error checking DB size:", error);
