@@ -10,12 +10,16 @@ import Animated, {
   withDecay,
   withSpring,
 } from "react-native-reanimated";
+import { scheduleOnRN } from "react-native-worklets";
 
 interface ZoomableMangaReaderPageProps {
   item: MangaChapterPage;
   scale: SharedValue<number>;
   translateX: SharedValue<number>;
   translateY: SharedValue<number>;
+  scrollToNextPage?: () => void;
+  scrollToPreviousPage?: () => void;
+  onLongPress?: () => void; // Added prop
 }
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -28,13 +32,18 @@ const ZoomableMangaReaderPage = ({
   scale,
   translateX,
   translateY,
+  scrollToNextPage,
+  scrollToPreviousPage,
+  onLongPress,
 }: ZoomableMangaReaderPageProps) => {
-  // Local values to track the "start" of a gesture to calculate offsets
+  const displayedImageWidth = useSharedValue(SCREEN_WIDTH);
+  const displayedImageHeight = useSharedValue(SCREEN_HEIGHT);
+
+  const gestureTranslateX = useSharedValue(0);
   const startScale = useSharedValue(1);
   const startTranslateX = useSharedValue(0);
   const startTranslateY = useSharedValue(0);
 
-  // Helper to reset everything back to center
   const resetZoom = () => {
     "worklet";
     scale.value = withSpring(1);
@@ -49,7 +58,6 @@ const ZoomableMangaReaderPage = ({
     cancelAnimation(translateY);
   };
 
-  // --- PINCH GESTURE ---
   const pinchGesture = Gesture.Pinch()
     .onStart(() => {
       stopAnimations();
@@ -58,15 +66,9 @@ const ZoomableMangaReaderPage = ({
       startTranslateY.value = translateY.value;
     })
     .onUpdate((e) => {
-      // Calculate new scale
       const newScale = startScale.value * e.scale;
-
-      // Allow slight bounce-back past boundaries during gesture
       if (newScale >= MIN_SCALE * 0.8 && newScale <= MAX_SCALE * 1.2) {
         scale.value = newScale;
-
-        // Focal point logic: adjust translation so zoom happens at finger center
-        // focalX/Y is the point between fingers relative to the component center
         const focalX = e.focalX - SCREEN_WIDTH / 2;
         const focalY = e.focalY - SCREEN_HEIGHT / 2;
 
@@ -86,7 +88,6 @@ const ZoomableMangaReaderPage = ({
       }
     });
 
-  // --- PAN GESTURE ---
   const panGesture = Gesture.Pan()
     .maxPointers(1)
     .manualActivation(true)
@@ -98,25 +99,49 @@ const ZoomableMangaReaderPage = ({
       stopAnimations();
       startTranslateX.value = translateX.value;
       startTranslateY.value = translateY.value;
+      gestureTranslateX.value = 0;
     })
     .onUpdate((e) => {
       if (scale.value > 1) {
-        const maxTX = (SCREEN_WIDTH * (scale.value - 1)) / 2;
-        const maxTY = (SCREEN_HEIGHT * (scale.value - 1)) / 2;
-
-        // Apply pan with boundaries
+        const maxY = Math.max(
+          0,
+          (displayedImageHeight.value * scale.value - SCREEN_HEIGHT) / 2,
+        );
+        gestureTranslateX.value = e.translationX;
         translateX.value = startTranslateX.value + e.translationX;
-        translateY.value = startTranslateY.value + e.translationY;
+        translateY.value = withDecay({
+          velocity: e.velocityY,
+          clamp: [-maxY, maxY],
+        });
       }
     })
     .onEnd((e) => {
       if (scale.value > 1) {
-        const maxX = (SCREEN_WIDTH * (scale.value - 1)) / 2;
-        const maxY = (SCREEN_HEIGHT * (scale.value - 1)) / 2;
+        const maxX = Math.max(
+          0,
+          (displayedImageWidth.value * scale.value - SCREEN_WIDTH) / 2,
+        );
+        const maxY = Math.max(
+          0,
+          (displayedImageHeight.value * scale.value - SCREEN_HEIGHT) / 2,
+        );
 
-        // --- Handle X Axis ---
-        // If we are outside the boundaries, spring back.
-        // Otherwise, use decay for momentum.
+        const overscrollX = startTranslateX.value + gestureTranslateX.value;
+        const OVERSCROLL_THRESHOLD = 75;
+        const VELOCITY_THRESHOLD = 600;
+
+        if (
+          overscrollX > maxX + OVERSCROLL_THRESHOLD &&
+          e.velocityX > VELOCITY_THRESHOLD
+        ) {
+          if (scrollToPreviousPage) scheduleOnRN(scrollToPreviousPage);
+        } else if (
+          overscrollX < -maxX - OVERSCROLL_THRESHOLD &&
+          e.velocityX < -VELOCITY_THRESHOLD
+        ) {
+          if (scrollToNextPage) scheduleOnRN(scrollToNextPage);
+        }
+
         if (translateX.value > maxX || translateX.value < -maxX) {
           translateX.value = withSpring(
             Math.min(maxX, Math.max(-maxX, translateX.value)),
@@ -129,41 +154,52 @@ const ZoomableMangaReaderPage = ({
           });
         }
 
-        // --- Handle Y Axis ---
-        if (translateY.value > maxY || translateY.value < -maxY) {
-          translateY.value = withSpring(
-            Math.min(maxY, Math.max(-maxY, translateY.value)),
-            { velocity: e.velocityY },
-          );
-        } else {
-          translateY.value = withDecay({
-            velocity: e.velocityY,
-            clamp: [-maxY, maxY],
-          });
-        }
+        translateY.value = withDecay({
+          velocity: e.velocityY,
+          clamp: [-maxY, maxY],
+        });
       }
     });
 
-  // --- DOUBLE TAP ---
   const doubleTapGesture = Gesture.Tap()
     .numberOfTaps(2)
     .onEnd((e) => {
       if (scale.value > 1) {
         resetZoom();
       } else {
-        scale.value = withSpring(2.5);
-        // Zoom toward tap position
-        const targetX = (SCREEN_WIDTH / 2 - e.x) * 1.5;
-        const targetY = (SCREEN_HEIGHT / 2 - e.y) * 1.5;
+        const nextScale = 2.0;
+        scale.value = withSpring(nextScale);
+        const maxX = Math.max(
+          0,
+          (displayedImageWidth.value * nextScale - SCREEN_WIDTH) / 2,
+        );
+        const maxY = Math.max(
+          0,
+          (displayedImageHeight.value * nextScale - SCREEN_HEIGHT) / 2,
+        );
+        let targetX = (SCREEN_WIDTH / 2 - e.x) * (nextScale - 1);
+        let targetY = (SCREEN_HEIGHT / 2 - e.y) * (nextScale - 1);
+        targetX = Math.min(maxX, Math.max(-maxX, targetX));
+        targetY = Math.min(maxY, Math.max(-maxY, targetY));
         translateX.value = withSpring(targetX);
         translateY.value = withSpring(targetY);
       }
     });
 
-  const composed = Gesture.Race(
-    pinchGesture,
-    Gesture.Race(panGesture, doubleTapGesture),
-  );
+  const longPressGesture = Gesture.LongPress().onStart(() => {
+    // Triggers exactly after 500ms of holding down
+    if (onLongPress) {
+      scheduleOnRN(onLongPress);
+    }
+  });
+
+  // --- COMPOSITION ---
+  // Exclusive ensures that if a LongPress starts, it doesn't
+  // accidentally trigger a single tap (if you add one later)
+  // or conflict with the DoubleTap logic.
+  const tapSystem = Gesture.Exclusive(doubleTapGesture, longPressGesture);
+
+  const composed = Gesture.Race(pinchGesture, panGesture, tapSystem);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -180,6 +216,12 @@ const ZoomableMangaReaderPage = ({
           source={{ uri: item.pageImageUrl }}
           style={styles.image}
           resizeMode="contain"
+          onLoad={(e) => {
+            const { width: w, height: h } = e.nativeEvent.source;
+            const ratio = Math.min(SCREEN_WIDTH / w, SCREEN_HEIGHT / h);
+            displayedImageWidth.value = w * ratio;
+            displayedImageHeight.value = h * ratio;
+          }}
         />
       </Animated.View>
     </GestureDetector>
