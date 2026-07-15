@@ -1,50 +1,107 @@
-# Welcome to your Expo app 👋
+# MangaKo v3
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A modern manga reader app built with Expo and React Native. Browse, search, and read manga from multiple sources with a clean, dark-themed interface.
 
-## Get started
+## Screenshots
 
-1. Install dependencies
+| Home | Browse | Search | Manga Info | Source Selection |
+|:---:|:---:|:---:|:---:|:---:|
+| ![Home](readme/images/home_screen.png) | ![Browse](readme/images/browse_manga_screen.png) | ![Search](readme/images/search_manga_screen.png) | ![Manga Info](readme/images/manga_info_screen.png) | ![Source Selection](readme/images/source_selection_screen.png) |
 
-   ```bash
-   npm install
-   ```
+### Reader
 
-2. Start the app
+| Manga | Manhwa |
+|:---:|:---:|
+| ![Manga Reader](readme/images/reader_screen_manga.PNG) | ![Manhwa Reader](readme/images/reader_screen_manhwa.PNG) |
 
-   ```bash
-   npx expo start
-   ```
+## Features
 
-In the output, you'll find options to open the app in a
+- **Multiple Sources** - Browse manga from various sources with easy switching
+- **Library Management** - Organize manga with categories
+- **Reading Progress** - Track your reading progress automatically
+- **Dark Theme** - Easy on the eyes for extended reading sessions
+- **Offline Support** - Local database for cached data
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Tech Stack
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **Framework:** Expo SDK 54 + React Native
+- **Styling:** NativeWind (Tailwind CSS)
+- **State:** Zustand
+- **Database:** SQLite (expo-sqlite)
+- **Navigation:** Expo Router
+- **Data Fetching:** TanStack React Query
 
-## Get a fresh project
+## Getting Started
 
-When you're ready, run:
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+- Expo CLI
+
+### Installation
 
 ```bash
-npm run reset-project
+# Clone the repository
+git clone https://github.com/your-username/mangako-v3.git
+
+# Navigate to project
+cd mangako-v3
+
+# Install dependencies
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Running the App
 
-## Learn more
+```bash
+# Start Expo server
+npx expo start
 
-To learn more about developing your project with Expo, look at the following resources:
+# Run on Android
+npm run android
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+# Run on iOS
+npm run ios
 
-## Join the community
+# Run on Web
+npm run web
+```
 
-Join our community of developers creating universal apps.
+### Building
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+# Install EAS CLI
+npm install -g eas-cli
+
+# Build for Android
+eas build -p android
+
+# Build for iOS
+eas build -p ios
+```
+
+## Project Structure
+
+```
+mangako-v3/
+├── app/                    # Expo Router pages
+│   ├── (tabs)/            # Tab navigation
+│   │   ├── index.tsx      # Home screen
+│   │   └── browse.tsx     # Library/Browse screen
+│   ├── (modals)/          # Modal screens
+│   ├── manga/             # Manga detail & reader
+│   └── search.tsx         # Search screen
+├── components/            # Reusable UI components
+├── hooks/                 # Custom React hooks
+├── lib/                   # Utility libraries
+├── services/              # API & database services
+│   └── db/               # SQLite database layer
+├── stores/                # Zustand state stores
+├── types/                 # TypeScript type definitions
+└── utils/                 # Helper utilities
+```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
