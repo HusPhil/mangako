@@ -2,6 +2,18 @@
 
 A modern manga reader app built with Expo and React Native. Browse, search, and read manga from multiple sources with a clean, dark-themed interface.
 
+## Installation
+
+### iOS (Expo Go)
+1. Install [Expo Go](https://apps.apple.com/us/app/expo-go/id984023095) from the App Store
+2. Scan the QR code or tap the link on the [Releases page](https://github.com/HusPhil/mangako/releases)
+
+### Android (APK)
+1. Download the APK from the [Releases page](https://github.com/HusPhil/mangako/releases/latest)
+2. Open the downloaded file and tap **Install**
+
+For detailed instructions, visit the [Releases page](https://github.com/HusPhil/mangako/releases).
+
 ## Screenshots
 
 | Home | Browse | Search | Manga Info | Source Selection |
