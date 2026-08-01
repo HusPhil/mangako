@@ -114,6 +114,10 @@ mangako-v3/
 └── utils/                 # Helper utilities
 ```
 
+## Backend Setup
+
+To set up the backend, refer to the [MangaKo API Repository](https://github.com/HusPhil/MangaKo_API).
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
